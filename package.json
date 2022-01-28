@@ -19,11 +19,14 @@
     "typescript": "^4.5.5"
   },
   "scripts": {
-      "cli": "ts-node src/cli.ts",
-      "test": "jest",
-      "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
-      "build": "tsc -p tsconfig.json",
-      "clean": "rm -rf dist build",
-      "ts-node": "ts-node"
+    "cli": "ts-node src/cli.ts",
+    "test": "jest",
+    "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist build",
+    "ts-node": "ts-node"
+  },
+  "dependencies": {
+    "three": "^0.137.5"
   }
 }
