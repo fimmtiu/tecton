@@ -25,11 +25,12 @@
     "clean": "rm -rf dist build",
     "cli": "ts-node src/cli.ts",
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
-    "server": "five-server . -p 8000",
+    "server": "esbuild --bundle src/main.ts --outfile=www/tecton.js --servedir=www --sourcemap=external",
     "test": "jest",
     "ts-node": "ts-node"
   },
   "dependencies": {
-    "@types/three": "^0.137.0"
+    "@types/three": "^0.137.0",
+    "three": "^0.137.0"
   }
 }
