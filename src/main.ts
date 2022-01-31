@@ -3,7 +3,7 @@ import { Planet } from "./planet";
 
 const FIELD_OF_VIEW = 50;
 
-const canvasContainer = document.getElementById("canvas");
+const canvasContainer = document.getElementById("canvas-container");
 if (canvasContainer === null) {
   throw "Can't find the canvas!";
 }
