@@ -4,7 +4,7 @@ import { Planet } from "./planet";
 export { SceneData };
 
 const FIELD_OF_VIEW = 50;
-const ROTATION_SPEED = 0.003;
+const ROTATION_SPEED = 0.005;
 
 class SceneData {
   public scene: THREE.Scene;

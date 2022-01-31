@@ -19,18 +19,28 @@ function initBrowserWindow(container: HTMLElement) {
   new ResizeObserver(setCanvasSize).observe(container);
 }
 
-function keyPressListener(event: KeyboardEvent) {
-  console.log(`code ${event.code}, key ${event.key}`);
+function keyDownListener(event: KeyboardEvent) {
+  console.log(`down: code ${event.code}, key ${event.key}`);
   switch(event.key) {
+    case 'ArrowLeft':
+      sceneData.rotate(-1);
+      break;
+    case 'ArrowRight':
+      sceneData.rotate(1);
+      break;
     case 'h':
       sceneData.planet.setEdgesVisible(!sceneData.planet.showEdges);
       break;
   }
 }
 
-function keyDownListener(event: KeyboardEvent) {
-  console.log(`code ${event.code}, key ${event.key}`);
+function keyUpListener(event: KeyboardEvent) {
+  console.log(`up: code ${event.code}, key ${event.key}`);
   switch(event.key) {
+    case 'ArrowLeft':
+    case 'ArrowRight':
+      sceneData.rotate(0);
+      break;
   }
 }
 
@@ -48,13 +58,12 @@ sceneData.scene.add(light);
 
 const backgroundGeometry = new THREE.PlaneGeometry(8, 8);
 const texture = new THREE.TextureLoader().load('img/star-field.jpg');
-// immediately use the texture for material creation
 const material = new THREE.MeshBasicMaterial({ map: texture });
 const plane = new THREE.Mesh(backgroundGeometry, material);
 plane.position.z = -2.5;
 sceneData.scene.add(plane);
 
 initBrowserWindow(canvasContainer);
-window.addEventListener('keypress', keyPressListener);
 window.addEventListener('keydown', keyDownListener);
+window.addEventListener('keyup', keyUpListener);
 mainLoop();
