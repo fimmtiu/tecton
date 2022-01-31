@@ -15,13 +15,13 @@ class SceneData {
   constructor(width: number, height: number) {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(FIELD_OF_VIEW, width / height, 0.1, 1000);
-    this.planet = new Planet(this.scene, false);
+    this.planet = new Planet(this.scene);
     this.rotateSpeed = 0;
   }
 
   updateCamera(newWidth: number, newHeight: number) {
     this.camera.aspect = newWidth / newHeight;
-    const distance = 1 / (Math.tan((FIELD_OF_VIEW / 2) / (180 / Math.PI)) / 1 /* <-- height of planet */ / 1.2);
+    const distance = 1 / (Math.tan((FIELD_OF_VIEW / 2) / (180 / Math.PI)) / Planet.radius / 1.2);
     this.camera.position.z = distance;
     this.camera.updateProjectionMatrix();
   }
