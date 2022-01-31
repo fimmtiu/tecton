@@ -55,13 +55,9 @@ light.position.y = 1.0;
 light.position.z = 3.0;
 sceneData.scene.add(light);
 
-
-const backgroundGeometry = new THREE.PlaneGeometry(8, 8);
+// For now, just a flat background that doesn't move. In the future, maybe it can be a sky-sphere.
 const texture = new THREE.TextureLoader().load('img/star-field.jpg');
-const material = new THREE.MeshBasicMaterial({ map: texture });
-const plane = new THREE.Mesh(backgroundGeometry, material);
-plane.position.z = -2.5;
-sceneData.scene.add(plane);
+sceneData.scene.background = texture;
 
 initBrowserWindow(canvasContainer);
 window.addEventListener('keydown', keyDownListener);
