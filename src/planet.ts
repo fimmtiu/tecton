@@ -10,8 +10,8 @@ class Planet {
   protected edges: THREE.LineSegments;
   protected scene: THREE.Scene;
 
-  constructor(scene: THREE.Scene) {
-    this.showEdges = true;
+  constructor(scene: THREE.Scene, showEdges: boolean) {
+    this.showEdges = showEdges || false;
 
     let geometry = new THREE.IcosahedronGeometry(1, SUBDIVISION);
     let material = new THREE.MeshLambertMaterial({ color: 0x00aa00 });
@@ -21,11 +21,20 @@ class Planet {
 
     let edgeGeometry = new THREE.EdgesGeometry(this.mesh.geometry);
     this.edges = new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
-    scene.add(this.edges);
+    this.setEdgesVisible(this.showEdges);
   };
 
   update() {
     this.mesh.rotation.y += 0.003;
     this.edges.rotation.y = this.mesh.rotation.y;
+  }
+
+  setEdgesVisible(showEdges: boolean) {
+    this.showEdges = showEdges;
+    if (showEdges) {
+      this.scene.add(this.edges);
+    } else {
+      this.scene.remove(this.edges);
+    }
   }
 };
