@@ -24,8 +24,8 @@ class Planet {
     this.setEdgesVisible(this.showEdges);
   };
 
-  update() {
-    this.mesh.rotation.y += 0.003;
+  rotate(amount: number) {
+    this.mesh.rotation.y += amount;
     this.edges.rotation.y = this.mesh.rotation.y;
   }
 
