@@ -35,6 +35,12 @@ function keyDownListener(event: KeyboardEvent) {
     case 'ArrowUp':
       sceneData.rotateVertically(1);
       break;
+    case ',':
+      sceneData.zoom(-1);
+      break;
+    case '.':
+      sceneData.zoom(1);
+      break;
     case 'h':
       sceneData.planet.setEdgesVisible(!sceneData.planet.showEdges);
       break;
@@ -51,6 +57,10 @@ function keyUpListener(event: KeyboardEvent) {
     case 'ArrowDown':
     case 'ArrowUp':
       sceneData.rotateVertically(0);
+      break;
+    case ',':
+    case '.':
+      sceneData.zoom(0);
       break;
   }
 }
