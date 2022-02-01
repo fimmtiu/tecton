@@ -5,15 +5,15 @@ export { SceneData };
 
 const FIELD_OF_VIEW = 50;
 const ROTATION_SPEED = 0.005;
-const MAX_VERT_ANGLE = Math.PI / 2 - 0.005;
+const MIN_VERT_ANGLE = 0.005;
+const MAX_VERT_ANGLE = Math.PI - MIN_VERT_ANGLE;
 
 class SceneData {
   public scene: THREE.Scene;
   public camera: THREE.PerspectiveCamera;
   public planet: Planet;
 
-  protected orbitAngleH: number;
-  protected orbitAngleV: number;
+  protected sphereCoords: THREE.Spherical;
   protected horizDirection: number;
   protected vertDirection: number;
 
@@ -21,15 +21,14 @@ class SceneData {
     this.scene = new THREE.Scene();
     this.planet = new Planet(this.scene);
     this.camera = new THREE.PerspectiveCamera(FIELD_OF_VIEW, width / height, 0.1, Planet.radius * 3);
-    this.orbitAngleH = this.orbitAngleV = 0;
+    this.sphereCoords = new THREE.Spherical(this.cameraDistance(), Math.PI / 2, 0)
     this.horizDirection = this.vertDirection = 0;
   }
 
-  updateCamera(newWidth: number, newHeight: number) {
+  updateCameraOnResize(newWidth: number, newHeight: number) {
     this.camera.aspect = newWidth / newHeight;
-    this.camera.position.z = this.cameraDistance();
-    this.camera.updateProjectionMatrix();
-    console.log(`Initial position: H angle: ${this.orbitAngleH}. V angle: ${this.orbitAngleV}. Position: (${this.camera.position.x}, ${this.camera.position.y}, ${this.camera.position.z})`);
+    this.positionCamera();
+    console.log(`Initial position: rad: ${this.sphereCoords.radius}, phi: ${this.sphereCoords.phi}, theta: ${this.sphereCoords.theta}. Position: (${this.camera.position.x}, ${this.camera.position.y}, ${this.camera.position.z})`);
   }
 
   // This will stop being a constant once I implement zooming in and out.
@@ -38,40 +37,28 @@ class SceneData {
   }
 
   update() {
-    let horizNewZ = 0, vertNewZ = 0;
-
     if (this.horizDirection) {
-      this.orbitAngleH += ROTATION_SPEED * this.horizDirection;
-      this.orbitAngleH %= 2 * Math.PI;
-      const latitudeDistance = Math.cos(this.orbitAngleV) * this.cameraDistance();
-      this.camera.position.x = Math.sin(this.orbitAngleH) * latitudeDistance;
-      horizNewZ = Math.cos(this.orbitAngleH) * latitudeDistance;
-      console.log(`Moved horizontally. H angle: ${this.orbitAngleH}. New position: (${this.camera.position.x}, ${this.camera.position.y}, ${this.camera.position.z})`);
+      this.sphereCoords.theta += ROTATION_SPEED * this.horizDirection;
+      this.sphereCoords.theta %= 2 * Math.PI;
+      console.log(`Moved horizontally. Rad: ${this.sphereCoords.radius}, phi: ${this.sphereCoords.phi}, theta: ${this.sphereCoords.theta}. Position: (${this.camera.position.x}, ${this.camera.position.y}, ${this.camera.position.z})`);
     }
 
     if (this.vertDirection) {
-      this.orbitAngleV += ROTATION_SPEED * this.vertDirection;
-      // Clamp the vertical angle to just shy of 90 degrees, so we can't go over the pole.
-      this.orbitAngleV = Math.max(Math.min(this.orbitAngleV, MAX_VERT_ANGLE), -MAX_VERT_ANGLE);
-      const longitudeDistance = Math.cos(this.orbitAngleH) * this.cameraDistance();
-      this.camera.position.y = Math.sin(this.orbitAngleV) * longitudeDistance;
-      vertNewZ = Math.cos(this.orbitAngleV) * longitudeDistance;
-      console.log(`Moved vertically. V angle: ${this.orbitAngleV}. New position: (${this.camera.position.x}, ${this.camera.position.y}, ${this.camera.position.z})`);
+      this.sphereCoords.phi += ROTATION_SPEED * this.vertDirection;
+      // Clamp the vertical angle to just about 0-180 degrees, so we can't go over the pole.
+      this.sphereCoords.phi = Math.max(Math.min(this.sphereCoords.phi, MAX_VERT_ANGLE), MIN_VERT_ANGLE);
+      console.log(`Moved vertically. Rad: ${this.sphereCoords.radius}, phi: ${this.sphereCoords.phi}, theta: ${this.sphereCoords.theta}. Position: (${this.camera.position.x}, ${this.camera.position.y}, ${this.camera.position.z})`);
     }
 
-    // Both the horizontal and vertical rotations want to change the Z coordinate, so if they're both active at once
-    // then we have to average the results to prevent the vertical Z from overwriting the horizontal Z.
     if (this.horizDirection || this.vertDirection) {
-      if (this.horizDirection && !this.vertDirection) {
-        this.camera.position.z = horizNewZ;
-      } else if (this.vertDirection && !this.horizDirection) {
-        this.camera.position.z = vertNewZ;
-      } else {
-        this.camera.position.z = (horizNewZ + vertNewZ) / 2;
-      }
-      this.camera.lookAt(0, 0, 0);
-      this.camera.updateProjectionMatrix();
+      this.positionCamera();
     }
+  }
+
+  positionCamera() {
+    this.camera.position.setFromSpherical(this.sphereCoords);
+    this.camera.lookAt(0, 0, 0);
+    this.camera.updateProjectionMatrix();
   }
 
   // -1 for left, 0 for stop, 1 for right.
@@ -81,5 +68,5 @@ class SceneData {
 
   // -1 for down, 0 for stop, 1 for up.
   rotateVertically(direction: number) {
-    this.vertDirection = direction;
+    this.vertDirection = -direction;
   }}
