@@ -23,10 +23,16 @@ function keyDownListener(event: KeyboardEvent) {
   console.log(`down: code ${event.code}, key ${event.key}`);
   switch(event.key) {
     case 'ArrowLeft':
-      sceneData.rotate(-1);
+      sceneData.rotateHorizontally(-1);
       break;
     case 'ArrowRight':
-      sceneData.rotate(1);
+      sceneData.rotateHorizontally(1);
+      break;
+    case 'ArrowDown':
+      sceneData.rotateVertically(-1);
+      break;
+    case 'ArrowUp':
+      sceneData.rotateVertically(1);
       break;
     case 'h':
       sceneData.planet.setEdgesVisible(!sceneData.planet.showEdges);
@@ -39,7 +45,11 @@ function keyUpListener(event: KeyboardEvent) {
   switch(event.key) {
     case 'ArrowLeft':
     case 'ArrowRight':
-      sceneData.rotate(0);
+      sceneData.rotateHorizontally(0);
+      break;
+    case 'ArrowDown':
+    case 'ArrowUp':
+      sceneData.rotateVertically(0);
       break;
   }
 }
