@@ -14,6 +14,7 @@ const ZOOM_SPEED = Planet.radius / 100;
 class SceneData {
   public scene: THREE.Scene;
   public camera: THREE.PerspectiveCamera;
+  public light: THREE.PointLight;
   public planet: Planet;
 
   protected sphereCoords: THREE.Spherical;
@@ -27,6 +28,9 @@ class SceneData {
     this.camera = new THREE.PerspectiveCamera(FIELD_OF_VIEW, width / height, 0.1, Planet.radius * 3);
     this.sphereCoords = new THREE.Spherical(MAX_ZOOM, Math.PI / 2, 0)
     this.horizDirection = this.vertDirection = this.zoomDirection = 0;
+
+    this.light = new THREE.PointLight(0xffffff);
+    this.scene.add(this.light);
   }
 
   updateCameraOnResize(newWidth: number, newHeight: number) {
@@ -61,6 +65,11 @@ class SceneData {
   private positionCamera() {
     this.camera.position.setFromSpherical(this.sphereCoords);
     this.camera.lookAt(0, 0, 0);
+
+    // Offset the light slightly from the camera position to make it look a bit more shadowy.
+    let lightLocation = new THREE.Vector3(100, 100, 0);
+    this.light.position.copy(lightLocation.unproject(this.camera));
+
     this.camera.updateProjectionMatrix();
   }
 

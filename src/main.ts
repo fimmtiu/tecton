@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { SceneData } from "./scene_data";
-import { Planet } from "./planet";
 
 const canvasContainer = document.getElementById("canvas-container");
 if (canvasContainer === null) {
