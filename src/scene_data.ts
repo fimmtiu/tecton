@@ -38,12 +38,14 @@ class SceneData {
   }
 
   update() {
+    let horizNewZ = 0, vertNewZ = 0;
+
     if (this.horizDirection) {
       this.orbitAngleH += ROTATION_SPEED * this.horizDirection;
       this.orbitAngleH %= 2 * Math.PI;
       const latitudeDistance = Math.cos(this.orbitAngleV) * this.cameraDistance();
       this.camera.position.x = Math.sin(this.orbitAngleH) * latitudeDistance;
-      this.camera.position.z = Math.cos(this.orbitAngleH) * latitudeDistance;
+      horizNewZ = Math.cos(this.orbitAngleH) * latitudeDistance;
       console.log(`Moved horizontally. H angle: ${this.orbitAngleH}. New position: (${this.camera.position.x}, ${this.camera.position.y}, ${this.camera.position.z})`);
     }
 
@@ -53,11 +55,20 @@ class SceneData {
       this.orbitAngleV = Math.max(Math.min(this.orbitAngleV, MAX_VERT_ANGLE), -MAX_VERT_ANGLE);
       const longitudeDistance = Math.cos(this.orbitAngleH) * this.cameraDistance();
       this.camera.position.y = Math.sin(this.orbitAngleV) * longitudeDistance;
-      this.camera.position.z = Math.cos(this.orbitAngleV) * longitudeDistance;
+      vertNewZ = Math.cos(this.orbitAngleV) * longitudeDistance;
       console.log(`Moved vertically. V angle: ${this.orbitAngleV}. New position: (${this.camera.position.x}, ${this.camera.position.y}, ${this.camera.position.z})`);
     }
 
+    // Both the horizontal and vertical rotations want to change the Z coordinate, so if they're both active at once
+    // then we have to average the results to prevent the vertical Z from overwriting the horizontal Z.
     if (this.horizDirection || this.vertDirection) {
+      if (this.horizDirection && !this.vertDirection) {
+        this.camera.position.z = horizNewZ;
+      } else if (this.vertDirection && !this.horizDirection) {
+        this.camera.position.z = vertNewZ;
+      } else {
+        this.camera.position.z = (horizNewZ + vertNewZ) / 2;
+      }
       this.camera.lookAt(0, 0, 0);
       this.camera.updateProjectionMatrix();
     }
