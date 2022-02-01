@@ -25,7 +25,7 @@ class SceneData {
   constructor(width: number, height: number) {
     this.scene = new THREE.Scene();
     this.planet = new Planet(this.scene);
-    this.camera = new THREE.PerspectiveCamera(FIELD_OF_VIEW, width / height, 0.1, Planet.radius * 3);
+    this.camera = new THREE.PerspectiveCamera(FIELD_OF_VIEW, width / height, 0.1, MAX_ZOOM + Planet.radius);
     this.sphereCoords = new THREE.Spherical(MAX_ZOOM, Math.PI / 2, 0)
     this.horizDirection = this.vertDirection = this.zoomDirection = 0;
 

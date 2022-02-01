@@ -2,10 +2,10 @@ import * as THREE from "three";
 
 export { Planet };
 
-const SUBDIVISION = 13;
+const SUBDIVISION = 19;
 
 class Planet {
-  static readonly radius = 1000;
+  static readonly radius = 6370; // each unit is 1 kilometer
 
   public showEdges: boolean;
   protected mesh: THREE.Mesh;
