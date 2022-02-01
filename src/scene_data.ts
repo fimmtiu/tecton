@@ -19,8 +19,8 @@ class SceneData {
 
   constructor(width: number, height: number) {
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(FIELD_OF_VIEW, width / height, 0.1, 1000);
     this.planet = new Planet(this.scene);
+    this.camera = new THREE.PerspectiveCamera(FIELD_OF_VIEW, width / height, 0.1, Planet.radius * 3);
     this.orbitAngleH = this.orbitAngleV = 0;
     this.horizDirection = this.vertDirection = 0;
   }

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { SceneData } from "./scene_data";
+import { Planet } from "./planet";
 
 const canvasContainer = document.getElementById("canvas-container");
 if (canvasContainer === null) {
@@ -61,8 +62,8 @@ function mainLoop() {
 }
 
 const light = new THREE.PointLight(0xffffff);
-light.position.y = 1.0;
-light.position.z = 3.0;
+light.position.y = Planet.radius;
+light.position.z = Planet.radius * 3;
 sceneData.scene.add(light);
 
 // For now, just a flat background that doesn't move. In the future, maybe it can be a sky-sphere.

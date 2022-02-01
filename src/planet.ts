@@ -5,7 +5,7 @@ export { Planet };
 const SUBDIVISION = 13;
 
 class Planet {
-  static readonly radius = 1;
+  static readonly radius = 1000;
 
   public showEdges: boolean;
   protected mesh: THREE.Mesh;
