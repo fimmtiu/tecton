@@ -71,11 +71,6 @@ function mainLoop() {
   renderer.render(sceneData.scene, sceneData.camera);
 }
 
-const light = new THREE.PointLight(0xffffff);
-light.position.y = Planet.radius;
-light.position.z = Planet.radius * 3;
-sceneData.scene.add(light);
-
 // For now, just a flat background that doesn't move. In the future, maybe it can be a sky-sphere.
 const texture = new THREE.TextureLoader().load('img/star-field.jpg');
 sceneData.scene.background = texture;
