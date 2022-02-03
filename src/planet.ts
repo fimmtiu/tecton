@@ -24,7 +24,7 @@ class Planet {
     const positions = geometry.attributes.position;
     geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(positions.count * 3), 3));
 
-    let material = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true });
+    let material = new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true });
     this.mesh = new THREE.Mesh(geometry, material);
     this.scene = scene;
     scene.add(this.mesh);
@@ -74,9 +74,10 @@ class Planet {
   }
 
   generateTerrain() {
-    const NOISE_SCALE = 5000;
-    const MIN_WATER_HUE = 192 / 360;
-    const MAX_WATER_HUE = 230 / 360;
+    const NOISE_SCALE = 6000;
+    const FAVOR_WATER = -0.25;
+    const MIN_WATER_HUE = 0.55;
+    const MAX_WATER_HUE = 0.65;
     const MIN_GROUND_LIGHT = 0.40;
     const MAX_GROUND_LIGHT = 0.64;
 
@@ -84,11 +85,13 @@ class Planet {
     let positions = this.mesh.geometry.attributes.position;
 
     for (let i = 0; i < positions.count; i++) {
-      let height = this.noiseGenerator.noise3D(positions.getX(i) / NOISE_SCALE, positions.getY(i) / NOISE_SCALE, positions.getZ(i) / NOISE_SCALE);
+      let height = FAVOR_WATER + this.noiseGenerator.noise3D(
+        positions.getX(i) / NOISE_SCALE,
+        positions.getY(i) / NOISE_SCALE,
+        positions.getZ(i) / NOISE_SCALE
+      );
 
       if (height < 0) {
-        console.log(`hue for water: (${MAX_WATER_HUE} - ${MIN_WATER_HUE}) * ${Math.abs(height)} + ${MIN_WATER_HUE} = ${(MAX_WATER_HUE - MIN_WATER_HUE) * Math.abs(height) + MIN_WATER_HUE}`);
-        // color.setHSL(MAX_WATER_HUE, 1.0, 0.5);
         color.setHSL((MAX_WATER_HUE - MIN_WATER_HUE) * Math.abs(height) + MIN_WATER_HUE, 1.0, 0.5);
       } else {
         color.setHSL(1/3, 1.0, (MAX_GROUND_LIGHT - MIN_GROUND_LIGHT) * Math.abs(height) + MIN_GROUND_LIGHT);
