@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import SimplexNoise from "simplex-noise";
 
 export { Planet };
 
@@ -13,22 +14,22 @@ class Planet {
   protected edges: THREE.LineSegments;
   protected points: THREE.Points;
   protected scene: THREE.Scene;
+  protected noiseGenerator: SimplexNoise;
 
   constructor(scene: THREE.Scene) {
+    this.noiseGenerator = new SimplexNoise();
+
     let geometry = new THREE.IcosahedronGeometry(Planet.radius, SPHERE_SUBDIVISION);
     const color = new THREE.Color();
     const positions = geometry.attributes.position;
     geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(positions.count * 3), 3));
 
-    for (let i = 0; i < positions.count; i++) {
-      color.setHSL((positions.getY(i) / Planet.radius + 1) / 2, 1.0, 0.5);
-      geometry.attributes.color.setXYZ(i, color.r, color.g, color.b);
-    }
-
     let material = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true });
     this.mesh = new THREE.Mesh(geometry, material);
     this.scene = scene;
     scene.add(this.mesh);
+
+    this.generateTerrain();
 
     // Optional white lines outlining each face of the mesh.
     let edgeGeometry = new THREE.EdgesGeometry(this.mesh.geometry);
@@ -69,6 +70,31 @@ class Planet {
       this.scene.add(this.points);
     } else {
       this.scene.remove(this.points);
+    }
+  }
+
+  generateTerrain() {
+    const NOISE_SCALE = 5000;
+    const MIN_WATER_HUE = 192 / 360;
+    const MAX_WATER_HUE = 230 / 360;
+    const MIN_GROUND_LIGHT = 0.40;
+    const MAX_GROUND_LIGHT = 0.64;
+
+    let color = new THREE.Color;
+    let positions = this.mesh.geometry.attributes.position;
+
+    for (let i = 0; i < positions.count; i++) {
+      let height = this.noiseGenerator.noise3D(positions.getX(i) / NOISE_SCALE, positions.getY(i) / NOISE_SCALE, positions.getZ(i) / NOISE_SCALE);
+
+      if (height < 0) {
+        console.log(`hue for water: (${MAX_WATER_HUE} - ${MIN_WATER_HUE}) * ${Math.abs(height)} + ${MIN_WATER_HUE} = ${(MAX_WATER_HUE - MIN_WATER_HUE) * Math.abs(height) + MIN_WATER_HUE}`);
+        // color.setHSL(MAX_WATER_HUE, 1.0, 0.5);
+        color.setHSL((MAX_WATER_HUE - MIN_WATER_HUE) * Math.abs(height) + MIN_WATER_HUE, 1.0, 0.5);
+      } else {
+        color.setHSL(1/3, 1.0, (MAX_GROUND_LIGHT - MIN_GROUND_LIGHT) * Math.abs(height) + MIN_GROUND_LIGHT);
+      }
+
+      this.mesh.geometry.attributes.color.setXYZ(i, color.r, color.g, color.b);
     }
   }
 };
