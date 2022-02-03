@@ -37,9 +37,19 @@ class Planet {
     this.setEdgesVisible(false);
 
     // The points that represent each chunk of a tectonic plate.
-    const pointsMaterial = new THREE.PointsMaterial({ size: Planet.radius * 0.02 });
-    this.points = new THREE.Points(this.mesh.geometry.clone(), pointsMaterial);
-    this.points.geometry.scale(1.01, 1.01, 1.01);
+    const pointsMaterial = new THREE.PointsMaterial({ size: Planet.radius * 0.02, vertexColors: true });
+    let pointsGeometry = this.mesh.geometry.clone();
+    this.points = new THREE.Points(pointsGeometry, pointsMaterial);
+    pointsGeometry.scale(1.01, 1.01, 1.01);
+    const pointPositions = pointsGeometry.attributes.position;
+    pointsGeometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(pointPositions.count * 3), 3));
+
+    // For now, let's just give them random colors to verify that setting the colors works.
+    for (let i = 0; i < positions.count; i++) {
+      color.setHSL((positions.getZ(i) / Planet.radius + 1) / 2, 1.0, 0.5);
+      pointsGeometry.attributes.color.setXYZ(i, color.r, color.g, color.b);
+    }
+
     this.showPoints = false;
     this.setPointsVisible(false);
   };
