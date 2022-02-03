@@ -43,7 +43,10 @@ function keyDownListener(event: KeyboardEvent) {
     case 'h':
       sceneData.planet.setEdgesVisible(!sceneData.planet.showEdges);
       break;
-  }
+    case 'p':
+      sceneData.planet.setPointsVisible(!sceneData.planet.showPoints);
+      break;
+    }
 }
 
 function keyUpListener(event: KeyboardEvent) {
