@@ -37,6 +37,10 @@ class SceneData {
     this.scene.background = texture;
   }
 
+  destroy() {
+    this.planet.destroy();
+  }
+
   updateCameraOnResize(newWidth: number, newHeight: number) {
     this.camera.aspect = newWidth / newHeight;
     this.positionCamera();

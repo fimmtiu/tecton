@@ -52,6 +52,17 @@ class Planet {
     this.setPointsVisible(false);
   };
 
+  destroy() {
+    (<THREE.Material>this.mesh.material).dispose();
+    this.mesh.geometry.dispose();
+
+    (<THREE.Material>this.edges.material).dispose();
+    this.edges.geometry.dispose();
+
+    (<THREE.Material>this.points.material).dispose();
+    this.points.geometry.dispose();
+  }
+
   setEdgesVisible(showEdges: boolean) {
     this.showEdges = showEdges;
     if (showEdges) {
