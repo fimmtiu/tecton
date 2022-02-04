@@ -1,14 +1,17 @@
 import * as THREE from "three";
-import { Controls } from "./controls";
 import { SceneData } from "./scene_data";
+import { setRandomSeed } from "./util";
 
-const canvasContainer = document.getElementById("canvas-container");
+const canvasContainer = document.getElementById("canvas-container") as HTMLCanvasElement;
 if (canvasContainer === null) {
   throw "Can't find the canvas!";
 }
-const sceneData = new SceneData(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+const randomSeedInput = document.getElementById("random-seed") as HTMLInputElement;
+if (randomSeedInput === null) {
+  throw "Can't find the #random-seed input box!";
+}
 const renderer = new THREE.WebGLRenderer();
-const controls = new Controls(window, sceneData);
+let sceneData = new SceneData(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
 
 function initBrowserWindow(container: HTMLElement) {
   container.appendChild(renderer.domElement);
@@ -27,6 +30,72 @@ function mainLoop() {
   renderer.render(sceneData.scene, sceneData.camera);
 }
 
+function keyDownListener(event: KeyboardEvent) {
+  if (document.activeElement == randomSeedInput) {
+    return;
+  }
+
+  switch(event.key) {
+    case 'ArrowLeft':
+      sceneData.rotateHorizontally(-1);
+      break;
+    case 'ArrowRight':
+      sceneData.rotateHorizontally(1);
+      break;
+    case 'ArrowDown':
+      sceneData.rotateVertically(-1);
+      break;
+    case 'ArrowUp':
+      sceneData.rotateVertically(1);
+      break;
+    case ',':
+      sceneData.zoom(-1);
+      break;
+    case '.':
+      sceneData.zoom(1);
+      break;
+    case 'h':
+      sceneData.planet.setEdgesVisible(!sceneData.planet.showEdges);
+      break;
+    case 'p':
+      sceneData.planet.setPointsVisible(!sceneData.planet.showPoints);
+      break;
+    }
+}
+
+function keyUpListener(event: KeyboardEvent) {
+  console.log(`up: code ${event.code}, key ${event.key}`);
+  if (document.activeElement == randomSeedInput) {
+    if (event.key == "Enter") {
+      restart();
+    }
+    return;
+  }
+
+  switch(event.key) {
+    case 'ArrowLeft':
+    case 'ArrowRight':
+      sceneData.rotateHorizontally(0);
+      break;
+    case 'ArrowDown':
+    case 'ArrowUp':
+      sceneData.rotateVertically(0);
+      break;
+    case ',':
+    case '.':
+      sceneData.zoom(0);
+      break;
+  }
+}
+
+function restart() {
+  console.log(`Setting noise seed to ${randomSeedInput.value} and re-generating planet`);
+  setRandomSeed(randomSeedInput.value);
+  sceneData.destroy();
+  sceneData = new SceneData(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+}
+
 initBrowserWindow(canvasContainer);
-controls.listenForEvents();
+window.addEventListener('keydown', keyDownListener);
+window.addEventListener('keyup', keyUpListener);
 mainLoop();
