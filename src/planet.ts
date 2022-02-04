@@ -74,8 +74,8 @@ class Planet {
   }
 
   generateTerrain() {
-    const NOISE_SCALE = 6000;
-    const FAVOR_WATER = -0.25;
+    const NOISE_SCALE = 5000;
+    const FAVOR_WATER = -0.35;
     const MIN_WATER_HUE = 0.55;
     const MAX_WATER_HUE = 0.65;
     const MIN_GROUND_LIGHT = 0.40;

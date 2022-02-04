@@ -4,7 +4,7 @@ import { Planet } from "./planet";
 export { SceneData };
 
 const FIELD_OF_VIEW = 50;
-const ROTATION_SPEED = 0.005;
+const ROTATION_SPEED = 0.008;
 const MIN_VERT_ANGLE = 0.005;
 const MAX_VERT_ANGLE = Math.PI - MIN_VERT_ANGLE;
 const MAX_ZOOM = 1 / (Math.tan((FIELD_OF_VIEW / 2) / (180 / Math.PI)) / Planet.radius / 1.2);
