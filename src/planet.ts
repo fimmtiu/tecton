@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import SimplexNoise from "simplex-noise";
+import { noiseGenerator } from "./util";
 
 export { Planet };
 
@@ -14,11 +14,8 @@ class Planet {
   protected edges: THREE.LineSegments;
   protected points: THREE.Points;
   protected scene: THREE.Scene;
-  protected noiseGenerator: SimplexNoise;
 
   constructor(scene: THREE.Scene) {
-    this.noiseGenerator = new SimplexNoise();
-
     let geometry = new THREE.IcosahedronGeometry(Planet.radius, SPHERE_SUBDIVISION);
     const color = new THREE.Color();
     const positions = geometry.attributes.position;
@@ -85,7 +82,7 @@ class Planet {
     let positions = this.mesh.geometry.attributes.position;
 
     for (let i = 0; i < positions.count; i++) {
-      let height = FAVOR_WATER + this.noiseGenerator.noise3D(
+      let height = FAVOR_WATER + noiseGenerator().noise3D(
         positions.getX(i) / NOISE_SCALE,
         positions.getY(i) / NOISE_SCALE,
         positions.getZ(i) / NOISE_SCALE
