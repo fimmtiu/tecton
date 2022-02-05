@@ -58,12 +58,12 @@ class SceneData {
     if (this.vertDirection) {
       this.sphereCoords.phi += ROTATION_SPEED * -this.vertDirection;
       // Clamp the vertical angle to just about 0-180 degrees, so we can't go over the pole.
-      this.sphereCoords.phi = Math.max(Math.min(this.sphereCoords.phi, MAX_VERT_ANGLE), MIN_VERT_ANGLE);
+      this.sphereCoords.phi = THREE.MathUtils.clamp(this.sphereCoords.phi, MIN_VERT_ANGLE, MAX_VERT_ANGLE);
     }
 
     if (this.zoomDirection) {
       this.sphereCoords.radius += ZOOM_SPEED * -this.zoomDirection;
-      this.sphereCoords.radius = Math.max(Math.min(this.sphereCoords.radius, MAX_ZOOM), MIN_ZOOM);
+      this.sphereCoords.radius = THREE.MathUtils.clamp(this.sphereCoords.radius, MIN_ZOOM, MAX_ZOOM);
     }
 
     if (this.horizDirection || this.vertDirection || this.zoomDirection) {
