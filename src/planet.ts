@@ -13,11 +13,9 @@ class Planet {
   protected scene: THREE.Scene;
   protected mesh: THREE.Mesh;
   protected edges: THREE.LineSegments | null;
-  protected normalArrows: Array<THREE.ArrowHelper>;
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
-    this.normalArrows = [];
 
     let geometry = new THREE.PlaneGeometry(MESH_SIDE_LENGTH, MESH_SIDE_LENGTH, MESH_SUBDIVISION, MESH_SUBDIVISION);
     const positions = geometry.attributes.position;
@@ -51,8 +49,6 @@ class Planet {
       this.toggleEdgesVisible();
       this.toggleEdgesVisible();
     }
-
-    // this.showFaceNormals(this.mesh.geometry, cameraPosition);
   }
 
   // Makes the mesh curve based on how far away it is, so that it seems round at a distance
@@ -80,41 +76,6 @@ class Planet {
 
       newPosition.setFromSpherical(sphereCoords);
       positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
-    }
-  }
-
-  protected showFaceNormals(geometry: THREE.BufferGeometry, cameraPosition: THREE.Vector3) {
-    let positions = geometry.attributes.position;
-    let index = geometry.index;
-    if (index === null) {
-      throw "not indexed, wtf?";
-    }
-    let a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
-    let faceNormal = new THREE.Vector3(), normalizedCameraVector = new THREE.Vector3(), midpoint = new THREE.Vector3();
-    let triangle = new THREE.Triangle();
-    const blue = new THREE.Color(0, 0, 1), red = new THREE.Color(1, 0, 0);
-    let arrowColor = new THREE.Color();
-    let distance = 0.0;
-
-    for (let arrow of this.normalArrows) {
-      this.scene.remove(arrow);
-    }
-
-    for (let i = 0; i < index.count; i++) {
-      a.fromBufferAttribute(positions, index.getX((i * 3) + 0));
-      b.fromBufferAttribute(positions, index.getX((i * 3) + 1));
-      c.fromBufferAttribute(positions, index.getX((i * 3) + 2));
-      triangle.set(a, b, c);
-      triangle.getNormal(faceNormal);
-      triangle.getMidpoint(midpoint);
-
-      normalizedCameraVector.copy(cameraPosition).normalize();
-      distance = normalizedCameraVector.distanceTo(faceNormal);
-      arrowColor.lerpColors(blue, red, distance / 2);
-
-      const arrow = new THREE.ArrowHelper(faceNormal, midpoint, 800, arrowColor.getHex());
-      this.normalArrows.push(arrow);
-      this.scene.add(arrow);
     }
   }
 
@@ -147,7 +108,7 @@ class Planet {
       let height = FAVOR_WATER + noiseGenerator().noise3D(
         positions.getX(i) / NOISE_SCALE,
         positions.getY(i) / NOISE_SCALE,
-        positions.getZ(i) / NOISE_SCALE
+        positions.getZ(i) / NOISE_SCALE,
       );
 
       if (height < 0) {
