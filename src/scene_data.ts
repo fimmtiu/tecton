@@ -37,6 +37,7 @@ class SceneData {
     this.scene.background = texture;
 
     this.updateCameraOnResize(width, height);
+    this.planet.update(this.camera.position);
   }
 
   destroy() {
@@ -67,12 +68,13 @@ class SceneData {
     }
 
     if (this.horizDirection || this.vertDirection || this.zoomDirection) {
-      console.log(`Moved. Rad: ${this.sphereCoords.radius}, phi: ${this.sphereCoords.phi}, theta: ${this.sphereCoords.theta}. Position: (${this.camera.position.x}, ${this.camera.position.y}, ${this.camera.position.z})`);
       this.positionCamera();
+      console.log(`Moved. Rad: ${this.sphereCoords.radius}, phi: ${this.sphereCoords.phi}, theta: ${this.sphereCoords.theta}. Position: (${this.camera.position.x}, ${this.camera.position.y}, ${this.camera.position.z})`);
+      this.planet.update(this.camera.position);
     }
   }
 
-  private positionCamera() {
+  protected positionCamera() {
     this.camera.position.setFromSpherical(this.sphereCoords);
     this.camera.lookAt(0, 0, 0);
 

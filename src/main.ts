@@ -55,10 +55,7 @@ function keyDownListener(event: KeyboardEvent) {
       sceneData.zoom(1);
       break;
     case 'h':
-      sceneData.planet.setEdgesVisible(!sceneData.planet.showEdges);
-      break;
-    case 'p':
-      sceneData.planet.setPointsVisible(!sceneData.planet.showPoints);
+      sceneData.planet.toggleEdgesVisible();
       break;
     }
 }

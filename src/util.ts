@@ -1,6 +1,6 @@
 import SimplexNoise from "simplex-noise";
 
-export { noiseGenerator, setRandomSeed };
+export { noiseGenerator, setRandomSeed, updateGeometry };
 
 let simplex = new SimplexNoise();
 
@@ -16,3 +16,11 @@ function setRandomSeed(seed: string) {
   }
 }
 
+// Tell three.js that this geometry has changed.
+function updateGeometry(geometry: THREE.BufferGeometry) {
+  geometry.attributes.position.needsUpdate = true;
+  geometry.attributes.color.needsUpdate = true;
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+}
