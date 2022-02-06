@@ -1,12 +1,11 @@
 import * as THREE from "three";
-import { ArrowHelper, Vector3 } from "three";
 import { noiseGenerator, updateGeometry } from "./util";
 
 export { Planet };
 
-const ORIGIN = new Vector3(0, 0, 0);
+const ORIGIN = new THREE.Vector3(0, 0, 0);
 const MESH_SIDE_LENGTH = 6000;
-const MESH_SUBDIVISION = 6; // The coordinates are much simpler if this is even.
+const MESH_SUBDIVISION = 100;
 
 class Planet {
   static readonly radius = 6370; // each unit is 1 kilometer
@@ -53,7 +52,7 @@ class Planet {
       this.toggleEdgesVisible();
     }
 
-    this.showFaceNormals(this.mesh.geometry, cameraPosition);
+    // this.showFaceNormals(this.mesh.geometry, cameraPosition);
   }
 
   // Makes the mesh curve based on how far away it is, so that it seems round at a distance
@@ -81,7 +80,6 @@ class Planet {
 
       newPosition.setFromSpherical(sphereCoords);
       positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
-      console.log(`Mesh: (${u}, ${v}). Spherical: (t ${sphereCoords.theta}, p ${sphereCoords.phi}, r: ${sphereCoords.radius}). World: (${newPosition.x}, ${newPosition.y}, ${newPosition.z}).`);
     }
   }
 
@@ -102,7 +100,7 @@ class Planet {
       this.scene.remove(arrow);
     }
 
-    for (let i = 0; i < positions.count; i++) {
+    for (let i = 0; i < index.count; i++) {
       a.fromBufferAttribute(positions, index.getX((i * 3) + 0));
       b.fromBufferAttribute(positions, index.getX((i * 3) + 1));
       c.fromBufferAttribute(positions, index.getX((i * 3) + 2));
