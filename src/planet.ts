@@ -72,7 +72,14 @@ class Planet {
       sphereCoords.theta = RADIANS_PER_UNIT * v;
       sphereCoords.phi = RADIANS_PER_UNIT * u + Math.PI / 2;
       // const FIXME_MAX_ZOOM = 1 / (Math.tan(25 / (180 / Math.PI)) / Planet.radius / 1.2);
-      // sphereCoords.radius = (Planet.radius / cameraDistance) * FIXME_MAX_ZOOM;
+      // sphereCoords.radius = (Planet.radius / (cameraDistance - Planet.radius)) * FIXME_MAX_ZOOM;
+
+      // if ((u == -HALF_MESH_LENGTH && v == -HALF_MESH_LENGTH) || (u == 0 && v == -HALF_MESH_LENGTH) || (u == HALF_MESH_LENGTH && v == -HALF_MESH_LENGTH) ||
+      //     (u == -HALF_MESH_LENGTH && v == 0) || (u == 0 && v == 0) || (u == HALF_MESH_LENGTH && v == 0) ||
+      //     (u == -HALF_MESH_LENGTH && v == HALF_MESH_LENGTH) || (u == 0 && v == HALF_MESH_LENGTH) || (u == HALF_MESH_LENGTH && v == HALF_MESH_LENGTH)) {
+      //   console.log(`(camD ${cameraDistance} - Pr ${Planet.radius}) * FMZ ${FIXME_MAX_ZOOM} = ${sphereCoords.radius}`);
+      //   console.log(`mesh(${u}, ${v}) => sphere(r: ${sphereCoords.radius}, t: ${sphereCoords.theta}, p: ${sphereCoords.phi})`);
+      // }
 
       newPosition.setFromSpherical(sphereCoords);
       positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
