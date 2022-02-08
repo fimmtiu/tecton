@@ -1,0 +1,93 @@
+import * as THREE from "three";
+import { Planet } from "./planet";
+
+export { PlanetCamera };
+
+// The camera and planet have to know about each other for a couple of reasons:
+// - The height of the camera above the planet determines the planet mesh's curvature
+// - The camera has to know how tall the terrain is at its location so it doesn't zoom inside mountains
+
+const FIELD_OF_VIEW = 50;
+const ROTATION_SPEED = 0.008;
+const MIN_VERT_ANGLE = 0.005;
+const MAX_VERT_ANGLE = Math.PI - MIN_VERT_ANGLE;
+const MAX_ZOOM = 1 / (Math.tan((FIELD_OF_VIEW / 2) / (180 / Math.PI)) / Planet.radius / 1.2);
+const MIN_ZOOM = Planet.radius * 1.2;
+const ZOOM_SPEED = Planet.radius / 100;
+const ORIGIN = new THREE.Vector3(0, 0, 0);
+
+class PlanetCamera extends THREE.PerspectiveCamera {
+  public width: number;
+  public height: number;
+  public sphereCoords: THREE.Spherical;
+  public planet: Planet;
+
+  constructor(width: number, height: number, planet: Planet) {
+    super(FIELD_OF_VIEW, width / height, 0.1, MAX_ZOOM + Planet.radius);
+    this.width = width;
+    this.height = height;
+    this.sphereCoords = new THREE.Spherical(MAX_ZOOM, Math.PI / 2, 0)
+    this.planet = planet;
+    this.updateOnResize(width, height);
+  }
+
+  updateOnResize(newWidth: number, newHeight: number) {
+    this.width = newWidth;
+    this.height = newHeight;
+    this.aspect = newWidth / newHeight;
+    this.updateOnMove();
+    console.log(`Initial position: rad: ${this.sphereCoords.radius}, phi: ${this.sphereCoords.phi}, theta: ${this.sphereCoords.theta}. Position: (${this.position.x}, ${this.position.y}, ${this.position.z})`);
+  }
+
+  protected updateOnMove() {
+    this.position.setFromSpherical(this.sphereCoords);
+    this.lookAt(ORIGIN);
+    this.updateProjectionMatrix();
+    this.planet.update(this);
+  }
+
+  // Returns true if the camera moved during this call, false otherwise.
+  move(horizontal: number, vertical: number, zoom: number) {
+    if (horizontal) {
+      this.sphereCoords.theta += ROTATION_SPEED * horizontal;
+      this.sphereCoords.theta %= 2 * Math.PI;
+    }
+
+    if (vertical) {
+      this.sphereCoords.phi += ROTATION_SPEED * -vertical;
+      // Clamp the vertical angle to just about 0-180 degrees, so we can't go over the pole.
+      this.sphereCoords.phi = THREE.MathUtils.clamp(this.sphereCoords.phi, MIN_VERT_ANGLE, MAX_VERT_ANGLE);
+    }
+
+    if (zoom) {
+      const lowestHeight = Math.max(MIN_ZOOM, this.heightAboveTerrain());
+      this.sphereCoords.radius += ZOOM_SPEED * -zoom;
+      this.sphereCoords.radius = THREE.MathUtils.clamp(this.sphereCoords.radius, lowestHeight, MAX_ZOOM);
+    }
+
+    if (horizontal || vertical || zoom) {
+      this.updateOnMove();
+      return true;
+      // console.log(`Moved. Rad: ${this.sphereCoords.radius}, phi: ${this.sphereCoords.phi}, theta: ${this.sphereCoords.theta}. Position: (${this.camera.position.x}, ${this.camera.position.y}, ${this.camera.position.z})`);
+    }
+
+    return false;
+  }
+
+  containsPoint(point: THREE.Vector3) {
+    let cameraFrustum = new THREE.Frustum();
+    cameraFrustum.setFromProjectionMatrix(this.projectionMatrix);
+    return cameraFrustum.containsPoint(point);
+  }
+
+  distance() {
+    return this.position.distanceTo(ORIGIN);
+  }
+
+  heightAboveTerrain() {
+    // FIXME: Change "Planet.radius" to the actual terrain height.
+    // Right now we're assuming the planet is a smooth sphere.
+    return this.distance() - Planet.radius;
+  }
+}
+

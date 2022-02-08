@@ -1,9 +1,9 @@
 import * as THREE from "three";
+import { PlanetCamera } from "./planet_camera";
 import { noiseGenerator, updateGeometry } from "./util";
 
 export { Planet };
 
-const ORIGIN = new THREE.Vector3(0, 0, 0);
 const MESH_SIDE_LENGTH = 6000;
 const MESH_SUBDIVISION = 100;
 
@@ -39,9 +39,9 @@ class Planet {
     }
   }
 
-  update(cameraPosition: THREE.Vector3) {
-    this.deformPlaneMesh(cameraPosition.distanceTo(ORIGIN));
-    this.mesh.geometry.lookAt(cameraPosition);
+  update(camera: PlanetCamera) {
+    this.deformPlaneMesh(camera);
+    this.mesh.geometry.lookAt(camera.position);
     updateGeometry(this.mesh.geometry);
     this.generateTerrain();
 
@@ -53,10 +53,7 @@ class Planet {
 
   // Makes the mesh curve based on how far away it is, so that it seems round at a distance
   // and flatter when you get closer. (Later, maybe try moving this into a vertex shader?)
-  //
-  // FIXME: Doesn't do the flattening yet!
-  //
-  protected deformPlaneMesh(cameraDistance: number) {
+  protected deformPlaneMesh(camera: PlanetCamera) {
     const SIDE_LENGTH = MESH_SUBDIVISION + 1;
     const HALF_MESH_LENGTH = Math.floor(SIDE_LENGTH / 2);
     const RADIANS_PER_UNIT = Math.PI / HALF_MESH_LENGTH / 2;
@@ -70,23 +67,23 @@ class Planet {
       const v = (i % SIDE_LENGTH) - HALF_MESH_LENGTH;
 
       const FIXME_MAX_ZOOM = 1 / (Math.tan(25 / (180 / Math.PI)) / Planet.radius / 1.2);
-      const closeness = (FIXME_MAX_ZOOM - Planet.radius) / (cameraDistance - Planet.radius);
-      sphereCoords.theta = (RADIANS_PER_UNIT / closeness) * v;
-      sphereCoords.phi = (RADIANS_PER_UNIT / closeness) * u + Math.PI / 2;
-      sphereCoords.radius = closeness * Planet.radius;
+      const closeness = camera.heightAboveTerrain() / (FIXME_MAX_ZOOM - Planet.radius);
+      sphereCoords.theta = (RADIANS_PER_UNIT * closeness) * v;
+      sphereCoords.phi = (RADIANS_PER_UNIT * closeness) * u + Math.PI / 2;
+      sphereCoords.radius = Planet.radius / closeness;
       const moveBackDistance = sphereCoords.radius - Planet.radius;
 
       newPosition.setFromSpherical(sphereCoords);
       positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z - moveBackDistance);
 
-      if ((u == -HALF_MESH_LENGTH && v == -HALF_MESH_LENGTH) || (u == 0 && v == -HALF_MESH_LENGTH) || (u == HALF_MESH_LENGTH && v == -HALF_MESH_LENGTH) ||
-          (u == -HALF_MESH_LENGTH && v == 0) || (u == 0 && v == 0) || (u == HALF_MESH_LENGTH && v == 0) ||
-          (u == -HALF_MESH_LENGTH && v == HALF_MESH_LENGTH) || (u == 0 && v == HALF_MESH_LENGTH) || (u == HALF_MESH_LENGTH && v == HALF_MESH_LENGTH)) {
-        console.log(`mesh(${u}, ${v}) => sphere(r: ${sphereCoords.radius}, t: ${sphereCoords.theta}, p: ${sphereCoords.phi}) => world(x ${newPosition.x}, y ${newPosition.y}, z ${newPosition.z - moveBackDistance})`);
-      }
+      // if ((u == -HALF_MESH_LENGTH && v == -HALF_MESH_LENGTH) || (u == 0 && v == -HALF_MESH_LENGTH) || (u == HALF_MESH_LENGTH && v == -HALF_MESH_LENGTH) ||
+      //     (u == -HALF_MESH_LENGTH && v == 0) || (u == 0 && v == 0) || (u == HALF_MESH_LENGTH && v == 0) ||
+      //     (u == -HALF_MESH_LENGTH && v == HALF_MESH_LENGTH) || (u == 0 && v == HALF_MESH_LENGTH) || (u == HALF_MESH_LENGTH && v == HALF_MESH_LENGTH)) {
+      //   console.log(`mesh(${u}, ${v}) => sphere(r: ${sphereCoords.radius}, t: ${sphereCoords.theta}, p: ${sphereCoords.phi}) => world(x ${newPosition.x}, y ${newPosition.y}, z ${newPosition.z - moveBackDistance})`);
+      // }
 
       if (u == 0 && v == 0) {
-        console.log(`closeness: ${closeness} radians per unit: ${RADIANS_PER_UNIT / closeness}`);
+        console.log(`closeness: ${closeness} radians per unit: ${RADIANS_PER_UNIT * closeness}`);
       }
     }
   }
@@ -95,7 +92,7 @@ class Planet {
   toggleEdgesVisible() {
     if (this.edges === null) {
       let edgeGeometry = new THREE.EdgesGeometry(this.mesh.geometry, 0.001);
-      edgeGeometry.scale(1.001, 1.001, 1.001);
+      edgeGeometry.scale(1.001, 1.001, 1.001); // Prevents weird clipping
       this.edges = new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
       this.scene.add(this.edges);
     } else {

@@ -18,7 +18,7 @@ function initBrowserWindow(container: HTMLElement) {
 
   const setCanvasSize = function () {
     renderer.setSize(container.offsetWidth, container.offsetHeight);
-    sceneData.updateCameraOnResize(container.offsetWidth, container.offsetHeight);
+    sceneData.updateOnResize(container.offsetWidth, container.offsetHeight);
   };
   setCanvasSize();
   new ResizeObserver(setCanvasSize).observe(container);

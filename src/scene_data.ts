@@ -1,23 +1,14 @@
 import * as THREE from "three";
 import { Planet } from "./planet";
+import { PlanetCamera } from "./planet_camera";
 
 export { SceneData };
-
-const FIELD_OF_VIEW = 50;
-const ROTATION_SPEED = 0.008;
-const MIN_VERT_ANGLE = 0.005;
-const MAX_VERT_ANGLE = Math.PI - MIN_VERT_ANGLE;
-const MAX_ZOOM = 1 / (Math.tan((FIELD_OF_VIEW / 2) / (180 / Math.PI)) / Planet.radius / 1.2);
-const MIN_ZOOM = Planet.radius * 1.2;
-const ZOOM_SPEED = Planet.radius / 100;
-
 class SceneData {
   public scene: THREE.Scene;
-  public camera: THREE.PerspectiveCamera;
   public light: THREE.PointLight;
   public planet: Planet;
+  public camera: PlanetCamera;
 
-  protected sphereCoords: THREE.Spherical;
   protected horizDirection: number;
   protected vertDirection: number;
   protected zoomDirection: number;
@@ -25,8 +16,7 @@ class SceneData {
   constructor(width: number, height: number) {
     this.scene = new THREE.Scene();
     this.planet = new Planet(this.scene);
-    this.camera = new THREE.PerspectiveCamera(FIELD_OF_VIEW, width / height, 0.1, MAX_ZOOM + Planet.radius);
-    this.sphereCoords = new THREE.Spherical(MAX_ZOOM, Math.PI / 2, 0)
+    this.camera = new PlanetCamera(width, height, this.planet);
     this.horizDirection = this.vertDirection = this.zoomDirection = 0;
 
     this.light = new THREE.PointLight(0xffffff);
@@ -36,53 +26,28 @@ class SceneData {
     const texture = new THREE.TextureLoader().load('img/star-field.jpg');
     this.scene.background = texture;
 
-    this.updateCameraOnResize(width, height);
-    this.planet.update(this.camera.position);
+    this.camera.updateOnResize(width, height);
+    this.moveLightToCamera();
   }
 
   destroy() {
     this.planet.destroy();
   }
 
-  updateCameraOnResize(newWidth: number, newHeight: number) {
-    this.camera.aspect = newWidth / newHeight;
-    this.positionCamera();
-    console.log(`Initial position: rad: ${this.sphereCoords.radius}, phi: ${this.sphereCoords.phi}, theta: ${this.sphereCoords.theta}. Position: (${this.camera.position.x}, ${this.camera.position.y}, ${this.camera.position.z})`);
-  }
-
   update() {
-    if (this.horizDirection) {
-      this.sphereCoords.theta += ROTATION_SPEED * this.horizDirection;
-      this.sphereCoords.theta %= 2 * Math.PI;
-    }
-
-    if (this.vertDirection) {
-      this.sphereCoords.phi += ROTATION_SPEED * -this.vertDirection;
-      // Clamp the vertical angle to just about 0-180 degrees, so we can't go over the pole.
-      this.sphereCoords.phi = THREE.MathUtils.clamp(this.sphereCoords.phi, MIN_VERT_ANGLE, MAX_VERT_ANGLE);
-    }
-
-    if (this.zoomDirection) {
-      this.sphereCoords.radius += ZOOM_SPEED * -this.zoomDirection;
-      this.sphereCoords.radius = THREE.MathUtils.clamp(this.sphereCoords.radius, MIN_ZOOM, MAX_ZOOM);
-    }
-
-    if (this.horizDirection || this.vertDirection || this.zoomDirection) {
-      this.positionCamera();
-      // console.log(`Moved. Rad: ${this.sphereCoords.radius}, phi: ${this.sphereCoords.phi}, theta: ${this.sphereCoords.theta}. Position: (${this.camera.position.x}, ${this.camera.position.y}, ${this.camera.position.z})`);
-      this.planet.update(this.camera.position);
+    if (this.camera.move(this.horizDirection, this.vertDirection, this.zoomDirection)) {
+      this.moveLightToCamera();
     }
   }
 
-  protected positionCamera() {
-    this.camera.position.setFromSpherical(this.sphereCoords);
-    this.camera.lookAt(0, 0, 0);
-
+  moveLightToCamera() {
     // Offset the light slightly from the camera position to make it look a bit more shadowy.
     let lightLocation = new THREE.Vector3(100, 100, 0);
     this.light.position.copy(lightLocation.unproject(this.camera));
+  }
 
-    this.camera.updateProjectionMatrix();
+  updateOnResize(width: number, height: number) {
+    this.camera.updateOnResize(width, height);
   }
 
   // -1 for left, 0 for stop, 1 for right.
