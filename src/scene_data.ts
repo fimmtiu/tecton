@@ -15,8 +15,8 @@ class SceneData {
 
   constructor(width: number, height: number) {
     this.scene = new THREE.Scene();
-    this.planet = new Planet(this.scene);
-    this.camera = new PlanetCamera(width, height, this.planet);
+    this.planet = new Planet(this.scene, width, height);
+    this.camera = new PlanetCamera(this.planet, width, height);
     this.horizDirection = this.vertDirection = this.zoomDirection = 0;
 
     this.light = new THREE.PointLight(0xffffff);

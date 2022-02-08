@@ -4,8 +4,7 @@ import { noiseGenerator, updateGeometry } from "./util";
 
 export { Planet };
 
-const MESH_SIDE_LENGTH = 6000;
-const MESH_SUBDIVISION = 100;
+const PIXELS_BETWEEN_VERTICES = 10;
 
 class Planet {
   static readonly radius = 6370; // each unit is 1 kilometer
@@ -13,21 +12,36 @@ class Planet {
   protected scene: THREE.Scene;
   protected mesh: THREE.Mesh;
   protected edges: THREE.LineSegments | null;
+  protected horizontalVertices!: number;
+  protected verticalVertices!: number;
 
-  constructor(scene: THREE.Scene) {
+  constructor(scene: THREE.Scene, viewportWidth: number, viewportHeight: number) {
     this.scene = scene;
+    this.mesh = new THREE.Mesh();
+    this.resize(viewportWidth, viewportHeight);
 
-    let geometry = new THREE.PlaneGeometry(MESH_SIDE_LENGTH, MESH_SIDE_LENGTH, MESH_SUBDIVISION, MESH_SUBDIVISION);
+    this.edges = new THREE.LineSegments();
+    this.toggleEdgesVisible();
+  }
+
+  resize(width: number, height: number) {
+    this.destroy();
+
+    this.horizontalVertices = Math.ceil(width / PIXELS_BETWEEN_VERTICES);
+    this.verticalVertices = Math.ceil(height / PIXELS_BETWEEN_VERTICES);
+
+    console.log(`New mesh: ${this.horizontalVertices} x ${this.verticalVertices} vertices.`);
+    let geometry = new THREE.PlaneGeometry(
+      width * 12, height * 12,
+      this.horizontalVertices, this.verticalVertices,
+    );
     const positions = geometry.attributes.position;
     geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(positions.count * 3), 3));
 
     let material = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.FrontSide });
     this.mesh = new THREE.Mesh(geometry, material);
-    scene.add(this.mesh);
-
-    this.edges = new THREE.LineSegments();
-    this.toggleEdgesVisible();
-  };
+    this.scene.add(this.mesh);
+  }
 
   destroy() {
     (<THREE.Material>this.mesh.material).dispose();
@@ -36,6 +50,7 @@ class Planet {
     if (this.edges) {
       (<THREE.Material>this.edges.material).dispose();
       this.edges.geometry.dispose();
+      this.edges = null;
     }
   }
 
@@ -54,22 +69,23 @@ class Planet {
   // Makes the mesh curve based on how far away it is, so that it seems round at a distance
   // and flatter when you get closer. (Later, maybe try moving this into a vertex shader?)
   protected deformPlaneMesh(camera: PlanetCamera) {
-    const SIDE_LENGTH = MESH_SUBDIVISION + 1;
-    const HALF_MESH_LENGTH = Math.floor(SIDE_LENGTH / 2);
-    const RADIANS_PER_UNIT = Math.PI / HALF_MESH_LENGTH / 2;
+    const HALF_HORIZ_LENGTH = Math.floor((this.horizontalVertices + 1) / 2);
+    const HALF_VERT_LENGTH = Math.floor((this.horizontalVertices + 1) / 2);
+    const HORIZ_RADIANS_PER_UNIT = Math.PI / HALF_HORIZ_LENGTH / 2;
+    const VERT_RADIANS_PER_UNIT = Math.PI / HALF_VERT_LENGTH / 2;
 
     let positions = this.mesh.geometry.attributes.position;
     let sphereCoords = new THREE.Spherical(Planet.radius, 0, 0);
     let newPosition = new THREE.Vector3();
 
     for (let i = 0; i < positions.count; i++) {
-      const u = Math.floor(i / SIDE_LENGTH) - HALF_MESH_LENGTH;
-      const v = (i % SIDE_LENGTH) - HALF_MESH_LENGTH;
+      const u = Math.floor(i / (this.verticalVertices + 1)) - HALF_VERT_LENGTH;
+      const v = (i % (this.horizontalVertices + 1)) - HALF_HORIZ_LENGTH;
 
       const FIXME_MAX_ZOOM = 1 / (Math.tan(25 / (180 / Math.PI)) / Planet.radius / 1.2);
       const closeness = camera.heightAboveTerrain() / (FIXME_MAX_ZOOM - Planet.radius);
-      sphereCoords.theta = (RADIANS_PER_UNIT * closeness) * v;
-      sphereCoords.phi = (RADIANS_PER_UNIT * closeness) * u + Math.PI / 2;
+      sphereCoords.theta = (HORIZ_RADIANS_PER_UNIT * closeness) * v;
+      sphereCoords.phi = (VERT_RADIANS_PER_UNIT * closeness) * u + Math.PI / 2;
       sphereCoords.radius = Planet.radius / closeness;
       const moveBackDistance = sphereCoords.radius - Planet.radius;
 
@@ -83,7 +99,7 @@ class Planet {
       // }
 
       if (u == 0 && v == 0) {
-        console.log(`closeness: ${closeness} radians per unit: ${RADIANS_PER_UNIT * closeness}`);
+        console.log(`closeness: ${closeness} radians per unit: ${HORIZ_RADIANS_PER_UNIT * closeness}`);
       }
     }
   }
@@ -91,7 +107,7 @@ class Planet {
   // Optional white lines outlining each face of the mesh.
   toggleEdgesVisible() {
     if (this.edges === null) {
-      let edgeGeometry = new THREE.EdgesGeometry(this.mesh.geometry, 0.001);
+      let edgeGeometry = new THREE.EdgesGeometry(this.mesh.geometry, 0);
       edgeGeometry.scale(1.001, 1.001, 1.001); // Prevents weird clipping
       this.edges = new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
       this.scene.add(this.edges);

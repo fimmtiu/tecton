@@ -3,9 +3,10 @@ import { Planet } from "./planet";
 
 export { PlanetCamera };
 
-// The camera and planet have to know about each other for a couple of reasons:
+// The camera and planet have to know about each other for a few reasons:
 // - The height of the camera above the planet determines the planet mesh's curvature
 // - The camera has to know how tall the terrain is at its location so it doesn't zoom inside mountains
+// - The number of vertices in the planet mesh is determined by the camera's width and height
 
 const FIELD_OF_VIEW = 50;
 const ROTATION_SPEED = 0.008;
@@ -22,13 +23,13 @@ class PlanetCamera extends THREE.PerspectiveCamera {
   public sphereCoords: THREE.Spherical;
   public planet: Planet;
 
-  constructor(width: number, height: number, planet: Planet) {
-    super(FIELD_OF_VIEW, width / height, 0.1, MAX_ZOOM + Planet.radius);
-    this.width = width;
-    this.height = height;
+  constructor(planet: Planet, viewportWidth: number, viewportHeight: number) {
+    super(FIELD_OF_VIEW, viewportWidth / viewportHeight, 0.1, MAX_ZOOM + Planet.radius);
+    this.width = viewportWidth;
+    this.height = viewportHeight;
     this.sphereCoords = new THREE.Spherical(MAX_ZOOM, Math.PI / 2, 0)
     this.planet = planet;
-    this.updateOnResize(width, height);
+    this.updateOnResize(viewportWidth, viewportHeight);
   }
 
   updateOnResize(newWidth: number, newHeight: number) {
