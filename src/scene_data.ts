@@ -69,7 +69,7 @@ class SceneData {
 
     if (this.horizDirection || this.vertDirection || this.zoomDirection) {
       this.positionCamera();
-      console.log(`Moved. Rad: ${this.sphereCoords.radius}, phi: ${this.sphereCoords.phi}, theta: ${this.sphereCoords.theta}. Position: (${this.camera.position.x}, ${this.camera.position.y}, ${this.camera.position.z})`);
+      // console.log(`Moved. Rad: ${this.sphereCoords.radius}, phi: ${this.sphereCoords.phi}, theta: ${this.sphereCoords.theta}. Position: (${this.camera.position.x}, ${this.camera.position.y}, ${this.camera.position.z})`);
       this.planet.update(this.camera.position);
     }
   }

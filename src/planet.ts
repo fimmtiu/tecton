@@ -69,27 +69,33 @@ class Planet {
       const u = Math.floor(i / SIDE_LENGTH) - HALF_MESH_LENGTH;
       const v = (i % SIDE_LENGTH) - HALF_MESH_LENGTH;
 
-      sphereCoords.theta = RADIANS_PER_UNIT * v;
-      sphereCoords.phi = RADIANS_PER_UNIT * u + Math.PI / 2;
-      // const FIXME_MAX_ZOOM = 1 / (Math.tan(25 / (180 / Math.PI)) / Planet.radius / 1.2);
-      // sphereCoords.radius = (Planet.radius / (cameraDistance - Planet.radius)) * FIXME_MAX_ZOOM;
-
-      // if ((u == -HALF_MESH_LENGTH && v == -HALF_MESH_LENGTH) || (u == 0 && v == -HALF_MESH_LENGTH) || (u == HALF_MESH_LENGTH && v == -HALF_MESH_LENGTH) ||
-      //     (u == -HALF_MESH_LENGTH && v == 0) || (u == 0 && v == 0) || (u == HALF_MESH_LENGTH && v == 0) ||
-      //     (u == -HALF_MESH_LENGTH && v == HALF_MESH_LENGTH) || (u == 0 && v == HALF_MESH_LENGTH) || (u == HALF_MESH_LENGTH && v == HALF_MESH_LENGTH)) {
-      //   console.log(`(camD ${cameraDistance} - Pr ${Planet.radius}) * FMZ ${FIXME_MAX_ZOOM} = ${sphereCoords.radius}`);
-      //   console.log(`mesh(${u}, ${v}) => sphere(r: ${sphereCoords.radius}, t: ${sphereCoords.theta}, p: ${sphereCoords.phi})`);
-      // }
+      const FIXME_MAX_ZOOM = 1 / (Math.tan(25 / (180 / Math.PI)) / Planet.radius / 1.2);
+      const closeness = (FIXME_MAX_ZOOM - Planet.radius) / (cameraDistance - Planet.radius);
+      sphereCoords.theta = (RADIANS_PER_UNIT / closeness) * v;
+      sphereCoords.phi = (RADIANS_PER_UNIT / closeness) * u + Math.PI / 2;
+      sphereCoords.radius = closeness * Planet.radius;
+      const moveBackDistance = sphereCoords.radius - Planet.radius;
 
       newPosition.setFromSpherical(sphereCoords);
-      positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
+      positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z - moveBackDistance);
+
+      if ((u == -HALF_MESH_LENGTH && v == -HALF_MESH_LENGTH) || (u == 0 && v == -HALF_MESH_LENGTH) || (u == HALF_MESH_LENGTH && v == -HALF_MESH_LENGTH) ||
+          (u == -HALF_MESH_LENGTH && v == 0) || (u == 0 && v == 0) || (u == HALF_MESH_LENGTH && v == 0) ||
+          (u == -HALF_MESH_LENGTH && v == HALF_MESH_LENGTH) || (u == 0 && v == HALF_MESH_LENGTH) || (u == HALF_MESH_LENGTH && v == HALF_MESH_LENGTH)) {
+        console.log(`mesh(${u}, ${v}) => sphere(r: ${sphereCoords.radius}, t: ${sphereCoords.theta}, p: ${sphereCoords.phi}) => world(x ${newPosition.x}, y ${newPosition.y}, z ${newPosition.z - moveBackDistance})`);
+      }
+
+      if (u == 0 && v == 0) {
+        console.log(`closeness: ${closeness} radians per unit: ${RADIANS_PER_UNIT / closeness}`);
+      }
     }
   }
 
   // Optional white lines outlining each face of the mesh.
   toggleEdgesVisible() {
     if (this.edges === null) {
-      let edgeGeometry = new THREE.EdgesGeometry(this.mesh.geometry);
+      let edgeGeometry = new THREE.EdgesGeometry(this.mesh.geometry, 0.001);
+      edgeGeometry.scale(1.001, 1.001, 1.001);
       this.edges = new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
       this.scene.add(this.edges);
     } else {
@@ -102,7 +108,7 @@ class Planet {
 
   protected generateTerrain() {
     const NOISE_SCALE = 5000;
-    const FAVOR_WATER = -0.35;
+    const FAVOR_WATER = -0.30;
     const MIN_WATER_HUE = 0.55;
     const MAX_WATER_HUE = 0.65;
     const MIN_GROUND_LIGHT = 0.40;
@@ -112,10 +118,12 @@ class Planet {
     let positions = this.mesh.geometry.attributes.position;
 
     for (let i = 0; i < positions.count; i++) {
+      let vertexLocation = new THREE.Vector3(positions.getX(i), positions.getY(i), positions.getZ(i));
+      const pointOnSphere = vertexLocation.normalize().multiplyScalar(Planet.radius);
       let height = FAVOR_WATER + noiseGenerator().noise3D(
-        positions.getX(i) / NOISE_SCALE,
-        positions.getY(i) / NOISE_SCALE,
-        positions.getZ(i) / NOISE_SCALE,
+        pointOnSphere.x / NOISE_SCALE,
+        pointOnSphere.y / NOISE_SCALE,
+        pointOnSphere.z / NOISE_SCALE,
       );
 
       if (height < 0) {
