@@ -6,7 +6,7 @@ export { PlanetCamera };
 // The camera and planet have to know about each other for a few reasons:
 // - The height of the camera above the planet determines the planet mesh's curvature
 // - The camera has to know how tall the terrain is at its location so it doesn't zoom inside mountains
-// - The number of vertices in the planet mesh is determined by the camera's width and height
+// - The number of vertices in the planet mesh is determined by the camera's viewport width and height
 
 const FIELD_OF_VIEW = 50;
 const ROTATION_SPEED = 0.008;

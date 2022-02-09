@@ -69,23 +69,23 @@ class Planet {
   // Makes the mesh curve based on how far away it is, so that it seems round at a distance
   // and flatter when you get closer. (Later, maybe try moving this into a vertex shader?)
   protected deformPlaneMesh(camera: PlanetCamera) {
-    const HALF_HORIZ_LENGTH = Math.floor((this.horizontalVertices + 1) / 2);
-    const HALF_VERT_LENGTH = Math.floor((this.horizontalVertices + 1) / 2);
-    const HORIZ_RADIANS_PER_UNIT = Math.PI / HALF_HORIZ_LENGTH / 2;
-    const VERT_RADIANS_PER_UNIT = Math.PI / HALF_VERT_LENGTH / 2;
+    const half_horiz_length = Math.floor((this.horizontalVertices + 1) / 2);
+    const half_vert_length = Math.floor((this.horizontalVertices + 1) / 2);
+    const horiz_radians_per_unit = Math.PI / half_horiz_length / 2;
+    const vert_radians_per_unit = Math.PI / half_vert_length / 2;
+    const FIXME_MAX_ZOOM = 1 / (Math.tan(25 / (180 / Math.PI)) / Planet.radius / 1.2);
+    const closeness = camera.heightAboveTerrain() / (FIXME_MAX_ZOOM - Planet.radius);
 
     let positions = this.mesh.geometry.attributes.position;
     let sphereCoords = new THREE.Spherical(Planet.radius, 0, 0);
     let newPosition = new THREE.Vector3();
 
     for (let i = 0; i < positions.count; i++) {
-      const u = Math.floor(i / (this.verticalVertices + 1)) - HALF_VERT_LENGTH;
-      const v = (i % (this.horizontalVertices + 1)) - HALF_HORIZ_LENGTH;
+      const u = Math.floor(i / (this.verticalVertices + 1)) - half_vert_length;
+      const v = (i % (this.horizontalVertices + 1)) - half_horiz_length;
 
-      const FIXME_MAX_ZOOM = 1 / (Math.tan(25 / (180 / Math.PI)) / Planet.radius / 1.2);
-      const closeness = camera.heightAboveTerrain() / (FIXME_MAX_ZOOM - Planet.radius);
-      sphereCoords.theta = (HORIZ_RADIANS_PER_UNIT * closeness) * v;
-      sphereCoords.phi = (VERT_RADIANS_PER_UNIT * closeness) * u + Math.PI / 2;
+      sphereCoords.theta = (horiz_radians_per_unit * closeness) * v;
+      sphereCoords.phi = (vert_radians_per_unit * closeness) * u + Math.PI / 2;
       sphereCoords.radius = Planet.radius / closeness;
       const moveBackDistance = sphereCoords.radius - Planet.radius;
 
@@ -99,7 +99,7 @@ class Planet {
       // }
 
       if (u == 0 && v == 0) {
-        console.log(`closeness: ${closeness} radians per unit: ${HORIZ_RADIANS_PER_UNIT * closeness}`);
+        console.log(`closeness: ${closeness} radians per unit: ${horiz_radians_per_unit * closeness}`);
       }
     }
   }
