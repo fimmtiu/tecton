@@ -1,6 +1,7 @@
 import SimplexNoise from "simplex-noise";
+import * as THREE from "three";
 
-export { noiseGenerator, setRandomSeed, updateGeometry };
+export { noiseGenerator, setRandomSeed, updateGeometry, getVertexFromGeometry };
 
 let simplex = new SimplexNoise();
 
@@ -25,6 +26,11 @@ function updateGeometry(geometry: THREE.BufferGeometry) {
   geometry.computeVertexNormals();
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
+}
+
+function getVertexFromGeometry(geometry: THREE.BufferGeometry, index: number) {
+  const positions = geometry.getAttribute("position");
+  return new THREE.Vector3(positions.getX(index), positions.getY(index), positions.getZ(index))
 }
 
 // Junk drawer: A function to draw arrows on every face showing which way it's facing.

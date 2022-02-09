@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { PlanetCamera } from "./planet_camera";
-import { noiseGenerator, updateGeometry } from "./util";
+import { getVertexFromGeometry, noiseGenerator, updateGeometry } from "./util";
 
 export { Planet };
 
@@ -131,7 +131,7 @@ class Planet {
     let positions = this.mesh.geometry.attributes.position;
 
     for (let i = 0; i < positions.count; i++) {
-      let vertexLocation = new THREE.Vector3(positions.getX(i), positions.getY(i), positions.getZ(i));
+      let vertexLocation = getVertexFromGeometry(this.mesh.geometry, i);
       const pointOnSphere = vertexLocation.normalize().multiplyScalar(Planet.radius);
       let height = FAVOR_WATER + noiseGenerator().noise3D(
         pointOnSphere.x / NOISE_SCALE,
