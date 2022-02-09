@@ -11,13 +11,17 @@ class Planet {
 
   protected scene: THREE.Scene;
   protected mesh: THREE.Mesh;
+  protected points: Array<THREE.Points>;
   protected edges: THREE.LineSegments | null;
   protected horizontalVertices!: number;
   protected verticalVertices!: number;
+  protected flatten: boolean;
 
   constructor(scene: THREE.Scene, viewportWidth: number, viewportHeight: number) {
     this.scene = scene;
     this.mesh = new THREE.Mesh();
+    this.points = [];
+    this.flatten = false;
     this.resize(viewportWidth, viewportHeight);
 
     this.edges = new THREE.LineSegments();
@@ -27,13 +31,13 @@ class Planet {
   resize(width: number, height: number) {
     this.destroy();
 
-    this.horizontalVertices = Math.ceil(width / PIXELS_BETWEEN_VERTICES);
-    this.verticalVertices = Math.ceil(height / PIXELS_BETWEEN_VERTICES);
+    this.horizontalVertices = Math.ceil(width / PIXELS_BETWEEN_VERTICES) + 2;
+    this.verticalVertices = Math.ceil(height / PIXELS_BETWEEN_VERTICES) + 2;
 
     console.log(`New mesh: ${this.horizontalVertices} x ${this.verticalVertices} vertices.`);
     let geometry = new THREE.PlaneGeometry(
       width * 12, height * 12,
-      this.horizontalVertices, this.verticalVertices,
+      this.horizontalVertices - 1, this.verticalVertices - 1,
     );
     const positions = geometry.attributes.position;
     geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(positions.count * 3), 3));
@@ -44,18 +48,27 @@ class Planet {
   }
 
   destroy() {
+    this.scene.remove(this.mesh);
     (<THREE.Material>this.mesh.material).dispose();
     this.mesh.geometry.dispose();
 
     if (this.edges) {
-      (<THREE.Material>this.edges.material).dispose();
-      this.edges.geometry.dispose();
-      this.edges = null;
+      this.toggleEdgesVisible();
+    }
+
+    for (let point of this.points) {
+      this.scene.remove(point);
+      (<THREE.Material>point.material).dispose();
+      point.geometry.dispose();
     }
   }
 
   update(camera: PlanetCamera) {
-    this.deformPlaneMesh(camera);
+    if (this.cornersInView(camera)) {
+      this.deformPlaneIntoHemisphere(camera);
+    } else {
+      this.deformPlaneIntoSector(camera);
+    }
     this.mesh.geometry.lookAt(camera.position);
     updateGeometry(this.mesh.geometry);
     this.generateTerrain();
@@ -66,42 +79,48 @@ class Planet {
     }
   }
 
-  // Makes the mesh curve based on how far away it is, so that it seems round at a distance
-  // and flatter when you get closer. (Later, maybe try moving this into a vertex shader?)
-  protected deformPlaneMesh(camera: PlanetCamera) {
-    const half_horiz_length = Math.floor((this.horizontalVertices + 1) / 2);
-    const half_vert_length = Math.floor((this.horizontalVertices + 1) / 2);
-    const horiz_radians_per_unit = Math.PI / half_horiz_length / 2;
-    const vert_radians_per_unit = Math.PI / half_vert_length / 2;
-    const FIXME_MAX_ZOOM = 1 / (Math.tan(25 / (180 / Math.PI)) / Planet.radius / 1.2);
-    const closeness = camera.heightAboveTerrain() / (FIXME_MAX_ZOOM - Planet.radius);
+  // FIXME: This only works when you're head-on. If you rotate the camera, the points won't rotate with it.
+  protected cornersInView(camera: PlanetCamera) {
+    const topLeft = new THREE.Vector3();
+    const bottomRight = new THREE.Vector3();
+    topLeft.setFromSphericalCoords(Planet.radius, Math.PI / 4, Math.PI * 1.5);
+    bottomRight.setFromSphericalCoords(Planet.radius, Math.PI / 4 * 3, Math.PI / 2);
+
+    return camera.containsPoint(topLeft) && camera.containsPoint(bottomRight);
+  }
+
+  protected deformPlaneIntoHemisphere(camera: PlanetCamera) {
+    const half_horiz_length = (this.horizontalVertices - 1) / 2;
+    const half_vert_length = (this.verticalVertices - 1) / 2;
+    const horiz_radians_per_unit = Math.PI / half_vert_length / 2;
+    const vert_radians_per_unit = Math.PI / half_horiz_length / 2;
 
     let positions = this.mesh.geometry.attributes.position;
     let sphereCoords = new THREE.Spherical(Planet.radius, 0, 0);
     let newPosition = new THREE.Vector3();
 
-    for (let i = 0; i < positions.count; i++) {
-      const u = Math.floor(i / (this.verticalVertices + 1)) - half_vert_length;
-      const v = (i % (this.horizontalVertices + 1)) - half_horiz_length;
+    console.log(`hv: ${this.horizontalVertices}. vv: ${this.verticalVertices}. hhl: ${half_horiz_length}. hvl: ${half_vert_length}. count ${positions.count}`);
 
-      sphereCoords.theta = (horiz_radians_per_unit * closeness) * v;
-      sphereCoords.phi = (vert_radians_per_unit * closeness) * u + Math.PI / 2;
-      sphereCoords.radius = Planet.radius / closeness;
-      const moveBackDistance = sphereCoords.radius - Planet.radius;
+    for (let i = 0; i < positions.count; i++) {
+      const u = (i % this.horizontalVertices) - half_horiz_length;
+      const v = Math.floor(i / this.horizontalVertices) - half_vert_length;
+
+      sphereCoords.theta = horiz_radians_per_unit * u;
+      sphereCoords.phi = vert_radians_per_unit * v + Math.PI / 2;
+
+      // console.log(`i ${i}, u ${u} (${i} % ${this.verticalVertices} - ${half_horiz_length}), v ${v} (floor(${i} / ${this.horizontalVertices}) - ${half_vert_length})`);
+      // console.log(`i ${i}, u ${u}, v ${v}, theta: ${horiz_radians_per_unit} * ${u} = ${sphereCoords.theta}, phi: ${vert_radians_per_unit} * ${v} + p/2 = ${sphereCoords.phi}`);
 
       newPosition.setFromSpherical(sphereCoords);
-      positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z - moveBackDistance);
-
-      // if ((u == -HALF_MESH_LENGTH && v == -HALF_MESH_LENGTH) || (u == 0 && v == -HALF_MESH_LENGTH) || (u == HALF_MESH_LENGTH && v == -HALF_MESH_LENGTH) ||
-      //     (u == -HALF_MESH_LENGTH && v == 0) || (u == 0 && v == 0) || (u == HALF_MESH_LENGTH && v == 0) ||
-      //     (u == -HALF_MESH_LENGTH && v == HALF_MESH_LENGTH) || (u == 0 && v == HALF_MESH_LENGTH) || (u == HALF_MESH_LENGTH && v == HALF_MESH_LENGTH)) {
-      //   console.log(`mesh(${u}, ${v}) => sphere(r: ${sphereCoords.radius}, t: ${sphereCoords.theta}, p: ${sphereCoords.phi}) => world(x ${newPosition.x}, y ${newPosition.y}, z ${newPosition.z - moveBackDistance})`);
-      // }
-
-      if (u == 0 && v == 0) {
-        console.log(`closeness: ${closeness} radians per unit: ${horiz_radians_per_unit * closeness}`);
+      if (!this.flatten) {
+        positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
       }
     }
+  }
+
+  protected deformPlaneIntoSector(camera: PlanetCamera) {
+    // FIXME implement this
+    this.deformPlaneIntoHemisphere(camera);
   }
 
   // Optional white lines outlining each face of the mesh.
@@ -116,6 +135,30 @@ class Planet {
       (<THREE.Material>this.edges.material).dispose();
       this.edges.geometry.dispose();
       this.edges = null;
+    }
+  }
+
+  toggleFlatten() {
+    this.flatten = !this.flatten;
+  }
+
+  // Debugging method: show specific 3D points in bright colors.
+  protected highlightPoints(points: Array<THREE.Vector3>) {
+    const COLORS = [0xffae00, 0x00ffff, 0xff1e00, 0xc800ff]; // orange, aqua, red, purple
+
+    for (let point of this.points) {
+      this.scene.remove(point);
+      (<THREE.Material>point.material).dispose();
+      point.geometry.dispose();
+    }
+
+    for (let i = 0; i < points.length; i++) {
+      const points_geometry = new THREE.BufferGeometry();
+      points_geometry.setAttribute('position', new THREE.Float32BufferAttribute([points[i].x, points[i].y, points[i].z], 3));
+      const points_material = new THREE.PointsMaterial({ color: COLORS[i % COLORS.length], size: 200 });
+      const point = new THREE.Points(points_geometry, points_material);
+      this.scene.add(point);
+      this.points.push(point);
     }
   }
 

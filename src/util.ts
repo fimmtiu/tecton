@@ -1,7 +1,9 @@
 import SimplexNoise from "simplex-noise";
 import * as THREE from "three";
 
-export { noiseGenerator, setRandomSeed, updateGeometry, getVertexFromGeometry };
+export { noiseGenerator, setRandomSeed, updateGeometry, getVertexFromGeometry, ORIGIN };
+
+const ORIGIN = new THREE.Vector3(0, 0, 0);
 
 let simplex = new SimplexNoise();
 

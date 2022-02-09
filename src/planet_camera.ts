@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { Planet } from "./planet";
+import { ORIGIN } from "./util";
 
 export { PlanetCamera };
 
@@ -15,7 +16,6 @@ const MAX_VERT_ANGLE = Math.PI - MIN_VERT_ANGLE;
 const MAX_ZOOM = 1 / (Math.tan((FIELD_OF_VIEW / 2) / (180 / Math.PI)) / Planet.radius / 1.2);
 const MIN_ZOOM = Planet.radius * 1.2;
 const ZOOM_SPEED = Planet.radius / 100;
-const ORIGIN = new THREE.Vector3(0, 0, 0);
 
 class PlanetCamera extends THREE.PerspectiveCamera {
   public width: number;
@@ -77,7 +77,8 @@ class PlanetCamera extends THREE.PerspectiveCamera {
 
   containsPoint(point: THREE.Vector3) {
     let cameraFrustum = new THREE.Frustum();
-    cameraFrustum.setFromProjectionMatrix(this.projectionMatrix);
+    const matrix = new THREE.Matrix4().multiplyMatrices(this.projectionMatrix, this.matrixWorldInverse)
+    cameraFrustum.setFromProjectionMatrix(matrix)
     return cameraFrustum.containsPoint(point);
   }
 
