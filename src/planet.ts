@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { PlanetCamera } from "./planet_camera";
-import { getVertexFromGeometry, noiseGenerator, updateGeometry } from "./util";
+import { getWorldVertexFromMesh, noiseGenerator, updateGeometry } from "./util";
 import { VisualHelper } from "./visual_helper";
 
 export { Planet };
@@ -81,7 +81,7 @@ class Planet {
     }
 
     console.log(`camera position: (${camera.position.x}, ${camera.position.y}, ${camera.position.z})`);
-    this.mesh.geometry.lookAt(camera.position);
+    this.mesh.lookAt(camera.position);
     this.meshCorners.lookAt(camera.position);
     updateGeometry(this.mesh.geometry);
     if (this.edges) {
@@ -93,8 +93,7 @@ class Planet {
   }
 
   protected cornersInView(camera: PlanetCamera) {
-    const vertex = getVertexFromGeometry(this.meshCorners.geometry, 0);
-    const topLeftPoint = this.meshCorners.localToWorld(vertex);
+    const topLeftPoint = getWorldVertexFromMesh(this.meshCorners, 0);
     return camera.containsPoint(topLeftPoint);
   }
 
@@ -158,7 +157,7 @@ class Planet {
     let positions = this.mesh.geometry.attributes.position;
 
     for (let i = 0; i < positions.count; i++) {
-      let vertexLocation = getVertexFromGeometry(this.mesh.geometry, i);
+      let vertexLocation = getWorldVertexFromMesh(this.mesh, i);
       const pointOnSphere = vertexLocation.normalize().multiplyScalar(Planet.radius);
       let height = FAVOR_WATER + noiseGenerator().noise3D(
         pointOnSphere.x / NOISE_SCALE,

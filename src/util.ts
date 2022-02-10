@@ -1,7 +1,7 @@
 import SimplexNoise from "simplex-noise";
 import * as THREE from "three";
 
-export { noiseGenerator, setRandomSeed, updateGeometry, getVertexFromGeometry, ORIGIN };
+export { noiseGenerator, setRandomSeed, updateGeometry, getWorldVertexFromMesh, ORIGIN };
 
 const ORIGIN = new THREE.Vector3(0, 0, 0);
 
@@ -20,17 +20,19 @@ function setRandomSeed(seed: string) {
 }
 
 // Tell three.js that this geometry has changed.
+// FIXME: We can remove this once we stop using vertex colors.
 function updateGeometry(geometry: THREE.BufferGeometry) {
-  geometry.attributes.position.needsUpdate = true;
+  // geometry.attributes.position.needsUpdate = true;
   if (geometry.attributes.color) {
     geometry.attributes.color.needsUpdate = true;
   }
   geometry.computeVertexNormals();
-  geometry.computeBoundingBox();
-  geometry.computeBoundingSphere();
+  // geometry.computeBoundingBox();
+  // geometry.computeBoundingSphere();
 }
 
-function getVertexFromGeometry(geometry: THREE.BufferGeometry, index: number) {
-  const positions = geometry.getAttribute("position");
-  return new THREE.Vector3(positions.getX(index), positions.getY(index), positions.getZ(index))
+function getWorldVertexFromMesh(mesh: THREE.Mesh, index: number) {
+  const positions = mesh.geometry.getAttribute("position");
+  const localPos = new THREE.Vector3(positions.getX(index), positions.getY(index), positions.getZ(index));
+  return mesh.localToWorld(localPos);
 }
