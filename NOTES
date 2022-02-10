@@ -1,0 +1,21 @@
+NOTES
+
+Vertex 0 is the top left corner. Vertex `positions.count - 1` is the bottom right corner.
+
+this.highlightPoints([
+  getVertexFromGeometry(this.mesh.geometry, 0), // Top left
+  getVertexFromGeometry(this.mesh.geometry, this.horizontalVertices), // Top right
+  getVertexFromGeometry(this.mesh.geometry, (this.horizontalVertices + 1) * this.verticalVertices), // Bottom left
+  getVertexFromGeometry(this.mesh.geometry, (this.horizontalVertices + 1) * this.verticalVertices + this.horizontalVertices), // Bottom Right
+]);
+
+
+
+
+      // if ((u == -HALF_MESH_LENGTH && v == -HALF_MESH_LENGTH) || (u == 0 && v == -HALF_MESH_LENGTH) || (u == HALF_MESH_LENGTH && v == -HALF_MESH_LENGTH) ||
+      //     (u == -HALF_MESH_LENGTH && v == 0) || (u == 0 && v == 0) || (u == HALF_MESH_LENGTH && v == 0) ||
+      //     (u == -HALF_MESH_LENGTH && v == HALF_MESH_LENGTH) || (u == 0 && v == HALF_MESH_LENGTH) || (u == HALF_MESH_LENGTH && v == HALF_MESH_LENGTH)) {
+      //   console.log(`mesh(${u}, ${v}) => sphere(r: ${sphereCoords.radius}, t: ${sphereCoords.theta}, p: ${sphereCoords.phi}) => world(x ${newPosition.x}, y ${newPosition.y}, z ${newPosition.z - moveBackDistance})`);
+      // }
+
+
