@@ -27,6 +27,7 @@ class SceneData {
     this.scene.background = texture;
 
     this.camera.updateOnResize(width, height);
+    this.planet.update(this.camera);
     this.moveLightToCamera();
   }
 
@@ -37,6 +38,7 @@ class SceneData {
   update() {
     if (this.camera.move(this.horizDirection, this.vertDirection, this.zoomDirection)) {
       this.moveLightToCamera();
+      this.planet.update(this.camera);
     }
   }
 

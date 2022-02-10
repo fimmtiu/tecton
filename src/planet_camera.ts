@@ -6,7 +6,7 @@ export { PlanetCamera };
 
 // The camera and planet have to know about each other for a few reasons:
 // - The height of the camera above the planet determines the planet mesh's curvature
-// - The camera has to know how tall the terrain is at its location so it doesn't zoom inside mountains
+// - The camera has to know how tall the terrain is below its location so it doesn't zoom inside mountains
 // - The number of vertices in the planet mesh is determined by the camera's viewport width and height
 
 const FIELD_OF_VIEW = 50;
@@ -41,10 +41,9 @@ class PlanetCamera extends THREE.PerspectiveCamera {
   }
 
   protected updateOnMove() {
+    this.updateProjectionMatrix();
     this.position.setFromSpherical(this.sphereCoords);
     this.lookAt(ORIGIN);
-    this.updateProjectionMatrix();
-    this.planet.update(this);
   }
 
   // Returns true if the camera moved during this call, false otherwise.
@@ -69,7 +68,6 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     if (horizontal || vertical || zoom) {
       this.updateOnMove();
       return true;
-      // console.log(`Moved. Rad: ${this.sphereCoords.radius}, phi: ${this.sphereCoords.phi}, theta: ${this.sphereCoords.theta}. Position: (${this.camera.position.x}, ${this.camera.position.y}, ${this.camera.position.z})`);
     }
 
     return false;

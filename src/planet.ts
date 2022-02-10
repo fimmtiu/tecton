@@ -53,19 +53,9 @@ class Planet {
     const topLeft = new THREE.Vector3().setFromSphericalCoords(Planet.radius, Math.PI / 4, Math.PI * 1.5);
     const bottomRight = new THREE.Vector3().setFromSphericalCoords(Planet.radius, Math.PI * (3 / 4), Math.PI / 2);
     const bottomLeft = new THREE.Vector3().setFromSphericalCoords(Planet.radius, Math.PI * (3 / 4), Math.PI * 1.5);
-    const corners_geometry = new THREE.BufferGeometry();
-    corners_geometry.setAttribute('position', new THREE.Float32BufferAttribute([
-      topLeft.x, topLeft.y, topLeft.z,
-      bottomRight.x, bottomRight.y, bottomRight.z,
-      bottomLeft.x, bottomLeft.y, bottomLeft.z,
-    ], 3));
-    corners_geometry.setAttribute("index", new THREE.Int8BufferAttribute([0, 1, 2], 3));
-    corners_geometry.index = (<THREE.BufferAttribute>corners_geometry.attributes.index);
+    const corners_geometry = new THREE.BufferGeometry().setFromPoints([topLeft, bottomRight, bottomLeft]);
+    corners_geometry.setIndex(new THREE.Uint16BufferAttribute([2, 1, 0], 1));
     this.meshCorners = new THREE.Mesh(corners_geometry);
-    this.meshCorners.visible = false;
-
-    this.visualHelper.setPoints([topLeft, bottomRight, bottomLeft]);
-    this.visualHelper.setMeshesForNormals([this.meshCorners]);
   }
 
   destroy() {
@@ -89,23 +79,22 @@ class Planet {
       console.log("out of camera");
       this.deformPlaneIntoSector(camera);
     }
+
+    console.log(`camera position: (${camera.position.x}, ${camera.position.y}, ${camera.position.z})`);
     this.mesh.geometry.lookAt(camera.position);
-    this.meshCorners.geometry.lookAt(camera.position);
+    this.meshCorners.lookAt(camera.position);
     updateGeometry(this.mesh.geometry);
-    updateGeometry(this.meshCorners.geometry);
+    if (this.edges) {
+      this.edges.lookAt(camera.position);
+    }
 
     this.generateTerrain();
     this.visualHelper.update();
-
-    if (this.edges) {
-      this.toggleEdgesVisible();
-      this.toggleEdgesVisible();
-    }
   }
 
-  // FIXME: This only works when you're head-on. If you rotate the camera, the points won't rotate with it.
   protected cornersInView(camera: PlanetCamera) {
-    const topLeftPoint = getVertexFromGeometry(this.meshCorners.geometry, 0);
+    const vertex = getVertexFromGeometry(this.meshCorners.geometry, 0);
+    const topLeftPoint = this.meshCorners.localToWorld(vertex);
     return camera.containsPoint(topLeftPoint);
   }
 
