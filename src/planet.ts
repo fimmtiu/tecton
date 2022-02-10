@@ -14,7 +14,7 @@ class Planet {
   protected mesh: THREE.Mesh;
   protected edges: THREE.LineSegments | null;
   protected visualHelper: VisualHelper;
-  protected meshCorners!: THREE.LineSegments;
+  protected meshCorners!: THREE.Mesh;
   protected horizontalVertices!: number;
   protected verticalVertices!: number;
   protected flatten: boolean;
@@ -23,7 +23,7 @@ class Planet {
     this.scene = scene;
     this.mesh = new THREE.Mesh();
     this.visualHelper = new VisualHelper(scene, true, true);
-    this.meshCorners = new THREE.LineSegments();
+    this.meshCorners = new THREE.Mesh();
     this.flatten = false;
 
     this.resize(viewportWidth, viewportHeight);
@@ -52,16 +52,20 @@ class Planet {
 
     const topLeft = new THREE.Vector3().setFromSphericalCoords(Planet.radius, Math.PI / 4, Math.PI * 1.5);
     const bottomRight = new THREE.Vector3().setFromSphericalCoords(Planet.radius, Math.PI * (3 / 4), Math.PI / 2);
-    const points_geometry = new THREE.BufferGeometry();
-    points_geometry.setAttribute('position', new THREE.Float32BufferAttribute([
+    const bottomLeft = new THREE.Vector3().setFromSphericalCoords(Planet.radius, Math.PI * (3 / 4), Math.PI * 1.5);
+    const corners_geometry = new THREE.BufferGeometry();
+    corners_geometry.setAttribute('position', new THREE.Float32BufferAttribute([
       topLeft.x, topLeft.y, topLeft.z,
       bottomRight.x, bottomRight.y, bottomRight.z,
-    ], 6));
-    this.meshCorners = new THREE.LineSegments(points_geometry);
+      bottomLeft.x, bottomLeft.y, bottomLeft.z,
+    ], 3));
+    corners_geometry.setAttribute("index", new THREE.Int8BufferAttribute([0, 1, 2], 3));
+    corners_geometry.index = (<THREE.BufferAttribute>corners_geometry.attributes.index);
+    this.meshCorners = new THREE.Mesh(corners_geometry);
     this.meshCorners.visible = false;
 
-    this.visualHelper.setPoints([topLeft, bottomRight]);
-    // this.visualHelper.setMeshesForNormals([this.meshCorners]);
+    this.visualHelper.setPoints([topLeft, bottomRight, bottomLeft]);
+    this.visualHelper.setMeshesForNormals([this.meshCorners]);
   }
 
   destroy() {
@@ -87,9 +91,11 @@ class Planet {
     }
     this.mesh.geometry.lookAt(camera.position);
     this.meshCorners.geometry.lookAt(camera.position);
-    this.visualHelper.update();
     updateGeometry(this.mesh.geometry);
+    updateGeometry(this.meshCorners.geometry);
+
     this.generateTerrain();
+    this.visualHelper.update();
 
     if (this.edges) {
       this.toggleEdgesVisible();

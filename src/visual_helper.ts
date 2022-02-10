@@ -5,6 +5,8 @@ import { ORIGIN } from "./util";
 export { VisualHelper };
 
 const COLORS = [0xffae00, 0x00ffff, 0xff1e00, 0xc800ff]; // orange, aqua, red, purple
+const BLUE = new THREE.Color(0, 0, 1);
+const RED = new THREE.Color(1, 0, 0);
 
 class VisualHelper {
   protected scene: THREE.Scene;
@@ -91,6 +93,35 @@ class VisualHelper {
       //     this.addArrow(normal, center, Planet.radius, COLORS[i % COLORS.length]);
       //
       // Steal this code from the comment in util.ts.
+
+      let positions = this.normalMeshes[i].geometry.attributes.position;
+      let index = this.normalMeshes[i].geometry.index;
+      if (index === null) {
+        throw "not indexed, wtf?";
+      }
+      let a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+      let faceNormal = new THREE.Vector3(), midpoint = new THREE.Vector3();
+      let triangle = new THREE.Triangle();
+
+      for (let j = 0; j < index.count; j++) {
+        a.fromBufferAttribute(positions, index.getX((j * 3) + 0));
+        b.fromBufferAttribute(positions, index.getX((j * 3) + 1));
+        c.fromBufferAttribute(positions, index.getX((j * 3) + 2));
+        triangle.set(a, b, c);
+        triangle.getNormal(faceNormal);
+        triangle.getMidpoint(midpoint);
+
+        // Some code to change the color based on whether the normal is pointing towards or away from the camera:
+        // (red = away, blue = towards). Requires us to pass in the camera position somehow.
+        //
+        // let arrowColor = new THREE.Color();
+        // const normalizedCameraVector = cameraPosition.clone().normalize();
+        // let distance = normalizedCameraVector.distanceTo(faceNormal);
+        // arrowColor.lerpColors(blue, red, distance / 2);
+        // // use it with arrowColor.getHex()
+
+        this.addArrow(faceNormal, midpoint, 10000, COLORS[i % COLORS.length]);
+      }
     }
   }
 
