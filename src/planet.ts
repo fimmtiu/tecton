@@ -58,6 +58,7 @@ class Planet {
     const corners_geometry = new THREE.BufferGeometry().setFromPoints([topLeft, bottomRight, bottomLeft]);
     corners_geometry.setIndex(new THREE.Uint16BufferAttribute([2, 1, 0], 1));
     this.meshCorners = new THREE.Mesh(corners_geometry);
+    this.mesh.add(this.meshCorners);
   }
 
   destroy() {
@@ -88,15 +89,10 @@ class Planet {
       this.fillsCamera = true;
     }
 
-    // Make the planet mesh and all associated meshes turn to look at the new camera position.
-    // FIXME: Could solve this by making the others children of the planet mesh?
+    // Make the planet mesh and all of its child meshes turn to look at the new camera position.
     console.log(`camera position: (${camera.position.x}, ${camera.position.y}, ${camera.position.z})`);
     this.mesh.lookAt(camera.position);
     updateGeometry(this.mesh.geometry);
-    this.meshCorners.lookAt(camera.position);
-    if (this.edges) {
-      this.edges.lookAt(camera.position);
-    }
 
     this.generateTerrain();
     this.visualHelper.update();
@@ -143,7 +139,9 @@ class Planet {
       edgeGeometry.scale(1.001, 1.001, 1.001); // Prevents weird clipping
       this.edges = new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
       this.scene.add(this.edges);
+      this.mesh.add(this.edges);
     } else {
+      this.edges.removeFromParent();
       this.scene.remove(this.edges);
       (<THREE.Material>this.edges.material).dispose();
       this.edges.geometry.dispose();
