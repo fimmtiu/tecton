@@ -9,22 +9,22 @@ const COLORS = [0xffae00, 0x00ffff, 0xff1e00, 0xc800ff]; // orange, aqua, red, p
 class VisualHelper {
   protected scene: THREE.Scene;
   protected pointVectors: Array<THREE.Vector3>;
+  protected normalMeshes: Array<THREE.Mesh | THREE.Points>;
   protected points: Array<THREE.Points>;
   protected arrows: Array<THREE.ArrowHelper>;
   protected axes: THREE.AxesHelper | null;
   public showArrows: boolean;
   public showAxes: boolean;
 
-  constructor(scene: THREE.Scene, points: Array<THREE.Vector3>, showArrows = false, showAxes = false) {
+  constructor(scene: THREE.Scene, showArrows = false, showAxes = false) {
     this.scene = scene;
-    this.pointVectors = points;
+    this.pointVectors = [];
+    this.normalMeshes = [];
     this.points = [];
     this.arrows = [];
     this.axes = null;
     this.showArrows = showArrows;
     this.showAxes = showAxes;
-
-    this.drawVisualAids(points);
   }
 
   destroy() {
@@ -49,6 +49,11 @@ class VisualHelper {
 
   update() {
     this.drawVisualAids(this.pointVectors);
+  }
+
+  setMeshesForNormals(meshes: Array<THREE.Mesh | THREE.Points>) {
+    this.normalMeshes = meshes;
+    this.update();
   }
 
   setPoints(points: Array<THREE.Vector3>) {
@@ -77,11 +82,27 @@ class VisualHelper {
       this.points.push(point);
 
       if (this.showArrows) {
-        const arrow = new THREE.ArrowHelper(points[i].clone().normalize(), ORIGIN, Planet.radius + 2000, color);
-        arrow.renderOrder = 999999999999;
-        (<THREE.Material>arrow.line.material).depthTest = false;
-        this.scene.add(arrow);
+        this.addArrow(points[i].clone().normalize(), ORIGIN, Planet.radius + 2000, color);
       }
     }
+
+    for (let i = 0; i < this.normalMeshes.length; i++) {
+      const geometry = this.normalMeshes[i].geometry;
+      const center = new THREE.Vector3();
+      if (!geometry.boundingBox) {
+        geometry.computeBoundingBox();
+      }
+      geometry.boundingBox!.getCenter(center);
+
+      this.addArrow(this.normalMeshes[i].up, center, Planet.radius, COLORS[i % COLORS.length]);
+    }
+  }
+
+  protected addArrow(dir: THREE.Vector3, origin: THREE.Vector3, size: number, color: number) {
+    const arrow = new THREE.ArrowHelper(dir, origin, size, color);
+    arrow.renderOrder = 999999999999;
+    (<THREE.Material>arrow.line.material).depthTest = false;
+    this.scene.add(arrow);
+    this.arrows.push(arrow)
   }
 }

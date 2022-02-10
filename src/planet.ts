@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { PlanetCamera } from "./planet_camera";
-import { getVertexFromGeometry, noiseGenerator, updateGeometry, ORIGIN } from "./util";
+import { getVertexFromGeometry, noiseGenerator, updateGeometry } from "./util";
 import { VisualHelper } from "./visual_helper";
 
 export { Planet };
@@ -14,7 +14,7 @@ class Planet {
   protected mesh: THREE.Mesh;
   protected edges: THREE.LineSegments | null;
   protected visualHelper: VisualHelper;
-  protected topLeftCorner!: THREE.Points;
+  protected meshCorners!: THREE.Points;
   protected horizontalVertices!: number;
   protected verticalVertices!: number;
   protected flatten: boolean;
@@ -22,8 +22,8 @@ class Planet {
   constructor(scene: THREE.Scene, viewportWidth: number, viewportHeight: number) {
     this.scene = scene;
     this.mesh = new THREE.Mesh();
-    this.visualHelper = new VisualHelper(scene, [], true, true);
-    this.topLeftCorner = new THREE.Points();
+    this.visualHelper = new VisualHelper(scene, true, true);
+    this.meshCorners = new THREE.Points();
     this.flatten = false;
 
     this.resize(viewportWidth, viewportHeight);
@@ -57,9 +57,11 @@ class Planet {
       topLeft.x, topLeft.y, topLeft.z,
       bottomRight.x, bottomRight.y, bottomRight.z,
     ], 6));
-    this.topLeftCorner = new THREE.Points(points_geometry);
+    this.meshCorners = new THREE.Points(points_geometry);
+    this.meshCorners.visible = false;
 
     this.visualHelper.setPoints([topLeft, bottomRight]);
+    this.visualHelper.setMeshesForNormals([this.meshCorners]);
   }
 
   destroy() {
@@ -67,8 +69,8 @@ class Planet {
     (<THREE.Material>this.mesh.material).dispose();
     this.mesh.geometry.dispose();
 
-    (<THREE.Material>this.topLeftCorner.material).dispose();
-    this.topLeftCorner.geometry.dispose();
+    (<THREE.Material>this.meshCorners.material).dispose();
+    this.meshCorners.geometry.dispose();
 
     if (this.edges) {
       this.toggleEdgesVisible();
@@ -84,7 +86,7 @@ class Planet {
       this.deformPlaneIntoSector(camera);
     }
     this.mesh.geometry.lookAt(camera.position);
-    this.topLeftCorner.geometry.lookAt(camera.position);
+    this.meshCorners.geometry.lookAt(camera.position);
     this.visualHelper.update();
     updateGeometry(this.mesh.geometry);
     this.generateTerrain();
@@ -97,7 +99,7 @@ class Planet {
 
   // FIXME: This only works when you're head-on. If you rotate the camera, the points won't rotate with it.
   protected cornersInView(camera: PlanetCamera) {
-    const topLeftPoint = getVertexFromGeometry(this.topLeftCorner.geometry, 0);
+    const topLeftPoint = getVertexFromGeometry(this.meshCorners.geometry, 0);
     return camera.containsPoint(topLeftPoint);
   }
 
