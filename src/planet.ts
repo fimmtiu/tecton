@@ -18,6 +18,7 @@ class Planet {
   protected horizontalVertices!: number;
   protected verticalVertices!: number;
   protected flatten: boolean;
+  protected fillsCamera: boolean;
 
   constructor(scene: THREE.Scene, viewportWidth: number, viewportHeight: number) {
     this.scene = scene;
@@ -25,6 +26,7 @@ class Planet {
     this.visualHelper = new VisualHelper(scene, true, true);
     this.meshCorners = new THREE.Mesh();
     this.flatten = false;
+    this.fillsCamera = true;
 
     this.resize(viewportWidth, viewportHeight);
 
@@ -72,18 +74,26 @@ class Planet {
   }
 
   update(camera: PlanetCamera) {
+    // Change the curvature of the planet mesh, if necessary.
     if (this.cornersInView(camera)) {
       console.log("in camera");
-      this.deformPlaneIntoHemisphere();
+      if (this.fillsCamera) {
+        console.log("switching to hemisphere shape");
+        this.deformPlaneIntoHemisphere();
+        this.fillsCamera = false;
+      }
     } else {
       console.log("out of camera");
       this.deformPlaneIntoSector(camera);
+      this.fillsCamera = true;
     }
 
+    // Make the planet mesh and all associated meshes turn to look at the new camera position.
+    // FIXME: Could solve this by making the others children of the planet mesh?
     console.log(`camera position: (${camera.position.x}, ${camera.position.y}, ${camera.position.z})`);
     this.mesh.lookAt(camera.position);
-    this.meshCorners.lookAt(camera.position);
     updateGeometry(this.mesh.geometry);
+    this.meshCorners.lookAt(camera.position);
     if (this.edges) {
       this.edges.lookAt(camera.position);
     }

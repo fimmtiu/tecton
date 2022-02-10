@@ -20,9 +20,8 @@ function setRandomSeed(seed: string) {
 }
 
 // Tell three.js that this geometry has changed.
-// FIXME: We can remove this once we stop using vertex colors.
 function updateGeometry(geometry: THREE.BufferGeometry) {
-  // geometry.attributes.position.needsUpdate = true;
+  geometry.attributes.position.needsUpdate = true;
   if (geometry.attributes.color) {
     geometry.attributes.color.needsUpdate = true;
   }
