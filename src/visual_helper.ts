@@ -9,7 +9,7 @@ const COLORS = [0xffae00, 0x00ffff, 0xff1e00, 0xc800ff]; // orange, aqua, red, p
 class VisualHelper {
   protected scene: THREE.Scene;
   protected pointVectors: Array<THREE.Vector3>;
-  protected normalMeshes: Array<THREE.Mesh | THREE.Points>;
+  protected normalMeshes: Array<THREE.Mesh>;
   protected points: Array<THREE.Points>;
   protected arrows: Array<THREE.ArrowHelper>;
   protected axes: THREE.AxesHelper | null;
@@ -51,7 +51,7 @@ class VisualHelper {
     this.drawVisualAids(this.pointVectors);
   }
 
-  setMeshesForNormals(meshes: Array<THREE.Mesh | THREE.Points>) {
+  setMeshesForNormals(meshes: Array<THREE.Mesh>) {
     this.normalMeshes = meshes;
     this.update();
   }
@@ -87,14 +87,10 @@ class VisualHelper {
     }
 
     for (let i = 0; i < this.normalMeshes.length; i++) {
-      const geometry = this.normalMeshes[i].geometry;
-      const center = new THREE.Vector3();
-      if (!geometry.boundingBox) {
-        geometry.computeBoundingBox();
-      }
-      geometry.boundingBox!.getCenter(center);
-
-      this.addArrow(this.normalMeshes[i].up, center, Planet.radius, COLORS[i % COLORS.length]);
+      // FIXME: For each triangle in the mesh, find the center and normal, then do this:
+      //     this.addArrow(normal, center, Planet.radius, COLORS[i % COLORS.length]);
+      //
+      // Steal this code from the comment in util.ts.
     }
   }
 

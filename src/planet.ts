@@ -14,7 +14,7 @@ class Planet {
   protected mesh: THREE.Mesh;
   protected edges: THREE.LineSegments | null;
   protected visualHelper: VisualHelper;
-  protected meshCorners!: THREE.Points;
+  protected meshCorners!: THREE.LineSegments;
   protected horizontalVertices!: number;
   protected verticalVertices!: number;
   protected flatten: boolean;
@@ -23,7 +23,7 @@ class Planet {
     this.scene = scene;
     this.mesh = new THREE.Mesh();
     this.visualHelper = new VisualHelper(scene, true, true);
-    this.meshCorners = new THREE.Points();
+    this.meshCorners = new THREE.LineSegments();
     this.flatten = false;
 
     this.resize(viewportWidth, viewportHeight);
@@ -57,11 +57,11 @@ class Planet {
       topLeft.x, topLeft.y, topLeft.z,
       bottomRight.x, bottomRight.y, bottomRight.z,
     ], 6));
-    this.meshCorners = new THREE.Points(points_geometry);
+    this.meshCorners = new THREE.LineSegments(points_geometry);
     this.meshCorners.visible = false;
 
     this.visualHelper.setPoints([topLeft, bottomRight]);
-    this.visualHelper.setMeshesForNormals([this.meshCorners]);
+    // this.visualHelper.setMeshesForNormals([this.meshCorners]);
   }
 
   destroy() {
