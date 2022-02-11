@@ -1,6 +1,7 @@
 import * as THREE from "three";
+import { Vector3 } from "three";
 import { PlanetCamera } from "./planet_camera";
-import { getWorldVertexFromMesh, noiseGenerator, updateGeometry } from "./util";
+import { getWorldVertexFromMesh, noiseGenerator, updateGeometry, ORIGIN, sphericalFromCoords } from "./util";
 import { VisualHelper } from "./visual_helper";
 
 export { Planet };
@@ -10,6 +11,7 @@ const PIXELS_BETWEEN_VERTICES = 10;
 class Planet {
   static readonly radius = 6370; // each unit is 1 kilometer
 
+  public sphere: THREE.Sphere;
   protected scene: THREE.Scene;
   protected mesh: THREE.Mesh;
   protected edges: THREE.LineSegments | null;
@@ -21,6 +23,7 @@ class Planet {
   protected fillsCamera: boolean;
 
   constructor(scene: THREE.Scene, viewportWidth: number, viewportHeight: number) {
+    this.sphere = new THREE.Sphere(ORIGIN, Planet.radius);
     this.scene = scene;
     this.mesh = new THREE.Mesh();
     this.visualHelper = new VisualHelper(scene, true, true);
@@ -77,6 +80,7 @@ class Planet {
 
   update(camera: PlanetCamera) {
     // Change the curvature of the planet mesh, if necessary.
+    // FIXME: Later, try doing this with a vertex shader instead.
     if (this.cornersInView(camera)) {
       console.log("in camera");
       if (this.fillsCamera) {
@@ -93,7 +97,14 @@ class Planet {
     // Make the planet mesh and all of its child meshes turn to look at the new camera position.
     console.log(`camera position: (${camera.position.x}, ${camera.position.y}, ${camera.position.z})`);
     this.mesh.lookAt(camera.position);
+
+    // FIXME: Once we're no longer using vertex colors we can move this into the 'deform' methods,
+    // where it will be called less often.
     updateGeometry(this.mesh.geometry);
+    if (this.edges) {
+      this.toggleEdgesVisible();
+      this.toggleEdgesVisible();
+    }
 
     // Update what the planet's surface looks like in the new orientation.
     this.generateTerrain();
@@ -106,24 +117,24 @@ class Planet {
   }
 
   // When we're zoomed far out, the planet mesh is shaped like a hemisphere.
-  // FIXME: The hemisphere isn't perfect. It dosn't stretch all the way to the poles, and there are some odd
+  // FIXME: The hemisphere isn't perfect. It doesn't stretch all the way to the poles, and there are some odd
   // vertices that should be connected but aren't. I'll clean it up later.
   protected deformPlaneIntoHemisphere() {
-    const half_horiz_length = (this.horizontalVertices - 1) / 2;
-    const half_vert_length = (this.verticalVertices - 1) / 2;
-    const horiz_radians_per_unit = Math.PI / half_vert_length / 2;
-    const vert_radians_per_unit = Math.PI / half_horiz_length / 2;
+    const halfHorizLength = (this.horizontalVertices - 1) / 2;
+    const halfVertLength = (this.verticalVertices - 1) / 2;
+    const horizRadiansPerUnit = Math.PI / halfVertLength / 2;
+    const vertRadiansPerUnit = Math.PI / halfHorizLength / 2;
+    const positions = this.mesh.geometry.attributes.position;
 
-    let positions = this.mesh.geometry.attributes.position;
     let sphereCoords = new THREE.Spherical(Planet.radius, 0, 0);
     let newPosition = new THREE.Vector3();
 
     for (let i = 0; i < positions.count; i++) {
-      const u = (i % this.horizontalVertices) - half_horiz_length;
-      const v = Math.floor(i / this.horizontalVertices) - half_vert_length;
+      const u = (i % this.horizontalVertices) - halfHorizLength;
+      const v = Math.floor(i / this.horizontalVertices) - halfVertLength;
 
-      sphereCoords.theta = horiz_radians_per_unit * u;
-      sphereCoords.phi = vert_radians_per_unit * v + Math.PI / 2;
+      sphereCoords.theta = horizRadiansPerUnit * u;
+      sphereCoords.phi = vertRadiansPerUnit * v + Math.PI / 2;
 
       newPosition.setFromSpherical(sphereCoords);
       if (!this.flatten) {
@@ -134,8 +145,28 @@ class Planet {
 
   // When we're zoomed close in, the planet mesh is a rectangular patch of the sphere's surface that fills the camera.
   protected deformPlaneIntoSector(camera: PlanetCamera) {
-    // FIXME implement this
-    this.deformPlaneIntoHemisphere();
+    const positions = this.mesh.geometry.attributes.position;
+    const topLeftWorld = new THREE.Vector3(), bottomRightWorld = new THREE.Vector3();
+    camera.copyPlanetIntersectionPoints(topLeftWorld, bottomRightWorld);
+    const topLeft = sphericalFromCoords(topLeftWorld);
+    const bottomRight = sphericalFromCoords(bottomRightWorld);
+    const horizRadiansPerUnit = Math.abs(bottomRight.theta - topLeft.theta) / (this.horizontalVertices - 1);
+    const vertRadiansPerUnit = Math.abs(bottomRight.phi - topLeft.phi) / (this.verticalVertices - 1);
+
+    let sphereCoords = new THREE.Spherical(Planet.radius, 0, 0);
+    let newPosition = new THREE.Vector3();
+
+    this.visualHelper.setPoints([topLeftWorld, bottomRightWorld]);
+
+    for (let i = 0; i < positions.count; i++) {
+      sphereCoords.theta = topLeft.theta + horizRadiansPerUnit * (i % this.horizontalVertices);
+      sphereCoords.phi = topLeft.phi + vertRadiansPerUnit * Math.floor(i / this.horizontalVertices);
+
+      newPosition.setFromSpherical(sphereCoords);
+      if (!this.flatten) {
+        positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
+      }
+    }
   }
 
   // Optional white lines outlining each face of the mesh.
@@ -145,7 +176,7 @@ class Planet {
       edgeGeometry.scale(1.001, 1.001, 1.001); // Prevents weird clipping
       this.edges = new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
       this.scene.add(this.edges);
-      this.mesh.add(this.edges);
+      this.mesh.add(this.edges); // Makes the edges turn when the mesh turns
     } else {
       this.edges.removeFromParent();
       this.scene.remove(this.edges);

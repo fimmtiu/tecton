@@ -1,7 +1,7 @@
 import SimplexNoise from "simplex-noise";
 import * as THREE from "three";
 
-export { noiseGenerator, setRandomSeed, updateGeometry, getWorldVertexFromMesh, ORIGIN };
+export { noiseGenerator, setRandomSeed, updateGeometry, getWorldVertexFromMesh, ORIGIN, sphericalFromCoords };
 
 const ORIGIN = new THREE.Vector3(0, 0, 0);
 
@@ -34,4 +34,8 @@ function getWorldVertexFromMesh(mesh: THREE.Mesh, index: number) {
   const positions = mesh.geometry.getAttribute("position");
   const localPos = new THREE.Vector3(positions.getX(index), positions.getY(index), positions.getZ(index));
   return mesh.localToWorld(localPos);
+}
+
+function sphericalFromCoords(coords: THREE.Vector3) {
+  return new THREE.Spherical().setFromCartesianCoords(coords.x, coords.y, coords.z);
 }
