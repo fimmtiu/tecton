@@ -59,6 +59,7 @@ class Planet {
     corners_geometry.setIndex(new THREE.Uint16BufferAttribute([2, 1, 0], 1));
     this.meshCorners = new THREE.Mesh(corners_geometry);
     this.mesh.add(this.meshCorners);
+    this.meshCorners.visible = false;
   }
 
   destroy() {
@@ -94,6 +95,7 @@ class Planet {
     this.mesh.lookAt(camera.position);
     updateGeometry(this.mesh.geometry);
 
+    // Update what the planet's surface looks like in the new orientation.
     this.generateTerrain();
     this.visualHelper.update();
   }
@@ -103,6 +105,9 @@ class Planet {
     return camera.containsPoint(topLeftPoint);
   }
 
+  // When we're zoomed far out, the planet mesh is shaped like a hemisphere.
+  // FIXME: The hemisphere isn't perfect. It dosn't stretch all the way to the poles, and there are some odd
+  // vertices that should be connected but aren't. I'll clean it up later.
   protected deformPlaneIntoHemisphere() {
     const half_horiz_length = (this.horizontalVertices - 1) / 2;
     const half_vert_length = (this.verticalVertices - 1) / 2;
@@ -127,6 +132,7 @@ class Planet {
     }
   }
 
+  // When we're zoomed close in, the planet mesh is a rectangular patch of the sphere's surface that fills the camera.
   protected deformPlaneIntoSector(camera: PlanetCamera) {
     // FIXME implement this
     this.deformPlaneIntoHemisphere();
@@ -149,10 +155,12 @@ class Planet {
     }
   }
 
+  // Debugging method: show the planet mesh as a flat rectangle instead of curving it.
   toggleFlatten() {
     this.flatten = !this.flatten;
   }
 
+  // Set the color for each vertex on the planet to reflect the land height/water depth there.
   protected generateTerrain() {
     const NOISE_SCALE = 5000;
     const FAVOR_WATER = -0.30;

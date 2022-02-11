@@ -77,7 +77,8 @@ class VisualHelper {
       const color = COLORS[i % COLORS.length];
 
       const points_geometry = new THREE.BufferGeometry();
-      points_geometry.setAttribute('position', new THREE.Float32BufferAttribute([points[i].x, points[i].y, points[i].z], 3));
+      const point_location = new THREE.Float32BufferAttribute([points[i].x, points[i].y, points[i].z], 3);
+      points_geometry.setAttribute('position', point_location);
       const points_material = new THREE.PointsMaterial({ color: color, size: 250 });
       const point = new THREE.Points(points_geometry, points_material);
       this.scene.add(point);
@@ -89,11 +90,6 @@ class VisualHelper {
     }
 
     for (let i = 0; i < this.normalMeshes.length; i++) {
-      // FIXME: For each triangle in the mesh, find the center and normal, then do this:
-      //     this.addArrow(normal, center, Planet.radius, COLORS[i % COLORS.length]);
-      //
-      // Steal this code from the comment in util.ts.
-
       let positions = this.normalMeshes[i].geometry.attributes.position;
       let index = this.normalMeshes[i].geometry.index;
       if (index === null) {

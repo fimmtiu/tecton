@@ -42,10 +42,12 @@ class SceneData {
     }
   }
 
+  // Offset the light slightly from the camera position to make it look a bit more shadowy.
+  // FIXME: I'm pretty sure this isn't working.
   moveLightToCamera() {
-    // Offset the light slightly from the camera position to make it look a bit more shadowy.
     let lightLocation = new THREE.Vector3(100, 100, 0);
     this.light.position.copy(lightLocation.unproject(this.camera));
+    console.log(`light position: (${this.light.position.x}, ${this.light.position.y}, ${this.light.position.z})`);
   }
 
   updateOnResize(width: number, height: number) {
