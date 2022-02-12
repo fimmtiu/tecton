@@ -131,6 +131,8 @@ class Planet {
     const positions = this.mesh.geometry.attributes.position;
     const topLeft = sphericalFromCoords(topLeftWorld);
     const bottomRight = sphericalFromCoords(bottomRightWorld);
+    const halfHorizLength = (this.horizontalVertices - 1) / 2;
+    const halfVertLength = (this.verticalVertices - 1) / 2;
     const horizRadiansPerUnit = Math.abs(bottomRight.theta - topLeft.theta) / (this.horizontalVertices - 1);
     const vertRadiansPerUnit = Math.abs(bottomRight.phi - topLeft.phi) / (this.verticalVertices - 1);
 
@@ -139,20 +141,22 @@ class Planet {
     }
 
     console.log(`tlw (${topLeftWorld.x}, ${topLeftWorld.y}, ${topLeftWorld.z}). brw (${bottomRightWorld.x}, ${bottomRightWorld.y}, ${bottomRightWorld.z}).`);
-    console.log(`hrpu ${horizRadiansPerUnit}, vrpu ${vertRadiansPerUnit}`);
-    console.log(`theta difference: ${Math.abs(bottomRight.theta - topLeft.theta)} - ${this.originalTheta} = ${Math.abs(bottomRight.theta - topLeft.theta) - this.originalTheta}`);
-    // console.log(`horiz: br.t ${bottomRight.theta} - tl.t ${topLeft.theta} = ${Math.abs(bottomRight.theta - topLeft.theta)}`);
-    // console.log(`vert: br.t ${bottomRight.phi} - tl.t ${topLeft.phi} = ${Math.abs(bottomRight.phi - topLeft.phi)}`);
     let sphereCoords = new THREE.Spherical(Planet.radius, 0, 0);
     let newPosition = new THREE.Vector3();
 
     this.visualHelper.setPoints([topLeftWorld, bottomRightWorld]);
 
     for (let i = 0; i < positions.count; i++) {
-      sphereCoords.theta = topLeft.theta + horizRadiansPerUnit * (i % this.horizontalVertices);
-      sphereCoords.phi = topLeft.phi + vertRadiansPerUnit * Math.floor(i / this.horizontalVertices);
+      const u = (i % this.horizontalVertices) - halfHorizLength;
+      const v = Math.floor(i / this.horizontalVertices) - halfVertLength;
+
+      sphereCoords.theta = horizRadiansPerUnit * u;
+      sphereCoords.phi = vertRadiansPerUnit * v + Math.PI / 2;
 
       newPosition.setFromSpherical(sphereCoords);
+      if (i == 0) {
+        console.log(`New top left position: (${newPosition.x}, ${newPosition.y}, ${newPosition.z})`);
+      }
       if (!this.flatten) {
         positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
       }
