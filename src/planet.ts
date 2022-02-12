@@ -19,7 +19,6 @@ class Planet {
   protected verticalVertices!: number;
   protected flatten: boolean;
   protected fillsCamera: boolean;
-  protected originalTheta: number | null;
 
   constructor(scene: THREE.Scene, viewportWidth: number, viewportHeight: number) {
     this.sphere = new THREE.Sphere(ORIGIN, Planet.radius);
@@ -28,7 +27,6 @@ class Planet {
     this.visualHelper = new VisualHelper(scene, true, true);
     this.flatten = false;
     this.fillsCamera = true;
-    this.originalTheta = null;
 
     this.resize(viewportWidth, viewportHeight);
 
@@ -135,10 +133,6 @@ class Planet {
     const halfVertLength = (this.verticalVertices - 1) / 2;
     const horizRadiansPerUnit = Math.abs(bottomRight.theta - topLeft.theta) / (this.horizontalVertices - 1);
     const vertRadiansPerUnit = Math.abs(bottomRight.phi - topLeft.phi) / (this.verticalVertices - 1);
-
-    if (this.originalTheta === null) {
-      this.originalTheta = Math.abs(bottomRight.theta - topLeft.theta);
-    }
 
     console.log(`tlw (${topLeftWorld.x}, ${topLeftWorld.y}, ${topLeftWorld.z}). brw (${bottomRightWorld.x}, ${bottomRightWorld.y}, ${bottomRightWorld.z}).`);
     let sphereCoords = new THREE.Spherical(Planet.radius, 0, 0);
