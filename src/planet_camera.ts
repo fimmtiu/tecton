@@ -73,13 +73,6 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     return false;
   }
 
-  containsPoint(point: THREE.Vector3) {
-    let cameraFrustum = new THREE.Frustum();
-    const matrix = new THREE.Matrix4().multiplyMatrices(this.projectionMatrix, this.matrixWorldInverse)
-    cameraFrustum.setFromProjectionMatrix(matrix)
-    return cameraFrustum.containsPoint(point);
-  }
-
   distance() {
     return this.position.distanceTo(ORIGIN);
   }
@@ -107,8 +100,11 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     const topLeftRay = new THREE.Ray(this.position, topLeftWorldSpace.sub(this.position).normalize());
     const bottomRightRay = new THREE.Ray(this.position, bottomRightWorldSpace.sub(this.position).normalize());
 
-    topLeftRay.intersectSphere(this.planet.sphere, outputTopLeft);
-    bottomRightRay.intersectSphere(this.planet.sphere, outputBottomRight);
+    if (topLeftRay.intersectSphere(this.planet.sphere, outputTopLeft) === null ||
+        bottomRightRay.intersectSphere(this.planet.sphere, outputBottomRight) === null) {
+      return false;
+    }
+    return true;
   }
 }
 
