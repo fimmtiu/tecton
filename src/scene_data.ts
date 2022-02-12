@@ -47,7 +47,6 @@ class SceneData {
   moveLightToCamera() {
     let lightLocation = new THREE.Vector3(100, 100, 0);
     this.light.position.copy(lightLocation.unproject(this.camera));
-    console.log(`light position: (${this.light.position.x}, ${this.light.position.y}, ${this.light.position.z})`);
   }
 
   updateOnResize(width: number, height: number) {

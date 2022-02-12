@@ -26,6 +26,7 @@ function updateGeometry(geometry: THREE.BufferGeometry) {
     geometry.attributes.color.needsUpdate = true;
   }
   geometry.computeVertexNormals();
+  // We don't care about collision, so these seem unnecessary.
   // geometry.computeBoundingBox();
   // geometry.computeBoundingSphere();
 }

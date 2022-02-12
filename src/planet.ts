@@ -82,20 +82,22 @@ class Planet {
     // Change the curvature of the planet mesh, if necessary.
     // FIXME: Later, try doing this with a vertex shader instead.
     if (this.cornersInView(camera)) {
-      console.log("in camera");
+      console.log("corners in view");
       if (this.fillsCamera) {
-        console.log("switching to hemisphere shape");
+        console.log("switching from sector to hemisphere");
         this.deformPlaneIntoHemisphere();
         this.fillsCamera = false;
       }
     } else {
-      console.log("out of camera");
+      console.log("corners NOT in view");
+      if (!this.fillsCamera) {
+        console.log("switching from hemisphere to sector");
+      }
       this.deformPlaneIntoSector(camera);
       this.fillsCamera = true;
     }
 
     // Make the planet mesh and all of its child meshes turn to look at the new camera position.
-    console.log(`camera position: (${camera.position.x}, ${camera.position.y}, ${camera.position.z})`);
     this.mesh.lookAt(camera.position);
 
     // FIXME: Once we're no longer using vertex colors we can move this into the 'deform' methods,
@@ -117,13 +119,11 @@ class Planet {
   }
 
   // When we're zoomed far out, the planet mesh is shaped like a hemisphere.
-  // FIXME: The hemisphere isn't perfect. It doesn't stretch all the way to the poles, and there are some odd
-  // vertices that should be connected but aren't. I'll clean it up later.
   protected deformPlaneIntoHemisphere() {
     const halfHorizLength = (this.horizontalVertices - 1) / 2;
     const halfVertLength = (this.verticalVertices - 1) / 2;
-    const horizRadiansPerUnit = Math.PI / halfVertLength / 2;
-    const vertRadiansPerUnit = Math.PI / halfHorizLength / 2;
+    const horizRadiansPerUnit = Math.PI / this.horizontalVertices;
+    const vertRadiansPerUnit = Math.PI / this.verticalVertices;
     const positions = this.mesh.geometry.attributes.position;
 
     let sphereCoords = new THREE.Spherical(Planet.radius, 0, 0);
