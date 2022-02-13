@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Planet } from "./planet";
-import { ORIGIN } from "./util";
+import { v2s, s2s, ORIGIN } from "./util";
 
 export { PlanetCamera };
 
@@ -37,7 +37,7 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     this.height = newHeight;
     this.aspect = newWidth / newHeight;
     this.updateOnMove();
-    console.log(`Initial position: rad: ${this.sphereCoords.radius}, phi: ${this.sphereCoords.phi}, theta: ${this.sphereCoords.theta}. Position: (${this.position.x}, ${this.position.y}, ${this.position.z})`);
+    console.log(`Initial position: ${s2s(this.sphereCoords)}. Position: ${v2s(this.position)}`);
   }
 
   protected updateOnMove() {

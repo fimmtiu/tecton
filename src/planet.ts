@@ -127,6 +127,8 @@ class Planet {
   // When we're zoomed close in, the planet mesh is a rectangular patch of the sphere's surface that fills the camera.
   protected deformPlaneIntoSector(topLeftWorld: THREE.Vector3, bottomRightWorld: THREE.Vector3) {
     const positions = this.mesh.geometry.attributes.position;
+    this.rotateCornersToEquator(topLeftWorld, bottomRightWorld);
+
     const topLeft = sphericalFromCoords(topLeftWorld);
     const bottomRight = sphericalFromCoords(bottomRightWorld);
     const halfHorizLength = (this.horizontalVertices - 1) / 2;
@@ -134,11 +136,8 @@ class Planet {
     const horizRadiansPerUnit = Math.abs(bottomRight.theta - topLeft.theta) / (this.horizontalVertices - 1);
     const vertRadiansPerUnit = Math.abs(bottomRight.phi - topLeft.phi) / (this.verticalVertices - 1);
 
-    console.log(`tlw (${topLeftWorld.x}, ${topLeftWorld.y}, ${topLeftWorld.z}). brw (${bottomRightWorld.x}, ${bottomRightWorld.y}, ${bottomRightWorld.z}).`);
     let sphereCoords = new THREE.Spherical(Planet.radius, 0, 0);
     let newPosition = new THREE.Vector3();
-
-    this.visualHelper.setPoints([topLeftWorld, bottomRightWorld]);
 
     for (let i = 0; i < positions.count; i++) {
       const u = (i % this.horizontalVertices) - halfHorizLength;
@@ -148,13 +147,19 @@ class Planet {
       sphereCoords.phi = vertRadiansPerUnit * v + Math.PI / 2;
 
       newPosition.setFromSpherical(sphereCoords);
-      if (i == 0) {
-        console.log(`New top left position: (${newPosition.x}, ${newPosition.y}, ${newPosition.z})`);
-      }
       if (!this.flatten) {
         positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
       }
     }
+  }
+
+  // The math for working out the angles only works if we assume that all points lie near the equator, and freaks
+  // out around the poles. The simplest (though not necessarily best) solution is to just move the corners to near
+  // the equator before we calculate the mesh deformation.
+  protected rotateCornersToEquator(topLeft: THREE.Vector3, bottomRight: THREE.Vector3) {
+    const rotation = new THREE.Quaternion().setFromEuler(this.mesh.rotation).conjugate();
+    topLeft.applyQuaternion(rotation);
+    bottomRight.applyQuaternion(rotation);
   }
 
   // Optional white lines outlining each face of the mesh.
