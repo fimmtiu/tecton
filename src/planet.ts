@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { PlanetCamera } from "./planet_camera";
 import { getWorldVertexFromMesh, noiseGenerator, updateGeometry, ORIGIN, sphericalFromCoords } from "./util";
+import { Terrain } from "./terrain";
 import { VisualHelper } from "./visual_helper";
 
 export { Planet };
@@ -19,6 +20,7 @@ class Planet {
   protected verticalVertices!: number;
   protected flatten: boolean;
   protected fillsCamera: boolean;
+  protected terrain: Terrain;
 
   constructor(scene: THREE.Scene, viewportWidth: number, viewportHeight: number) {
     this.sphere = new THREE.Sphere(ORIGIN, Planet.radius);
@@ -27,6 +29,7 @@ class Planet {
     this.visualHelper = new VisualHelper(scene, true, true);
     this.flatten = false;
     this.fillsCamera = true;
+    this.terrain = new Terrain(scene, this);
 
     this.resize(viewportWidth, viewportHeight);
 
