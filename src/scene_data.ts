@@ -2,9 +2,11 @@ import * as THREE from "three";
 import { Planet } from "./planet";
 import { PlanetCamera } from "./planet_camera";
 
-export { SceneData };
+// This is used so often in so many files that passing it around everywhere became ridiculous.
+const scene = new THREE.Scene();
+
+export { SceneData, scene };
 class SceneData {
-  public scene: THREE.Scene;
   public light: THREE.PointLight;
   public planet: Planet;
   public camera: PlanetCamera;
@@ -14,17 +16,16 @@ class SceneData {
   protected zoomDirection: number;
 
   constructor(width: number, height: number) {
-    this.scene = new THREE.Scene();
-    this.planet = new Planet(this.scene, width, height);
+    this.planet = new Planet(width, height);
     this.camera = new PlanetCamera(this.planet, width, height);
     this.horizDirection = this.vertDirection = this.zoomDirection = 0;
 
     this.light = new THREE.PointLight(0xffffff);
-    this.scene.add(this.light);
+    scene.add(this.light);
 
     // For now, just a flat background that doesn't move. In the future, maybe it can be a sky-sphere.
     const texture = new THREE.TextureLoader().load('img/star-field.jpg');
-    this.scene.background = texture;
+    scene.background = texture;
 
     this.camera.updateOnResize(width, height);
     this.planet.update(this.camera);

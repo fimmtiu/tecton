@@ -3,16 +3,17 @@ import { PlanetCamera } from "./planet_camera";
 import { getWorldVertexFromMesh, noiseGenerator, updateGeometry, ORIGIN, sphericalFromCoords } from "./util";
 import { Terrain } from "./terrain";
 import { VisualHelper } from "./visual_helper";
+import { scene } from "./scene_data";
 
-export { Planet };
+export { Planet, PLANET_RADIUS };
 
 const PIXELS_BETWEEN_VERTICES = 10;
+const PLANET_RADIUS = 6370; // each unit is 1 kilometer
 
 class Planet {
-  static readonly radius = 6370; // each unit is 1 kilometer
+  static readonly radius = PLANET_RADIUS;
 
   public sphere: THREE.Sphere;
-  protected scene: THREE.Scene;
   protected mesh: THREE.Mesh;
   protected edges: THREE.LineSegments | null;
   protected visualHelper: VisualHelper;
@@ -22,14 +23,13 @@ class Planet {
   protected fillsCamera: boolean;
   protected terrain: Terrain;
 
-  constructor(scene: THREE.Scene, viewportWidth: number, viewportHeight: number) {
+  constructor(viewportWidth: number, viewportHeight: number) {
     this.sphere = new THREE.Sphere(ORIGIN, Planet.radius);
-    this.scene = scene;
     this.mesh = new THREE.Mesh();
-    this.visualHelper = new VisualHelper(scene, true, true);
+    this.visualHelper = new VisualHelper(true, true);
     this.flatten = false;
     this.fillsCamera = true;
-    this.terrain = new Terrain(scene, this);
+    this.terrain = new Terrain(this);
 
     this.resize(viewportWidth, viewportHeight);
 
@@ -53,11 +53,11 @@ class Planet {
 
     let material = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.FrontSide });
     this.mesh = new THREE.Mesh(geometry, material);
-    this.scene.add(this.mesh);
+    scene.add(this.mesh);
   }
 
   destroy() {
-    this.scene.remove(this.mesh);
+    scene.remove(this.mesh);
     (<THREE.Material>this.mesh.material).dispose();
     this.mesh.geometry.dispose();
 
@@ -171,11 +171,11 @@ class Planet {
       let edgeGeometry = new THREE.EdgesGeometry(this.mesh.geometry, 0);
       edgeGeometry.scale(1.001, 1.001, 1.001); // Prevents weird clipping
       this.edges = new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
-      this.scene.add(this.edges);
+      scene.add(this.edges);
       this.mesh.add(this.edges); // Makes the edges turn when the mesh turns
     } else {
       this.edges.removeFromParent();
-      this.scene.remove(this.edges);
+      scene.remove(this.edges);
       (<THREE.Material>this.edges.material).dispose();
       this.edges.geometry.dispose();
       this.edges = null;

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Planet } from "./planet";
 import { ORIGIN } from "./util";
+import { scene } from "./scene_data";
 
 export { VisualHelper };
 
@@ -9,7 +10,6 @@ const BLUE = new THREE.Color(0, 0, 1);
 const RED = new THREE.Color(1, 0, 0);
 
 class VisualHelper {
-  protected scene: THREE.Scene;
   protected pointVectors: Array<THREE.Vector3>;
   protected normalMeshes: Array<THREE.Mesh>;
   protected points: Array<THREE.Points>;
@@ -18,8 +18,7 @@ class VisualHelper {
   public showArrows: boolean;
   public showAxes: boolean;
 
-  constructor(scene: THREE.Scene, showArrows = false, showAxes = false) {
-    this.scene = scene;
+  constructor(showArrows = false, showAxes = false) {
     this.pointVectors = [];
     this.normalMeshes = [];
     this.points = [];
@@ -31,18 +30,18 @@ class VisualHelper {
 
   destroy() {
     for (let arrow of this.arrows) {
-      this.scene.remove(arrow);
+      scene.remove(arrow);
     }
     this.arrows = [];
 
     if (this.axes) {
-      this.scene.remove(this.axes);
+      scene.remove(this.axes);
       this.axes.dispose();
       this.axes = null;
     }
 
     for (let point of this.points) {
-      this.scene.remove(point);
+      scene.remove(point);
       (<THREE.Material>point.material).dispose();
       point.geometry.dispose();
     }
@@ -70,7 +69,7 @@ class VisualHelper {
       this.axes = new THREE.AxesHelper(Planet.radius + 2000);
       this.axes.renderOrder = 99999999999;
       (<THREE.Material>this.axes.material).depthTest = false;
-      this.scene.add(this.axes);
+      scene.add(this.axes);
     }
 
     for (let i = 0; i < points.length; i++) {
@@ -81,7 +80,7 @@ class VisualHelper {
       points_geometry.setAttribute('position', point_location);
       const points_material = new THREE.PointsMaterial({ color: color, size: 250 });
       const point = new THREE.Points(points_geometry, points_material);
-      this.scene.add(point);
+      scene.add(point);
       this.points.push(point);
 
       if (this.showArrows) {
@@ -125,7 +124,7 @@ class VisualHelper {
     const arrow = new THREE.ArrowHelper(dir, origin, size, color);
     arrow.renderOrder = 999999999999;
     (<THREE.Material>arrow.line.material).depthTest = false;
-    this.scene.add(arrow);
+    scene.add(arrow);
     this.arrows.push(arrow)
   }
 }

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SceneData } from "./scene_data";
+import { SceneData, scene } from "./scene_data";
 import { setRandomSeed } from "./util";
 
 const canvasContainer = document.getElementById("canvas-container") as HTMLCanvasElement;
@@ -27,7 +27,7 @@ function initBrowserWindow(container: HTMLElement) {
 function mainLoop() {
   requestAnimationFrame(mainLoop);
   sceneData.update();
-  renderer.render(sceneData.scene, sceneData.camera);
+  renderer.render(scene, sceneData.camera);
 }
 
 function keyDownListener(event: KeyboardEvent) {
