@@ -20,34 +20,29 @@ class SceneData {
     this.camera = new PlanetCamera(this.planet, width, height);
     this.horizDirection = this.vertDirection = this.zoomDirection = 0;
 
-    this.light = new THREE.PointLight(0xffffff);
-    scene.add(this.light);
-
     // For now, just a flat background that doesn't move. In the future, maybe it can be a sky-sphere.
     const texture = new THREE.TextureLoader().load('img/star-field.jpg');
     scene.background = texture;
 
     this.camera.updateOnResize(width, height);
     this.planet.update(this.camera);
-    this.moveLightToCamera();
+
+    // FIXME: Replace this with a more shadowy, realistic-looking light source at some point.
+    this.light = new THREE.PointLight(0xffffff);
+    this.light.position.copy(this.camera.position);
+    this.camera.add(this.light);
+    scene.add(this.camera);
   }
 
   destroy() {
     this.planet.destroy();
+    this.light.dispose();
   }
 
   update() {
     if (this.camera.move(this.horizDirection, this.vertDirection, this.zoomDirection)) {
-      this.moveLightToCamera();
       this.planet.update(this.camera);
     }
-  }
-
-  // Offset the light slightly from the camera position to make it look a bit more shadowy.
-  // FIXME: I'm pretty sure this isn't working.
-  moveLightToCamera() {
-    let lightLocation = new THREE.Vector3(100, 100, 0);
-    this.light.position.copy(lightLocation.unproject(this.camera));
   }
 
   updateOnResize(width: number, height: number) {
