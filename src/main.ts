@@ -36,32 +36,32 @@ function keyDownListener(event: KeyboardEvent) {
   }
 
   switch(event.key) {
-    case 'ArrowLeft':
-      sceneData.rotateHorizontally(-1);
-      break;
-    case 'ArrowRight':
-      sceneData.rotateHorizontally(1);
-      break;
-    case 'ArrowDown':
-      sceneData.rotateVertically(-1);
-      break;
-    case 'ArrowUp':
-      sceneData.rotateVertically(1);
-      break;
-    case ',':
-      sceneData.zoom(-1);
-      break;
-    case '.':
-      sceneData.zoom(1);
-      break;
-    case 'h':
-      sceneData.planet.toggleEdgesVisible();
-      break;
-    case 'f':
-      sceneData.planet.toggleFlatten();
-      sceneData.planet.resize(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
-      break;
-    }
+  case 'ArrowLeft':
+    sceneData.rotateHorizontally(-1);
+    break;
+  case 'ArrowRight':
+    sceneData.rotateHorizontally(1);
+    break;
+  case 'ArrowDown':
+    sceneData.rotateVertically(-1);
+    break;
+  case 'ArrowUp':
+    sceneData.rotateVertically(1);
+    break;
+  case ',':
+    sceneData.zoom(-1);
+    break;
+  case '.':
+    sceneData.zoom(1);
+    break;
+  case 'h':
+    sceneData.planet.toggleEdgesVisible();
+    break;
+  case 'f':
+    sceneData.planet.toggleFlatten();
+    sceneData.planet.resize(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+    break;
+  }
 }
 
 function keyUpListener(event: KeyboardEvent) {
@@ -74,18 +74,18 @@ function keyUpListener(event: KeyboardEvent) {
   }
 
   switch(event.key) {
-    case 'ArrowLeft':
-    case 'ArrowRight':
-      sceneData.rotateHorizontally(0);
-      break;
-    case 'ArrowDown':
-    case 'ArrowUp':
-      sceneData.rotateVertically(0);
-      break;
-    case ',':
-    case '.':
-      sceneData.zoom(0);
-      break;
+  case 'ArrowLeft':
+  case 'ArrowRight':
+    sceneData.rotateHorizontally(0);
+    break;
+  case 'ArrowDown':
+  case 'ArrowUp':
+    sceneData.rotateVertically(0);
+    break;
+  case ',':
+  case '.':
+    sceneData.zoom(0);
+    break;
   }
 }
 

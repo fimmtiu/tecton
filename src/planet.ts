@@ -171,11 +171,9 @@ class Planet {
       let edgeGeometry = new THREE.EdgesGeometry(this.mesh.geometry, 0);
       edgeGeometry.scale(1.001, 1.001, 1.001); // Prevents weird clipping
       this.edges = new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
-      scene.add(this.edges);
       this.mesh.add(this.edges); // Makes the edges turn when the mesh turns
     } else {
       this.edges.removeFromParent();
-      scene.remove(this.edges);
       (<THREE.Material>this.edges.material).dispose();
       this.edges.geometry.dispose();
       this.edges = null;

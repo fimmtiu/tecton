@@ -5,7 +5,7 @@ import { scene } from "./scene_data";
 
 export { VisualHelper };
 
-const COLORS = [0xffae00, 0x00ffff, 0xff1e00, 0xc800ff]; // orange, aqua, red, purple
+const COLORS = [0xffae00, 0x00ffff, 0xff1e00] //, 0xc800ff]; // orange, aqua, red, purple
 const BLUE = new THREE.Color(0, 0, 1);
 const RED = new THREE.Color(1, 0, 0);
 
