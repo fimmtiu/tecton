@@ -126,6 +126,7 @@ class Planet {
       positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
     }
     updateGeometry(this.mesh.geometry);
+    console.log(`min: ${this.terrain.min}. max: ${this.terrain.max}`);
 
     if (this.edges) {
       this.toggleEdgesVisible();

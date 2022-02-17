@@ -2,11 +2,12 @@ import * as THREE from "three";
 import { Planet } from "./planet";
 import { VisualHelper } from "./visual_helper";
 import { noiseGenerator } from "./util";
+import { pingpong } from "three/src/math/MathUtils";
 
 export { Terrain };
 
-const NOISE_SCALE = 5000;
-const FAVOR_WATER = -0.20;
+const NOISE_SCALE = 6000;
+const FAVOR_WATER = -0.25;
 const MIN_ELEVATION = -11;  // 11 km is the deepest point on the Earth's surface.
 const MAX_ELEVATION = 9;    // Mount Everest is nearly 9 km high.
 const NOISE_LEVELS = [
@@ -24,6 +25,8 @@ const MAX_AMPLITUDE = NOISE_LEVELS.reduce((n, level) => { return n + level.ampli
 class Terrain {
   protected planet: Planet; // FIXME: Don't need this circular dependency long-term. Just for debugging.
   protected visualHelper: VisualHelper;
+  public min = 10000;
+  public max = -10000;
 
   constructor(planet: Planet) {
     this.planet = planet;
@@ -34,22 +37,27 @@ class Terrain {
   normalizedHeightAt(pointOnSphere: THREE.Vector3) {
     let height = FAVOR_WATER;
 
-    for (let level = 0; level < NOISE_LEVELS.length; level++) {
-      height += noiseGenerator().noise3D(
-        NOISE_LEVELS[level].offset * pointOnSphere.x / NOISE_SCALE,
-        NOISE_LEVELS[level].offset * pointOnSphere.y / NOISE_SCALE,
-        NOISE_LEVELS[level].offset * pointOnSphere.z / NOISE_SCALE,
-      ) * NOISE_LEVELS[level].amplitude;
+    for (let i = 0; i < NOISE_LEVELS.length; i++) {
+      let level = NOISE_LEVELS[i];
+      height += this.noise(pointOnSphere, level.offset, level.amplitude);
     }
 
     // Normalize to the range 0..1.
     height = (height / MAX_AMPLITUDE) / 2 + 0.5;
 
-    // The exponent will smooth valleys and exaggerate peaks.
+    // The exponent will smooth valleys and exaggerate peaks... I hope?
     height = Math.pow(height, 1.2);
 
     // Change the range back to -1..1, where 0 is sea level.
-    return height * 2 - 1;
+    height = height * 2 - 1;
+
+    if (height > this.max) {
+      this.max = height;
+    } else if (height < this.min) {
+      this.min = height;
+    }
+
+    return height;
   }
 
   scaleHeight(height: number) {
@@ -58,5 +66,13 @@ class Terrain {
     } else {
       return height * MAX_ELEVATION;
     }
+  }
+
+  protected noise(point: THREE.Vector3, offset: number, amplitude: number) {
+    return noiseGenerator().noise3D(
+      offset * point.x / NOISE_SCALE,
+      offset * point.y / NOISE_SCALE,
+      offset * point.z / NOISE_SCALE,
+    ) * amplitude;
   }
 }
