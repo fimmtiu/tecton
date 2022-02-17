@@ -22,6 +22,9 @@ class Planet {
   protected horizontalVertices!: number;
   protected verticalVertices!: number;
   protected terrain: Terrain;
+  protected halfHorizLength!: number;
+  protected halfVertLength!: number;
+
 
   constructor(viewportWidth: number, viewportHeight: number) {
     this.sphere = new THREE.Sphere(ORIGIN, Planet.radius);
@@ -40,6 +43,8 @@ class Planet {
 
     this.horizontalVertices = Math.ceil(width / PIXELS_BETWEEN_VERTICES) + 2;
     this.verticalVertices = Math.ceil(height / PIXELS_BETWEEN_VERTICES) + 2;
+    this.halfHorizLength = (this.horizontalVertices - 1) / 2;
+    this.halfVertLength = (this.verticalVertices - 1) / 2;
 
     console.log(`New mesh: ${this.horizontalVertices} x ${this.verticalVertices} vertices.`);
     let geometry = new THREE.PlaneGeometry(
@@ -115,8 +120,6 @@ class Planet {
   // FIXME: These functions are similar enough that we could probably combine them somehow.
   // When we're zoomed far out, the planet mesh is shaped like a hemisphere.
   protected deformIntoHemisphere(index: number, _tl: THREE.Vector3, _br: THREE.Vector3) {
-    const halfHorizLength = (this.horizontalVertices - 1) / 2;
-    const halfVertLength = (this.verticalVertices - 1) / 2;
     const horizRadiansPerUnit = Math.PI / this.horizontalVertices;
     const vertRadiansPerUnit = Math.PI / this.verticalVertices;
     const positions = this.mesh.geometry.attributes.position;
@@ -124,8 +127,8 @@ class Planet {
     let sphereCoords = new THREE.Spherical(Planet.radius, 0, 0);
     let newPosition = new THREE.Vector3();
 
-    const u = (index % this.horizontalVertices) - halfHorizLength;
-    const v = Math.floor(index / this.horizontalVertices) - halfVertLength;
+    const u = (index % this.horizontalVertices) - this.halfHorizLength;
+    const v = Math.floor(index / this.horizontalVertices) - this.halfVertLength;
 
     sphereCoords.theta = horizRadiansPerUnit * u;
     sphereCoords.phi = vertRadiansPerUnit * v + Math.PI / 2;
@@ -138,8 +141,6 @@ class Planet {
   protected deformIntoSector(index: number, topLeftWorld: THREE.Vector3, bottomRightWorld: THREE.Vector3) {
     const topLeft = sphericalFromCoords(topLeftWorld);
     const bottomRight = sphericalFromCoords(bottomRightWorld);
-    const halfHorizLength = (this.horizontalVertices - 1) / 2;
-    const halfVertLength = (this.verticalVertices - 1) / 2;
     const horizRadiansPerUnit = Math.abs(bottomRight.theta - topLeft.theta) / (this.horizontalVertices - 1);
     const vertRadiansPerUnit = Math.abs(bottomRight.phi - topLeft.phi) / (this.verticalVertices - 1);
     const positions = this.mesh.geometry.attributes.position;
@@ -147,8 +148,8 @@ class Planet {
     let sphereCoords = new THREE.Spherical(Planet.radius, 0, 0);
     let newPosition = new THREE.Vector3();
 
-    const u = (index % this.horizontalVertices) - halfHorizLength;
-    const v = Math.floor(index / this.horizontalVertices) - halfVertLength;
+    const u = (index % this.horizontalVertices) - this.halfHorizLength;
+    const v = Math.floor(index / this.horizontalVertices) - this.halfVertLength;
 
     sphereCoords.theta = horizRadiansPerUnit * u;
     sphereCoords.phi = vertRadiansPerUnit * v + Math.PI / 2;
