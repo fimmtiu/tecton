@@ -204,7 +204,10 @@ class Planet {
       let height1 = noiseGenerator().noise3D(pointOnSphere.x / NOISE_SCALE, pointOnSphere.y / NOISE_SCALE, pointOnSphere.z / NOISE_SCALE);
       let height2 = noiseGenerator().noise3D(5.1 * pointOnSphere.x / NOISE_SCALE, 5.1 * pointOnSphere.y / NOISE_SCALE, 5.1 * pointOnSphere.z / NOISE_SCALE);
       let height3 = noiseGenerator().noise3D(9.7 * pointOnSphere.x / NOISE_SCALE, 9.7 * pointOnSphere.y / NOISE_SCALE, 9.7 * pointOnSphere.z / NOISE_SCALE);
-      let height = height1 + height2 / 4 + height3 / 8 + FAVOR_WATER;
+      let height4 = noiseGenerator().noise3D(14.2 * pointOnSphere.x / NOISE_SCALE, 14.2 * pointOnSphere.y / NOISE_SCALE, 14.2 * pointOnSphere.z / NOISE_SCALE);
+      let height5 = noiseGenerator().noise3D(20.0 * pointOnSphere.x / NOISE_SCALE, 20.0 * pointOnSphere.y / NOISE_SCALE, 20.0 * pointOnSphere.z / NOISE_SCALE);
+      let height6 = noiseGenerator().noise3D(29.5 * pointOnSphere.x / NOISE_SCALE, 29.5 * pointOnSphere.y / NOISE_SCALE, 29.5 * pointOnSphere.z / NOISE_SCALE);
+      let height = height1 + height2 / 4 + height3 / 8 + height4 / 16 + height5 / 32 + height6 / 64 + FAVOR_WATER;
 
       if (height < 0) {
         color.setHSL((MAX_WATER_HUE - MIN_WATER_HUE) * Math.abs(height) + MIN_WATER_HUE, 1.0, 0.5);
