@@ -69,6 +69,10 @@ class Planet {
     }
   }
 
+  elevationAt(point: THREE.Vector3) {
+    return this.terrain.scaleHeight(this.terrain.normalizedHeightAt(point));
+  }
+
   // FIXME: This method is too long. Needs extraction.
   update(camera: PlanetCamera) {
     // Make the planet mesh and all of its child meshes turn to look at the new camera position.

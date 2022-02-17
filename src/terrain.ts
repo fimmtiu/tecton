@@ -14,8 +14,10 @@ const NOISE_LEVELS = [
   { offset: 5.1,  amplitude: 1/4  },
   { offset: 9.7,  amplitude: 1/8  },
   { offset: 14.2, amplitude: 1/16 },
-  { offset: 20.0, amplitude: 1/32 },
-  { offset: 29.5, amplitude: 1/64 },
+  { offset: 20.0, amplitude: 1/24 },
+  { offset: 29.5, amplitude: 1/32 },
+  { offset: 33.8, amplitude: 1/48 },
+  { offset: 41.3, amplitude: 1/64 },
 ];
 const MAX_AMPLITUDE = NOISE_LEVELS.reduce((n, level) => { return n + level.amplitude }, 0);
 

@@ -104,11 +104,11 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     const topLeftRay = new THREE.Ray(this.position, topLeftWorldSpace.sub(this.position).normalize());
     const bottomRightRay = new THREE.Ray(this.position, bottomRightWorldSpace.sub(this.position).normalize());
 
-    if (topLeftRay.intersectSphere(this.planet.sphere, outputTopLeft) === null ||
-        bottomRightRay.intersectSphere(this.planet.sphere, outputBottomRight) === null) {
-      return false;
-    }
-    return true;
+    return this.intersect(topLeftRay, outputTopLeft) && this.intersect(bottomRightRay, outputBottomRight);
+  }
+
+  intersect(ray: THREE.Ray, outputVector: THREE.Vector3) {
+    return (ray.intersectSphere(this.planet.sphere, outputVector) !== null);
   }
 }
 

@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { SceneData, scene } from "./scene_data";
 import { setRandomSeed } from "./util";
 
+// FIXME: Can we do any metaprogramming to reduce this boilerplate?
 const canvasContainer = document.getElementById("canvas-container") as HTMLCanvasElement;
 if (canvasContainer === null) {
   throw "Can't find the canvas!";
@@ -10,6 +11,11 @@ const randomSeedInput = document.getElementById("random-seed") as HTMLInputEleme
 if (randomSeedInput === null) {
   throw "Can't find the #random-seed input box!";
 }
+const elevation = document.getElementById("elevation") as HTMLSpanElement;
+if (elevation === null) {
+  throw "Can't find the #elevation span!";
+}
+
 const renderer = new THREE.WebGLRenderer();
 let sceneData = new SceneData(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
 
@@ -85,6 +91,16 @@ function keyUpListener(event: KeyboardEvent) {
   }
 }
 
+function mouseMoveListener(event: MouseEvent) {
+  let x = (event.clientX / canvasContainer.offsetWidth) * 2 - 1;
+	let y = -(event.clientY / canvasContainer.offsetHeight) * 2 + 1;
+  let data = sceneData.dataAtPoint(x, y);
+
+  if (data) {
+    elevation.innerHTML = `${data["elevation"]} m`;
+  }
+}
+
 function restart() {
   console.log(`Setting noise seed to ${randomSeedInput.value} and re-generating planet`);
   setRandomSeed(randomSeedInput.value);
@@ -95,4 +111,5 @@ function restart() {
 initBrowserWindow(canvasContainer);
 window.addEventListener('keydown', keyDownListener);
 window.addEventListener('keyup', keyUpListener);
+window.addEventListener('pointermove', mouseMoveListener);
 mainLoop();

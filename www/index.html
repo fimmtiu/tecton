@@ -23,7 +23,12 @@
       position: absolute;
     }
     #interface {
-      background-color: pink;
+      font-family: sans-serif;
+      background-color: grey;
+      padding: 0.3em;
+    }
+    #interface h1 {
+      text-align: center;
     }
   </style>
 </head>
@@ -34,10 +39,12 @@
     </div>
 
     <div id="interface">
-      <h1 style="color: white">HONK</h1>
+      <h1 style="color: white">Tecton</h1>
 
       <p>Random seed:</p>
       <input type="text" id="random-seed"></input>
+
+      <p>Elevation: <span id="elevation">0 m</span></p>
     </div>
   </div>
 

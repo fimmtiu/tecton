@@ -67,4 +67,19 @@ class SceneData {
   zoom(direction: number) {
     this.zoomDirection = direction;
   }
+
+  dataAtPoint(screenX: number, screenY: number) {
+    let worldPos = new THREE.Vector3();
+    let ray = new THREE.Ray();
+
+    ray.origin.setFromMatrixPosition(this.camera.matrixWorld);
+    ray.direction.set(screenX, screenY, 0.5 ).unproject(this.camera).sub(ray.origin).normalize();
+
+    if (this.camera.intersect(ray, worldPos)) {
+      return {
+        "elevation": Math.round(this.planet.elevationAt(worldPos) * 1000),
+      };
+    }
+    return null;
+  }
 }
