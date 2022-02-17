@@ -105,27 +105,25 @@ class Planet {
       const u = (i % this.horizontalVertices) - this.halfHorizLength;
       const v = Math.floor(i / this.horizontalVertices) - this.halfVertLength;
 
+      // Calculate where this vertex should go on the sea-level sphere.
       sphereCoords.theta = horizRadiansPerUnit * u;
       sphereCoords.phi = vertRadiansPerUnit * v + Math.PI / 2;
       sphereCoords.radius = Planet.radius;
-
-      // Set it to the point on the sphere.
       newPosition.setFromSpherical(sphereCoords);
-      positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
 
       // Get the height from the world position of the vertex and set the vertex to the appropriate color.
-      const height = this.terrain.normalizedHeightAt(this.mesh.localToWorld(newPosition.clone()));
+      const worldPosition = this.mesh.localToWorld(newPosition.clone());
+      const height = this.terrain.normalizedHeightAt(worldPosition);
       this.setColor(height, color);
       colors.setXYZ(i, color.r, color.g, color.b);
 
       // Add terrain height to the vertex. (We have to do this afterwards because the height is calculated based
       // on the vertex's location at sea level.)
       if (height > 0) {
-        sphereCoords.setFromVector3(newPosition);
         sphereCoords.radius += this.terrain.scaleHeight(height);
         newPosition.setFromSpherical(sphereCoords);
-        positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
       }
+      positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
     }
     updateGeometry(this.mesh.geometry);
 
@@ -160,25 +158,24 @@ class Planet {
     }
   }
 
+  // We have to pre-generate the gradients for performance reasons. 100 steps should be plenty, right?
   static readonly WATER_GRADIENT = tinygradient([
     {color: '#7ad6cf', pos: 0},
     {color: '#1298ff', pos: 0.05},
     {color: '#1c63c7', pos: 0.6},
     {color: '#003054', pos: 0.8},
-  ]);
+  ]).rgb(100);
   static readonly LAND_GRADIENT = tinygradient([
     {color: '#00aa00', pos: 0},
     {color: '#009900', pos: 0.2},
     {color: '#785c38', pos: 0.55},
     {color: '#967447', pos: 0.65}, // the snow line is a fairly hard cutoff
     {color: '#ffffff', pos: 0.68},
-  ]);
+  ]).rgb(100);
 
-  // FIXME: It's shocking how expensive the gradient calculation is.
-  // I may have to ditch this library and implement it myself.
   private setColor(height: number, color: THREE.Color) {
     const gradient = height >= 0 ? Planet.LAND_GRADIENT : Planet.WATER_GRADIENT;
-    const {r, g, b} = gradient.rgbAt(Math.abs(height)).toRgb();
+    const {r, g, b} = gradient[Math.trunc(Math.abs(height) * 100)].toRgb();
     color.setRGB(r/255, g/255, b/255);
   }
 };
