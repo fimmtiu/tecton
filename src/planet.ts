@@ -89,26 +89,24 @@ class Planet {
     // Make the planet mesh and all of its child meshes turn to look at the new camera position.
     this.mesh.lookAt(camera.position);
 
-    // FIXME: Once we're no longer using vertex colors we can move this into the 'deform' methods,
-    // where it will be called less often.
-    updateGeometry(this.mesh.geometry);
-    if (this.edges) {
-      this.toggleEdgesVisible();
-      this.toggleEdgesVisible();
-    }
-
     // Update what the planet's surface looks like in the new orientation.
-    let positions = this.mesh.geometry.attributes.position;
+    let positions = this.mesh.geometry.getAttribute("position");
+    let colors = this.mesh.geometry.getAttribute("color");
     let color = new THREE.Color();
+
     for (let i = 0; i < positions.count; i++) {
       let vertexLocation = getWorldVertexFromMesh(this.mesh, i);
       const pointOnSphere = vertexLocation.normalize().multiplyScalar(Planet.radius);
       const height = this.terrain.normalizedHeightAt(pointOnSphere);
       this.setColor(height, color);
-
-      this.mesh.geometry.attributes.color.setXYZ(i, color.r, color.g, color.b);
+      colors.setXYZ(i, color.r, color.g, color.b);
     }
-    console.log(`min: ${this.terrain.min}, max: ${this.terrain.max}`);
+    updateGeometry(this.mesh.geometry);
+
+    if (this.edges) {
+      this.toggleEdgesVisible();
+      this.toggleEdgesVisible();
+    }
     this.visualHelper.update();
   }
 
