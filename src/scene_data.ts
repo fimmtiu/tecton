@@ -25,13 +25,17 @@ class SceneData {
     scene.background = texture;
 
     this.camera.updateOnResize(width, height);
-    this.planet.update(this.camera);
 
     // FIXME: Replace this with a more shadowy, realistic-looking light source at some point.
     this.light = new THREE.PointLight(0xffffff);
     this.light.position.copy(this.camera.position);
     this.camera.add(this.light);
     scene.add(this.camera);
+
+    // FIXME: Temporary hack to ensure that the planet is curved correctly. (The first frame comes out flat.)
+    // I'll clean this up more elegantly later.
+    this.planet.update(this.camera);
+    this.planet.update(this.camera);
   }
 
   destroy() {
