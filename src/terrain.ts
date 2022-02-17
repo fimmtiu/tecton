@@ -17,7 +17,7 @@ const NOISE_LEVELS = [
   { offset: 20.0, amplitude: 1/32 },
   { offset: 29.5, amplitude: 1/64 },
 ];
-const MAX_AMPLITUDE = NOISE_LEVELS.reduce((n, level) => { return n + level.amplitude }, FAVOR_WATER);
+const MAX_AMPLITUDE = NOISE_LEVELS.reduce((n, level) => { return n + level.amplitude }, 0);
 
 class Terrain {
   protected planet: Planet; // FIXME: Don't need this circular dependency long-term. Just for debugging.
@@ -53,6 +53,10 @@ class Terrain {
   }
 
   scaleHeight(height: number) {
-    return height * (Math.abs(MIN_ELEVATION) + MAX_ELEVATION) + MIN_ELEVATION;
+    if (height < 0) {
+      return height * -MIN_ELEVATION;
+    } else {
+      return height * MAX_ELEVATION;
+    }
   }
 }

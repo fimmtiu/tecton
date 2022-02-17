@@ -200,10 +200,10 @@ class Planet {
     {color: '#ffffff', pos: 0.68},
   ]);
 
+  // FIXME: It's shocking how expensive the gradient calculation is.
+  // I may have to ditch this library and implement it myself.
   private setColor(height: number, color: THREE.Color) {
     const gradient = height >= 0 ? Planet.LAND_GRADIENT : Planet.WATER_GRADIENT;
-    // const {h, s, l} = gradient.hsvAt(Math.abs(height)).toHsl();
-    // color.setHSL(h/360, s, l);
     const {r, g, b} = gradient.rgbAt(Math.abs(height)).toRgb();
     color.setRGB(r/255, g/255, b/255);
   }
