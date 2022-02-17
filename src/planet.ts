@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import tinygradient from "tinygradient";
+
 import { PlanetCamera } from "./planet_camera";
 import { getWorldVertexFromMesh, noiseGenerator, updateGeometry, ORIGIN, sphericalFromCoords } from "./util";
 import { Terrain } from "./terrain";
@@ -189,10 +191,7 @@ class Planet {
   protected generateTerrain(camera: PlanetCamera) {
     const NOISE_SCALE = 5000;
     const FAVOR_WATER = -0.30;
-    const MIN_WATER_HUE = 0.55;
-    const MAX_WATER_HUE = 0.65;
-    const MIN_GROUND_LIGHT = 0.30;
-    const MAX_GROUND_LIGHT = 0.64;
+
 
     let color = new THREE.Color;
     let positions = this.mesh.geometry.attributes.position;
@@ -209,13 +208,32 @@ class Planet {
       let height6 = noiseGenerator().noise3D(29.5 * pointOnSphere.x / NOISE_SCALE, 29.5 * pointOnSphere.y / NOISE_SCALE, 29.5 * pointOnSphere.z / NOISE_SCALE);
       let height = height1 + height2 / 4 + height3 / 8 + height4 / 16 + height5 / 32 + height6 / 64 + FAVOR_WATER;
 
-      if (height < 0) {
-        color.setHSL((MAX_WATER_HUE - MIN_WATER_HUE) * Math.abs(height) + MIN_WATER_HUE, 1.0, 0.5);
-      } else {
-        color.setHSL(1/3, 1.0, (MAX_GROUND_LIGHT - MIN_GROUND_LIGHT) * Math.abs(height) + MIN_GROUND_LIGHT);
-      }
+      this.setColor(height, color);
 
       this.mesh.geometry.attributes.color.setXYZ(i, color.r, color.g, color.b);
     }
   }
+
+  static MIN_WATER_HUE = 0.55;
+  static MAX_WATER_HUE = 0.65;
+  // static MIN_GROUND_LIGHT = 0.30;
+  //static MAX_GROUND_LIGHT = 0.64;
+
+  static LAND_GRADIENT = tinygradient([
+    {color: '#00aa00', pos: 0},
+    {color: '#009900', pos: 0.33},
+    {color: '#606000', pos: 0.8},
+    {color: '#ffffff', pos: 0.9},
+  ]);
+
+
+  private setColor(height: number, color: THREE.Color) {
+    if (height < 0) {
+      color.setHSL((Planet.MAX_WATER_HUE - Planet.MIN_WATER_HUE) * Math.abs(height) + Planet.MIN_WATER_HUE, 1.0, 0.5);
+    } else {
+      let {h, s, l} = Planet.LAND_GRADIENT.hsvAt(height).toHsl();
+      color.setHSL(h/360, s, l);
+    }
+  }
+
 };
