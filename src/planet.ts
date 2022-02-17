@@ -2,7 +2,7 @@ import * as THREE from "three";
 import tinygradient from "tinygradient";
 
 import { PlanetCamera } from "./planet_camera";
-import { getWorldVertexFromMesh, noiseGenerator, updateGeometry, ORIGIN, sphericalFromCoords } from "./util";
+import { getWorldVertexFromMesh, updateGeometry, ORIGIN, sphericalFromCoords } from "./util";
 import { Terrain } from "./terrain";
 import { VisualHelper } from "./visual_helper";
 import { scene } from "./scene_data";
@@ -100,7 +100,17 @@ class Planet {
     }
 
     // Update what the planet's surface looks like in the new orientation.
-    this.generateTerrain(camera);
+    let positions = this.mesh.geometry.attributes.position;
+    let color = new THREE.Color();
+    for (let i = 0; i < positions.count; i++) {
+      let vertexLocation = getWorldVertexFromMesh(this.mesh, i);
+      const pointOnSphere = vertexLocation.normalize().multiplyScalar(Planet.radius);
+      const height = this.terrain.normalizedHeightAt(pointOnSphere);
+      this.setColor(height, color);
+
+      this.mesh.geometry.attributes.color.setXYZ(i, color.r, color.g, color.b);
+    }
+    console.log(`min: ${this.terrain.min}, max: ${this.terrain.max}`);
     this.visualHelper.update();
   }
 
@@ -187,53 +197,25 @@ class Planet {
     this.flatten = !this.flatten;
   }
 
-  // Set the color for each vertex on the planet to reflect the land height/water depth there.
-  protected generateTerrain(camera: PlanetCamera) {
-    const NOISE_SCALE = 5000;
-    const FAVOR_WATER = -0.30;
-
-
-    let color = new THREE.Color;
-    let positions = this.mesh.geometry.attributes.position;
-
-    for (let i = 0; i < positions.count; i++) {
-      let vertexLocation = getWorldVertexFromMesh(this.mesh, i);
-      const pointOnSphere = vertexLocation.normalize().multiplyScalar(Planet.radius);
-
-      let height1 = noiseGenerator().noise3D(pointOnSphere.x / NOISE_SCALE, pointOnSphere.y / NOISE_SCALE, pointOnSphere.z / NOISE_SCALE);
-      let height2 = noiseGenerator().noise3D(5.1 * pointOnSphere.x / NOISE_SCALE, 5.1 * pointOnSphere.y / NOISE_SCALE, 5.1 * pointOnSphere.z / NOISE_SCALE);
-      let height3 = noiseGenerator().noise3D(9.7 * pointOnSphere.x / NOISE_SCALE, 9.7 * pointOnSphere.y / NOISE_SCALE, 9.7 * pointOnSphere.z / NOISE_SCALE);
-      let height4 = noiseGenerator().noise3D(14.2 * pointOnSphere.x / NOISE_SCALE, 14.2 * pointOnSphere.y / NOISE_SCALE, 14.2 * pointOnSphere.z / NOISE_SCALE);
-      let height5 = noiseGenerator().noise3D(20.0 * pointOnSphere.x / NOISE_SCALE, 20.0 * pointOnSphere.y / NOISE_SCALE, 20.0 * pointOnSphere.z / NOISE_SCALE);
-      let height6 = noiseGenerator().noise3D(29.5 * pointOnSphere.x / NOISE_SCALE, 29.5 * pointOnSphere.y / NOISE_SCALE, 29.5 * pointOnSphere.z / NOISE_SCALE);
-      let height = height1 + height2 / 4 + height3 / 8 + height4 / 16 + height5 / 32 + height6 / 64 + FAVOR_WATER;
-
-      this.setColor(height, color);
-
-      this.mesh.geometry.attributes.color.setXYZ(i, color.r, color.g, color.b);
-    }
-  }
-
-  static MIN_WATER_HUE = 0.55;
-  static MAX_WATER_HUE = 0.65;
-  // static MIN_GROUND_LIGHT = 0.30;
-  //static MAX_GROUND_LIGHT = 0.64;
-
-  static LAND_GRADIENT = tinygradient([
+  static readonly WATER_GRADIENT = tinygradient([
+    {color: '#7ad6cf', pos: 0},
+    {color: '#1298ff', pos: 0.05},
+    {color: '#1c63c7', pos: 0.6},
+    {color: '#003054', pos: 0.8},
+  ]);
+  static readonly LAND_GRADIENT = tinygradient([
     {color: '#00aa00', pos: 0},
-    {color: '#009900', pos: 0.33},
-    {color: '#606000', pos: 0.8},
-    {color: '#ffffff', pos: 0.9},
+    {color: '#009900', pos: 0.2},
+    {color: '#785c38', pos: 0.55},
+    {color: '#967447', pos: 0.65}, // the snow line is a fairly hard cutoff
+    {color: '#ffffff', pos: 0.68},
   ]);
 
-
   private setColor(height: number, color: THREE.Color) {
-    if (height < 0) {
-      color.setHSL((Planet.MAX_WATER_HUE - Planet.MIN_WATER_HUE) * Math.abs(height) + Planet.MIN_WATER_HUE, 1.0, 0.5);
-    } else {
-      let {h, s, l} = Planet.LAND_GRADIENT.hsvAt(height).toHsl();
-      color.setHSL(h/360, s, l);
-    }
+    const gradient = height >= 0 ? Planet.LAND_GRADIENT : Planet.WATER_GRADIENT;
+    // const {h, s, l} = gradient.hsvAt(Math.abs(height)).toHsl();
+    // color.setHSL(h/360, s, l);
+    const {r, g, b} = gradient.rgbAt(Math.abs(height)).toRgb();
+    color.setRGB(r/255, g/255, b/255);
   }
-
 };
