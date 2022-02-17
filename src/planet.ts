@@ -21,7 +21,6 @@ class Planet {
   protected visualHelper: VisualHelper;
   protected horizontalVertices!: number;
   protected verticalVertices!: number;
-  protected flatten: boolean;
   protected fillsCamera: boolean;
   protected terrain: Terrain;
 
@@ -29,7 +28,6 @@ class Planet {
     this.sphere = new THREE.Sphere(ORIGIN, Planet.radius);
     this.mesh = new THREE.Mesh();
     this.visualHelper = new VisualHelper(true, true);
-    this.flatten = false;
     this.fillsCamera = true;
     this.terrain = new Terrain(this);
 
@@ -133,9 +131,7 @@ class Planet {
       sphereCoords.phi = vertRadiansPerUnit * v + Math.PI / 2;
 
       newPosition.setFromSpherical(sphereCoords);
-      if (!this.flatten) {
-        positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
-      }
+      positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
     }
   }
 
@@ -162,9 +158,7 @@ class Planet {
       sphereCoords.phi = vertRadiansPerUnit * v + Math.PI / 2;
 
       newPosition.setFromSpherical(sphereCoords);
-      if (!this.flatten) {
-        positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
-      }
+      positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
     }
   }
 
@@ -190,11 +184,6 @@ class Planet {
       this.edges.geometry.dispose();
       this.edges = null;
     }
-  }
-
-  // Debugging method: show the planet mesh as a flat rectangle instead of curving it.
-  toggleFlatten() {
-    this.flatten = !this.flatten;
   }
 
   static readonly WATER_GRADIENT = tinygradient([

@@ -57,10 +57,6 @@ function keyDownListener(event: KeyboardEvent) {
   case 'h':
     sceneData.planet.toggleEdgesVisible();
     break;
-  case 'f':
-    sceneData.planet.toggleFlatten();
-    sceneData.planet.resize(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
-    break;
   }
 }
 
