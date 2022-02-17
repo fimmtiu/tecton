@@ -8,12 +8,12 @@ export { Terrain };
 class Terrain {
   protected planet: Planet; // FIXME: Don't need this circular dependency long-term. Just for debugging.
   protected visualHelper: VisualHelper;
-  protected tectonics: Tectonics;
+  // protected tectonics: Tectonics;
 
   constructor(planet: Planet) {
     this.planet = planet;
     this.visualHelper = new VisualHelper(false, false);
-    this.tectonics = new Tectonics();
+    // this.tectonics = new Tectonics();
   }
 
   // // This is all hideously inefficient, but we only do it once at the start.

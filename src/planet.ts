@@ -98,7 +98,7 @@ class Planet {
     }
 
     // Update what the planet's surface looks like in the new orientation.
-    this.generateTerrain();
+    this.generateTerrain(camera);
     this.visualHelper.update();
   }
 
@@ -186,12 +186,12 @@ class Planet {
   }
 
   // Set the color for each vertex on the planet to reflect the land height/water depth there.
-  protected generateTerrain() {
+  protected generateTerrain(camera: PlanetCamera) {
     const NOISE_SCALE = 5000;
     const FAVOR_WATER = -0.30;
     const MIN_WATER_HUE = 0.55;
     const MAX_WATER_HUE = 0.65;
-    const MIN_GROUND_LIGHT = 0.40;
+    const MIN_GROUND_LIGHT = 0.30;
     const MAX_GROUND_LIGHT = 0.64;
 
     let color = new THREE.Color;
@@ -200,11 +200,11 @@ class Planet {
     for (let i = 0; i < positions.count; i++) {
       let vertexLocation = getWorldVertexFromMesh(this.mesh, i);
       const pointOnSphere = vertexLocation.normalize().multiplyScalar(Planet.radius);
-      let height = FAVOR_WATER + noiseGenerator().noise3D(
-        pointOnSphere.x / NOISE_SCALE,
-        pointOnSphere.y / NOISE_SCALE,
-        pointOnSphere.z / NOISE_SCALE,
-      );
+
+      let height1 = noiseGenerator().noise3D(pointOnSphere.x / NOISE_SCALE, pointOnSphere.y / NOISE_SCALE, pointOnSphere.z / NOISE_SCALE);
+      let height2 = noiseGenerator().noise3D(5.1 * pointOnSphere.x / NOISE_SCALE, 5.1 * pointOnSphere.y / NOISE_SCALE, 5.1 * pointOnSphere.z / NOISE_SCALE);
+      let height3 = noiseGenerator().noise3D(9.7 * pointOnSphere.x / NOISE_SCALE, 9.7 * pointOnSphere.y / NOISE_SCALE, 9.7 * pointOnSphere.z / NOISE_SCALE);
+      let height = height1 + height2 / 4 + height3 / 8 + FAVOR_WATER;
 
       if (height < 0) {
         color.setHSL((MAX_WATER_HUE - MIN_WATER_HUE) * Math.abs(height) + MIN_WATER_HUE, 1.0, 0.5);

@@ -80,6 +80,10 @@ class PlanetCamera extends THREE.PerspectiveCamera {
   heightAboveTerrain() {
     // FIXME: Change "Planet.radius" to the actual terrain height.
     // Right now we're assuming the planet is a smooth sphere.
+    return this.heightAboveSeaLevel();
+  }
+
+  heightAboveSeaLevel() {
     return this.distance() - Planet.radius;
   }
 

@@ -84,14 +84,14 @@ class VectorCubeField {
         points.push(topLeft.x, topLeft.y, topLeft.z);
 
         // FIXME DEBUGGING - draw each face in a different color
-        // const COLORS = [0xffae00, 0x00ffff, 0xff1e00, 0xc800ff, 0xfffb00, 0x1aff00]; // orange, aqua, red, purple, yellow, green
-        // const color = COLORS[face];
-        // const points_geometry = new THREE.BufferGeometry();
-        // const point_location = new THREE.Float32BufferAttribute([plane.coplanarPoint(topLeft).x, plane.coplanarPoint(topLeft).y, plane.coplanarPoint(topLeft).z], 3);
-        // points_geometry.setAttribute('position', point_location);
-        // const points_material = new THREE.PointsMaterial({ color: color, size: 250 });
-        // const point = new THREE.Points(points_geometry, points_material);
-        // scene.add(point);
+        const COLORS = [0xffae00, 0x00ffff, 0xff1e00, 0xc800ff, 0xfffb00, 0x1aff00]; // orange, aqua, red, purple, yellow, green
+        const color = COLORS[face];
+        const points_geometry = new THREE.BufferGeometry();
+        const point_location = new THREE.Float32BufferAttribute([topLeft.x, topLeft.y, topLeft.z], 3);
+        points_geometry.setAttribute('position', point_location);
+        const points_material = new THREE.PointsMaterial({ color: color, size: 250 });
+        const point = new THREE.Points(points_geometry, points_material);
+        scene.add(point);
       }
     }
 
@@ -101,7 +101,8 @@ class VectorCubeField {
 
     // FIXME: Fill faces with arbitrary values for debugging.
     //                            0: up                         1: right                2: up+right                    3: down                      4: left                    5: down+left
-    const fixme_vectors = [new THREE.Vector2(0, 300), new THREE.Vector2(300, 0), new THREE.Vector2(300, 300), new THREE.Vector2(0, -300), new THREE.Vector2(-300, 0), new THREE.Vector2(-300, -300)];
+    // const fixme_vectors = [new THREE.Vector2(0, 300), new THREE.Vector2(300, 0), new THREE.Vector2(300, 300), new THREE.Vector2(0, -300), new THREE.Vector2(-300, 0), new THREE.Vector2(-300, -300)];
+    const fixme_vectors = [new THREE.Vector2(0, 300), new THREE.Vector2(0, 300), new THREE.Vector2(0, 300), new THREE.Vector2(0, 300), new THREE.Vector2(0, 300), new THREE.Vector2(0, 300)];
     for (let face = 0; face < 6; face++) {
       for (let i = 0; i < CELLS_PER_FACE; i++) {
         const vec = fixme_vectors[face];
@@ -134,19 +135,17 @@ class VectorCubeField {
     const positions = this.cells.geometry.getAttribute("position");
     for (let face = 0; face < 6; face++) {
       for (let i = 0; i < CELLS_PER_FACE; i++) {
-        if (face == 4 && i == 45) {
-          const index = face * CELLS_PER_FACE + i;
-          const arrowOrigin = new THREE.Vector3(positions.getX(index), positions.getY(index), positions.getZ(index));
-          const plane = new THREE.Plane(arrowOrigin.clone().normalize(), -PLANET_RADIUS * 1.02);
-          const pointAbovePlane = this.faces[face].northVector.clone().add(arrowOrigin).multiplyScalar(1.1);
-          const direction = new THREE.Vector3();
-          plane.projectPoint(pointAbovePlane, direction);
-          let vh = new VisualHelper(false, false);
-          vh.setPoints([arrowOrigin, pointAbovePlane, direction]);
-          const arrow = new THREE.ArrowHelper(direction.sub(arrowOrigin).normalize(), arrowOrigin, this.faces[face].data[i].distanceTo(ORIGIN_2D));
-          scene.add(arrow);
-          this.arrows.push(arrow);
-        }
+        const index = face * CELLS_PER_FACE + i;
+        const arrowOrigin = new THREE.Vector3(positions.getX(index), positions.getY(index), positions.getZ(index));
+        const plane = new THREE.Plane(arrowOrigin.clone().normalize(), -PLANET_RADIUS * 1.02);
+        const pointAbovePlane = this.faces[face].northVector.clone().add(arrowOrigin).multiplyScalar(1.1);
+        const direction = new THREE.Vector3();
+        plane.projectPoint(pointAbovePlane, direction);
+        // let vh = new VisualHelper(false, false);
+        // vh.setPoints([arrowOrigin]);
+        // const arrow = new THREE.ArrowHelper(direction.sub(arrowOrigin).normalize(), arrowOrigin, this.faces[face].data[i].distanceTo(ORIGIN_2D));
+        // scene.add(arrow);
+        // this.arrows.push(arrow);
       }
     }
   }
