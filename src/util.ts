@@ -2,11 +2,12 @@ import SimplexNoise from "simplex-noise";
 import * as THREE from "three";
 
 export {
-  noiseGenerator, setRandomSeed, updateGeometry, getWorldVertexFromMesh, ORIGIN, sphericalFromCoords,
+  noiseGenerator, setRandomSeed, updateGeometry, getWorldVertexFromMesh, ORIGIN, ORIGIN_2D, sphericalFromCoords,
   v2s, s2s,
 };
 
 const ORIGIN = new THREE.Vector3(0, 0, 0);
+const ORIGIN_2D = new THREE.Vector2(0, 0);
 
 let simplex = new SimplexNoise();
 

@@ -1,6 +1,9 @@
+import { dir } from "console";
 import * as THREE from "three";
 import { PLANET_RADIUS } from "./planet";
 import { scene } from "./scene_data";
+import { v2s, ORIGIN_2D } from "./util";
+import { VisualHelper } from "./visual_helper";
 
 export { VectorCubeField };
 
@@ -14,11 +17,16 @@ const UNIT_GRID_ANGLES = [
   Math.PI * 0.75, Math.PI * 0.5, Math.PI * 0.25,
 ];
 
+const NONE = 1;  // FIXME good candidiates for an enum
+const TURN_LEFT = 2;
+const TURN_RIGHT = 3;
+const TURN_AROUND = 4;
+
 class VectorCubeField {
   protected box: THREE.BoxGeometry; // FIXME: Once we've got the cells, we probably don't need the box any more.
   protected edges: THREE.LineSegments; // FIXME: just for visualization, can remove later
   protected cells: THREE.Points;
-  protected fields: Array<FieldFace>;
+  protected faces: Array<FieldFace>;
   protected arrows: Array<THREE.ArrowHelper>;
 
   constructor() {
@@ -31,31 +39,40 @@ class VectorCubeField {
       positions.setXYZ(i, vec.x, vec.y, vec.z);
     }
 
-    this.fields = Array(6);
-    this.fields[0] = new FieldFace(new THREE.Vector3(0,  1,  0));
-    this.fields[1] = new FieldFace(new THREE.Vector3(0,  0, -1));
-    this.fields[2] = new FieldFace(new THREE.Vector3(-1, 0,  0));
-    this.fields[3] = new FieldFace(new THREE.Vector3(1,  0,  0));
-    this.fields[4] = new FieldFace(new THREE.Vector3(0,  0,  1));
-    this.fields[5] = new FieldFace(new THREE.Vector3(0,  -1,  0));
-    this.fields[0].setNeighbors(this.fields[1], this.fields[4], this.fields[3], this.fields[2]);
-    this.fields[1].setNeighbors(this.fields[5], this.fields[0], this.fields[3], this.fields[2]);
-    this.fields[2].setNeighbors(this.fields[0], this.fields[5], this.fields[4], this.fields[1]);
-    this.fields[3].setNeighbors(this.fields[1], this.fields[4], this.fields[5], this.fields[0]);
-    this.fields[4].setNeighbors(this.fields[0], this.fields[5], this.fields[3], this.fields[2]);
-    this.fields[5].setNeighbors(this.fields[4], this.fields[1], this.fields[3], this.fields[2]);
+    // Order that three.js creates the faces in:
+    // [right, left, top, bottom, front, back]
+
+    this.faces = Array(6);
+    this.faces[0] = new FieldFace(TURN_LEFT, TURN_LEFT, NONE, NONE);
+    this.faces[1] = new FieldFace(TURN_RIGHT, TURN_RIGHT, NONE, NONE);
+    this.faces[2] = new FieldFace(NONE, NONE, TURN_RIGHT, TURN_LEFT);
+    this.faces[3] = new FieldFace(NONE, NONE, TURN_LEFT, TURN_RIGHT);
+    this.faces[4] = new FieldFace(NONE, NONE, NONE, NONE);
+    this.faces[5] = new FieldFace(NONE, NONE, TURN_AROUND, TURN_AROUND);
+    this.faces[0].setNeighbors(this.faces[2], this.faces[3], this.faces[5], this.faces[4]);
+    this.faces[1].setNeighbors(this.faces[2], this.faces[5], this.faces[4], this.faces[5]);
+    this.faces[2].setNeighbors(this.faces[5], this.faces[4], this.faces[0], this.faces[1]);
+    this.faces[3].setNeighbors(this.faces[4], this.faces[5], this.faces[0], this.faces[1]);
+    this.faces[4].setNeighbors(this.faces[2], this.faces[3], this.faces[0], this.faces[1]);
+    this.faces[5].setNeighbors(this.faces[3], this.faces[2], this.faces[0], this.faces[1]);
+    this.faces[0].northVector.set(0, 1, 0);
+    this.faces[1].northVector.set(0, 1, 0);
+    this.faces[2].northVector.set(0, 0, -1);
+    this.faces[3].northVector.set(0, 0, 1);
+    this.faces[4].northVector.set(0, 1, 0);
+    this.faces[5].northVector.set(0, -1, 0);
 
     this.arrows = [];
 
     // FIXME: just for debugging
-    let edgeGeometry = new THREE.EdgesGeometry(this.box, 0);
+    const edgeGeometry = new THREE.EdgesGeometry(this.box, 0);
     edgeGeometry.scale(1.02, 1.02, 1.02);
     this.edges = new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
     scene.add(this.edges);
 
     // Find the center of every rectangular face of the grid and collect them into a Points geometry.
-    let points = [];
-    let pointsGeometry = new THREE.BufferGeometry();
+    const points = [];
+    const pointsGeometry = new THREE.BufferGeometry();
 
     for (let face = 0; face < 6; face++) {
       for (let i = 0; i < CELLS_PER_FACE; i++) {
@@ -63,14 +80,34 @@ class VectorCubeField {
         const br_i = tl_i + CELLS_PER_EDGE + 2;
         const topLeft = new THREE.Vector3(positions.getX(tl_i), positions.getY(tl_i), positions.getZ(tl_i));
         const bottomRight = new THREE.Vector3(positions.getX(br_i), positions.getY(br_i), positions.getZ(br_i));
-        topLeft.add(bottomRight).normalize().multiplyScalar(PLANET_RADIUS * 1.02)
+        topLeft.add(bottomRight).normalize().multiplyScalar(PLANET_RADIUS * 1.02);
         points.push(topLeft.x, topLeft.y, topLeft.z);
+
+        // FIXME DEBUGGING - draw each face in a different color
+        // const COLORS = [0xffae00, 0x00ffff, 0xff1e00, 0xc800ff, 0xfffb00, 0x1aff00]; // orange, aqua, red, purple, yellow, green
+        // const color = COLORS[face];
+        // const points_geometry = new THREE.BufferGeometry();
+        // const point_location = new THREE.Float32BufferAttribute([plane.coplanarPoint(topLeft).x, plane.coplanarPoint(topLeft).y, plane.coplanarPoint(topLeft).z], 3);
+        // points_geometry.setAttribute('position', point_location);
+        // const points_material = new THREE.PointsMaterial({ color: color, size: 250 });
+        // const point = new THREE.Points(points_geometry, points_material);
+        // scene.add(point);
       }
     }
 
     pointsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
     this.cells = new THREE.Points(pointsGeometry);
     scene.add(this.cells);
+
+    // FIXME: Fill faces with arbitrary values for debugging.
+    //                            0: up                         1: right                2: up+right                    3: down                      4: left                    5: down+left
+    const fixme_vectors = [new THREE.Vector2(0, 300), new THREE.Vector2(300, 0), new THREE.Vector2(300, 300), new THREE.Vector2(0, -300), new THREE.Vector2(-300, 0), new THREE.Vector2(-300, -300)];
+    for (let face = 0; face < 6; face++) {
+      for (let i = 0; i < CELLS_PER_FACE; i++) {
+        const vec = fixme_vectors[face];
+        this.faces[face].data[i].copy(vec);
+      }
+    }
 
     this.updateArrows();
   }
@@ -81,8 +118,13 @@ class VectorCubeField {
     (<THREE.Material>this.edges.material).dispose();
     this.cells.geometry.dispose();
     (<THREE.Material>this.cells.material).dispose();
+
+    for (let arrow of this.arrows) {
+      scene.remove(arrow);
+    }
   }
 
+  // Draw an arrow on each face representing the direction and magnitude of its vector.
   updateArrows() {
     for (let arrow of this.arrows) {
       scene.remove(arrow);
@@ -90,18 +132,28 @@ class VectorCubeField {
     this.arrows = [];
 
     const positions = this.cells.geometry.getAttribute("position");
-    for (let i = 0; i < positions.count; i++) {
-      const arrowOrigin = new THREE.Vector3(positions.getX(i), positions.getY(i), positions.getZ(i));
-      const dir = new THREE.Vector3(); // FIXME FIXME FIXME
-      const arrow = new THREE.ArrowHelper(dir, arrowOrigin, 200);
-      scene.add(arrow);
-      this.arrows.push(arrow);
+    for (let face = 0; face < 6; face++) {
+      for (let i = 0; i < CELLS_PER_FACE; i++) {
+        if (face == 4 && i == 45) {
+          const index = face * CELLS_PER_FACE + i;
+          const arrowOrigin = new THREE.Vector3(positions.getX(index), positions.getY(index), positions.getZ(index));
+          const plane = new THREE.Plane(arrowOrigin.clone().normalize(), -PLANET_RADIUS * 1.02);
+          const pointAbovePlane = this.faces[face].northVector.clone().add(arrowOrigin).multiplyScalar(1.1);
+          const direction = new THREE.Vector3();
+          plane.projectPoint(pointAbovePlane, direction);
+          let vh = new VisualHelper(false, false);
+          vh.setPoints([arrowOrigin, pointAbovePlane, direction]);
+          const arrow = new THREE.ArrowHelper(direction.sub(arrowOrigin).normalize(), arrowOrigin, this.faces[face].data[i].distanceTo(ORIGIN_2D));
+          scene.add(arrow);
+          this.arrows.push(arrow);
+        }
+      }
     }
   }
 
   update() {
     for (let i = 0; i < 6; i++) {
-      this.fields[i].update();
+      this.faces[i].update();
     }
 
     this.updateArrows();
@@ -109,19 +161,27 @@ class VectorCubeField {
 }
 
 class FieldFace {
+  public northTransform: number;
+  public southTransform: number;
+  public eastTransform: number;
+  public westTransform: number;
   public northNeighbor: FieldFace | null;
   public southNeighbor: FieldFace | null;
   public eastNeighbor: FieldFace | null;
   public westNeighbor: FieldFace | null;
-  public normal: THREE.Vector3;
+  public northVector: THREE.Vector3;
   public data: Array<THREE.Vector2>;
   public newData: Array<THREE.Vector2>;
 
-  constructor(normal: THREE.Vector3) {
+  constructor(northTransform: number, southTransform: number, eastTransform: number, westTransform: number) {
+    this.northTransform = northTransform;
+    this.southTransform = southTransform;
+    this.eastTransform = eastTransform;
+    this.westTransform = westTransform;
     this.northNeighbor = this.southNeighbor = this.eastNeighbor = this.westNeighbor = null;
-    this.normal = normal;
     this.data = Array(CELLS_PER_FACE);
     this.newData = Array(CELLS_PER_FACE);
+    this.northVector = new THREE.Vector3();
 
     for (let i = 0; i < CELLS_PER_FACE; i++) {
       this.data[i] = new THREE.Vector2();
@@ -160,6 +220,7 @@ class FieldFace {
       if (grid_angle == null) {
         continue;
       }
+
       const difference = Math.abs(angle - grid_angle);
       if (difference < VECTOR_SPREAD) {
         const ratio = difference / VECTOR_SPREAD;
@@ -185,76 +246,141 @@ class FieldFace {
     switch(dir) {
     case 0:
       if (x == left_x && y == top_y) { // top left corner
-        this.northNeighbor?.westNeighbor?.newData[bottom_right].add(vec);
+        this.updateNorthwestAcrossEdge(vec, bottom_right);
       } else if (y == top_y) { // top row
-        this.northNeighbor?.newData[bottom_left + x].add(vec);
+        this.updateNorthAcrossEdge(vec, bottom_left + x);
       } else if (x == left_x) { // left side
-        this.westNeighbor?.newData[y * CELLS_PER_EDGE + right_x].add(vec);
+        this.updateWestAcrossEdge(vec, y * CELLS_PER_EDGE + right_x);
       } else {
         this.newData[(y - 1) * CELLS_PER_EDGE + (x - 1)].add(vec);
       }
       break;
     case 1:
       if (y == 0) { // top row
-        this.northNeighbor?.newData[bottom_left + x].add(vec);
+        this.updateNorthAcrossEdge(vec, bottom_left + x);
       } else {
         this.newData[(y - 1) * CELLS_PER_EDGE + x].add(vec);
       }
       break;
     case 2:
       if (x == right_x && y == top_y) { // top right corner
-        this.northNeighbor?.eastNeighbor?.newData[bottom_left].add(vec);
+        this.updateNortheastAcrossEdge(vec, bottom_left);
       } else if (y == top_y) { // top row
-        this.northNeighbor?.newData[bottom_left + x].add(vec);
+        this.updateNorthAcrossEdge(vec, bottom_left + x);
       } else if (x == right_x) { // right side
-        this.eastNeighbor?.newData[y * CELLS_PER_EDGE].add(vec);
+        this.updateEastAcrossEdge(vec, y * CELLS_PER_EDGE);
       } else {
         this.newData[(y - 1) * CELLS_PER_EDGE + (x - 1)].add(vec);
       }
       break;
     case 3:
       if (x == left_x) { // left side
-        this.westNeighbor?.newData[y * CELLS_PER_EDGE + right_x].add(vec);
+        this.updateWestAcrossEdge(vec, y * CELLS_PER_EDGE + right_x);
       } else {
         this.newData[y * CELLS_PER_EDGE + (x - 1)].add(vec);
       }
       break;
     case 5:
       if (x == right_x) { // right side
-        this.eastNeighbor?.newData[y * CELLS_PER_EDGE].add(vec);
+        this.updateEastAcrossEdge(vec, y * CELLS_PER_EDGE);
       } else {
         this.newData[y * CELLS_PER_EDGE + (x + 1)].add(vec);
       }
       break;
     case 6:
       if (x == left_x && y == bottom_y) { // bottom left corner
-        this.southNeighbor?.westNeighbor?.newData[top_right].add(vec);
+        this.updateSouthwestAcrossEdge(vec, top_right);
       } else if (y == bottom_y) { // bottom row
-        this.southNeighbor?.newData[x].add(vec);
+        this.updateSouthAcrossEdge(vec, x);
       } else if (x == left_x) { // left side
-        this.westNeighbor?.newData[y * CELLS_PER_EDGE + right_x].add(vec);
+        this.updateWestAcrossEdge(vec, y * CELLS_PER_EDGE + right_x);
       } else {
         this.newData[(y + 1) * CELLS_PER_EDGE + (x - 1)].add(vec);
       }
       break;
     case 7:
       if (y == bottom_y) { // bottom row
-        this.southNeighbor?.newData[x].add(vec);
+        this.updateSouthAcrossEdge(vec, x);
       } else {
         this.newData[(y + 1) * CELLS_PER_EDGE + x].add(vec);
       }
       break;
     case 8:
       if (x == right_x && y == bottom_y) { // bottom right corner
-        this.southNeighbor?.eastNeighbor?.newData[top_left].add(vec);
+        this.updateSoutheastAcrossEdge(vec, top_left);
       } else if (y == bottom_y) { // bottom row
-        this.southNeighbor?.newData[x].add(vec);
+        this.updateSouthAcrossEdge(vec, x);
       } else if (x == right_x) { // right side
-        this.eastNeighbor?.newData[y * CELLS_PER_EDGE].add(vec);
+        this.updateEastAcrossEdge(vec, y * CELLS_PER_EDGE);
       } else {
         this.newData[(y + 1) * CELLS_PER_EDGE + (x + 1)].add(vec);
       }
       break;
     }
+  }
+
+  // When we pass between two sides, sometimes we need to point the vector in a different 90-degree direction
+  // to keep it consistent as it wraps around the cube.
+  transformVector(vec: THREE.Vector2, transform: number) {
+    switch(transform) {
+    case NONE:
+      break;
+    case TURN_LEFT:
+      vec.set(vec.y, -vec.x);
+      break;
+    case TURN_RIGHT:
+      vec.set(-vec.y, vec.x);
+      break;
+    case TURN_AROUND:
+      vec.set(-vec.x, -vec.y);
+      break;
+    }
+  }
+
+  // FIXME: Bug: these transforms aren't commutative, so order matters, so diagonals don't make sense
+  // and we're going to get weird artifacts at corners. Need to revisit it so that we spread corner
+  // vectors between both adjacent faces.
+  updateNorthwestAcrossEdge(vec: THREE.Vector2, index: number) {
+    this.transformVector(vec, this.northTransform);
+    this.transformVector(vec, (<FieldFace>this.northNeighbor).westTransform);
+    this.northNeighbor?.westNeighbor?.newData[index].add(vec);
+  }
+
+  updateNorthAcrossEdge(vec: THREE.Vector2, index: number) {
+    this.transformVector(vec, this.northTransform);
+    this.northNeighbor?.newData[index].add(vec);
+  }
+
+  updateNortheastAcrossEdge(vec: THREE.Vector2, index: number) {
+    this.transformVector(vec, this.northTransform);
+    this.transformVector(vec, (<FieldFace>this.northNeighbor).eastTransform);
+    this.northNeighbor?.eastNeighbor?.newData[index].add(vec);
+  }
+
+  updateEastAcrossEdge(vec: THREE.Vector2, index: number) {
+    this.transformVector(vec, this.eastTransform);
+    this.eastNeighbor?.newData[index].add(vec);
+  }
+
+  updateSoutheastAcrossEdge(vec: THREE.Vector2, index: number) {
+    this.transformVector(vec, this.southTransform);
+    this.transformVector(vec, (<FieldFace>this.southNeighbor).eastTransform);
+    this.southNeighbor?.eastNeighbor?.newData[index].add(vec);
+  }
+
+  updateSouthAcrossEdge(vec: THREE.Vector2, index: number) {
+    this.transformVector(vec, this.southTransform);
+    this.southNeighbor?.newData[index].add(vec);
+  }
+
+  updateSouthwestAcrossEdge(vec: THREE.Vector2, index: number) {
+    this.transformVector(vec, this.southTransform);
+    this.transformVector(vec, (<FieldFace>this.southNeighbor).westTransform);
+    this.southNeighbor?.westNeighbor?.newData[index].add(vec);
+  }
+
+  updateWestAcrossEdge(vec: THREE.Vector2, index: number) {
+    this.transformVector(vec, this.westTransform);
+    this.westNeighbor?.newData[index].add(vec);
   }
 }
