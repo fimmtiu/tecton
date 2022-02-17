@@ -120,10 +120,12 @@ class Planet {
 
       // Add terrain height to the vertex. (We have to do this afterwards because the height is calculated based
       // on the vertex's location at sea level.)
-      sphereCoords.setFromVector3(newPosition);
-      sphereCoords.radius += this.terrain.scaleHeight(height);
-      newPosition.setFromSpherical(sphereCoords);
-      positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
+      if (height > 0) {
+        sphereCoords.setFromVector3(newPosition);
+        sphereCoords.radius += this.terrain.scaleHeight(height);
+        newPosition.setFromSpherical(sphereCoords);
+        positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
+      }
     }
     updateGeometry(this.mesh.geometry);
 
