@@ -96,13 +96,20 @@ class Planet {
   ) {
     deformFunction.apply(this, [index, topLeft, bottomRight]);
 
-    let vertexLocation = getWorldVertexFromMesh(this.mesh, index);
-    const pointOnSphere = vertexLocation.normalize().multiplyScalar(Planet.radius);
-    const height = this.terrain.normalizedHeightAt(pointOnSphere);
+    let worldPosition = getWorldVertexFromMesh(this.mesh, index);
+    const height = this.terrain.normalizedHeightAt(worldPosition);
 
     let color = new THREE.Color();
     this.setColor(height, color);
     this.mesh.geometry.getAttribute("color").setXYZ(index, color.r, color.g, color.b);
+
+    // Add terrain height to the vertex
+    const positions = this.mesh.geometry.getAttribute("position");
+    const localPosition = new THREE.Vector3(positions.getX(index), positions.getY(index), positions.getZ(index));
+    const sphereCoords = new THREE.Spherical().setFromVector3(localPosition);
+    sphereCoords.radius += this.terrain.scaleHeight(height);
+    localPosition.setFromSpherical(sphereCoords);
+    positions.setXYZ(index, localPosition.x, localPosition.y, localPosition.z);
   }
 
   // FIXME: These functions are similar enough that we could probably combine them somehow.

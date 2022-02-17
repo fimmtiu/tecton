@@ -10,12 +10,12 @@ export { PlanetCamera };
 // - The number of vertices in the planet mesh is determined by the camera's viewport width and height
 
 const FIELD_OF_VIEW = 50;
-const ROTATION_SPEED = 0.008;
+const ROTATION_SPEED = 0.01;
 const MIN_VERT_ANGLE = 0.005;
 const MAX_VERT_ANGLE = Math.PI - MIN_VERT_ANGLE;
 const MAX_ZOOM = 1 / (Math.tan((FIELD_OF_VIEW / 2) / (180 / Math.PI)) / Planet.radius / 1.2);
 const MIN_ZOOM = Planet.radius * 1.2;
-const ZOOM_SPEED = Planet.radius / 100;
+const ZOOM_SPEED = Planet.radius / 60;
 
 class PlanetCamera extends THREE.PerspectiveCamera {
   public width: number;
