@@ -101,6 +101,8 @@ function mouseMoveListener(event: MouseEvent) {
   }
 }
 
+// FIXME: We should make the seed a query string parameter. Instead of restarting, we can just
+// redirect window.location to this URL with the seed parameter appended. Way simpler.
 function restart() {
   console.log(`Setting noise seed to ${randomSeedInput.value} and re-generating planet`);
   setRandomSeed(randomSeedInput.value);

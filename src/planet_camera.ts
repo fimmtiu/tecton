@@ -14,7 +14,7 @@ const ROTATION_SPEED = 0.01;
 const MIN_VERT_ANGLE = 0.005;
 const MAX_VERT_ANGLE = Math.PI - MIN_VERT_ANGLE;
 const MAX_ZOOM = 1 / (Math.tan((FIELD_OF_VIEW / 2) / (180 / Math.PI)) / Planet.radius / 1.2);
-const MIN_ZOOM = Planet.radius * 1.2;
+const MIN_ZOOM = Planet.radius * 1.01;
 const ZOOM_SPEED = Planet.radius / 60;
 
 class PlanetCamera extends THREE.PerspectiveCamera {
@@ -24,7 +24,7 @@ class PlanetCamera extends THREE.PerspectiveCamera {
   public planet: Planet;
 
   constructor(planet: Planet, viewportWidth: number, viewportHeight: number) {
-    super(FIELD_OF_VIEW, viewportWidth / viewportHeight, 0.1, MAX_ZOOM + Planet.radius);
+    super(FIELD_OF_VIEW, viewportWidth / viewportHeight, 0.01, MAX_ZOOM + Planet.radius);
     this.width = viewportWidth;
     this.height = viewportHeight;
     this.sphereCoords = new THREE.Spherical(MAX_ZOOM, Math.PI / 2, 0)
@@ -78,8 +78,7 @@ class PlanetCamera extends THREE.PerspectiveCamera {
   }
 
   heightAboveTerrain() {
-    // FIXME: Change "Planet.radius" to the actual terrain height.
-    // Right now we're assuming the planet is a smooth sphere.
+    // FIXME: Get actual terrain height.
     return this.heightAboveSeaLevel();
   }
 

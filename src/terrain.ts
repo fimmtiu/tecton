@@ -24,8 +24,6 @@ const MAX_AMPLITUDE = NOISE_LEVELS.reduce((n, level) => { return n + level.ampli
 class Terrain {
   protected planet: Planet; // FIXME: Don't need this circular dependency long-term. Just for debugging.
   protected visualHelper: VisualHelper;
-  public min = 100000;
-  public max = -100000;
 
   constructor(planet: Planet) {
     this.planet = planet;

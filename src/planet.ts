@@ -114,17 +114,16 @@ class Planet {
       positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
 
       // Get the height from the world position of the vertex and set the vertex to the appropriate color.
-      const height = this.terrain.normalizedHeightAt(this.mesh.localToWorld(newPosition));
+      const height = this.terrain.normalizedHeightAt(this.mesh.localToWorld(newPosition.clone()));
       this.setColor(height, color);
       colors.setXYZ(i, color.r, color.g, color.b);
 
       // Add terrain height to the vertex. (We have to do this afterwards because the height is calculated based
       // on the vertex's location at sea level.)
-      const localPosition = new THREE.Vector3(positions.getX(i), positions.getY(i), positions.getZ(i));
-      sphereCoords.setFromVector3(localPosition);
+      sphereCoords.setFromVector3(newPosition);
       sphereCoords.radius += this.terrain.scaleHeight(height);
-      localPosition.setFromSpherical(sphereCoords);
-      positions.setXYZ(i, localPosition.x, localPosition.y, localPosition.z);
+      newPosition.setFromSpherical(sphereCoords);
+      positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
     }
     updateGeometry(this.mesh.geometry);
 
