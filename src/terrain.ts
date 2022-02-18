@@ -33,34 +33,25 @@ class Terrain {
     this.visualHelper = new VisualHelper(false, false);
   }
 
-  // Set the color for each vertex on the planet to reflect the land height/water depth there.
+  // Return the height at the given point as a float between -1.0 and 1.0, inclusive.
+  // (To get the height in kilometers, pass this number to scaleHeight().)
   normalizedHeightAt(pointOnSphere: THREE.Vector3) {
     let height = 0;
 
-    // Generate noise in the range 0..1.
+    // Generate noise in the range -1..1.
     for (let i = 0; i < NOISE_LEVELS.length; i++) {
       let level = NOISE_LEVELS[i];
       height += this.noise(pointOnSphere, level.offset, level.amplitude);
-      // console.log(`loop ${i} height = ${height}`);
     }
-    // console.log(`height 0: ${height}`);
-    height /= MAX_AMPLITUDE;
 
-    // console.log(`height 1: ${height} / ${MAX_AMPLITUDE}`);
-
-    // console.log(`height 2: ${height}`);
-    // The exponent will smooth valleys and exaggerate peaks... I hope?
-    height = Math.pow(height, 1.2);
-
-    // Change the range back to -1..1, where 0 is sea level.
-    height = height * 2 - 1;
+    height = this.perturbHeight(height) / this.perturbHeight(MAX_AMPLITUDE);
+    // console.log(`height 2: ${before} / ${maxamp} = ${height}`);
 
     if (height > this.max) {
       this.max = height;
     } else if (height < this.min) {
       this.min = height;
     }
-
     return height;
   }
 
@@ -72,13 +63,21 @@ class Terrain {
     }
   }
 
+  // Massage the height values in a futile attempt to get something that looks less random and more earth-ish.
+  protected perturbHeight(height: number) {
+    // console.log(`height 0: ${height} + ${Math.atan(height) * 0.3} = ${height + Math.atan(height) * 0.3}`);
+    height += (Math.atan(height) - 0.5) * 0.3;
+    // console.log(`height 1: ${height}:  ${Math.sign(height) * Math.pow(Math.abs(height), 1.2)} = ${Math.sign(height) * Math.pow(Math.abs(height), 1.2)}`);
+    height = Math.sign(height) * Math.pow(Math.abs(height), 1.2);
+    return height;
+  }
+
+  // Returns a predictable but random value in the range -1..1.
   protected noise(point: THREE.Vector3, offset: number, amplitude: number) {
-    let rawValue = noiseGenerator().noise3D(
+    return noiseGenerator().noise3D(
       offset * point.x / NOISE_SCALE,
       offset * point.y / NOISE_SCALE,
       offset * point.z / NOISE_SCALE,
-    );
-    // console.log(`raw ${rawValue} => ${(rawValue + 1) / 2} * ${amplitude} = ${(rawValue + 1) / 2 * amplitude}`);
-    return (rawValue + 1) / 2 * amplitude;
+    ) * amplitude;
   }
 }
