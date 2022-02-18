@@ -7,7 +7,7 @@ import { pingpong } from "three/src/math/MathUtils";
 export { Terrain };
 
 const NOISE_SCALE = 6000;
-const FAVOR_WATER = -0.25;
+const FAVOR_WATER = 0.20;
 const MIN_ELEVATION = -11;  // 11 km is the deepest point on the Earth's surface.
 const MAX_ELEVATION = 9;    // Mount Everest is nearly 9 km high.
 const NOISE_LEVELS = [
@@ -47,12 +47,18 @@ class Terrain {
 
     // Massage the height value, then skew it between -1.0 and 1.0.
     height = (Terrain.perturbHeight(height) - Terrain.minAmplitude) / Terrain.maxAmplitude;
-    // console.log(`height 2: (${before} + ${Terrain.minAmplitude}) / ${Terrain.maxAmplitude} = ${height}`);
 
-    // Apply some bonkers thing to it in order to make the coastlines more dramatic.
-    let before = height;
-    height *= 1 - (1 / (5 + (10 * height) ** 2));
-    console.log(`height 3: ${before} * (1 - (1 / ${5 + (10 * before) ** 2}) = ${height}`);
+    // Apply some bonkers thing to it in order to make the coastlines more dramatic. Didn't work.
+    // height *= 1 - (1 / (5 + (10 * height) ** 2));
+
+    // Favour water by skewing heights lower without clamping. (doesn't work; the skew utterly destroys mountains.)
+    // height = height * (1 - FAVOR_WATER) - FAVOR_WATER;
+
+    height = (height + 1) / 2;      // Convert to the range 0..1.
+    height = Math.pow(height, 1.3); // Run it through a power function to decrease landmass and make it pointier.
+
+    // Convert back to -1..1.
+    height = height * 2 - 1;
 
     if (height > this.max) {
       this.max = height;
@@ -72,6 +78,9 @@ class Terrain {
 
   // Massage the height values in a futile effort to get something that looks less random and more earth-ish.
   static perturbHeight(height: number) {
+    return height;
+
+    // All this stuff sucks.
     let atan = Math.atan(height) * 0.3;
     // console.log(`height 0: ${height} + ${atan} = ${height + atan}`);
     height += atan;
