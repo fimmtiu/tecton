@@ -23,6 +23,9 @@ const NOISE_LEVELS = [
 const MAX_AMPLITUDE = NOISE_LEVELS.reduce((n, level) => { return n + level.amplitude }, 0);
 
 class Terrain {
+  static readonly minAmplitude = Terrain.perturbHeight(0);
+  static readonly maxAmplitude = Terrain.perturbHeight(MAX_AMPLITUDE) - this.minAmplitude;
+
   protected planet: Planet; // FIXME: Don't need this circular dependency long-term. Just for debugging.
   protected visualHelper: VisualHelper;
   public min = 10000;
@@ -38,14 +41,20 @@ class Terrain {
   normalizedHeightAt(pointOnSphere: THREE.Vector3) {
     let height = 0;
 
-    // Generate noise in the range -1..1.
+    // Generate a noisy height value.
     for (let i = 0; i < NOISE_LEVELS.length; i++) {
       let level = NOISE_LEVELS[i];
       height += this.noise(pointOnSphere, level.offset, level.amplitude);
     }
 
-    height = this.perturbHeight(height) / this.perturbHeight(MAX_AMPLITUDE);
-    // console.log(`height 2: ${before} / ${maxamp} = ${height}`);
+    // Massage the height value, then skew it between -1.0 and 1.0.
+    height = (Terrain.perturbHeight(height) - Terrain.minAmplitude) / Terrain.maxAmplitude;
+    // console.log(`height 2: (${before} + ${Terrain.minAmplitude}) / ${Terrain.maxAmplitude} = ${height}`);
+
+    // Apply some bonkers thing to it in order to make the coastlines more dramatic.
+    let before = height;
+    height *= 1 - (1 / (5 + (10 * height) ** 2));
+    console.log(`height 3: ${before} * (1 - (1 / ${5 + (10 * before) ** 2}) = ${height}`);
 
     if (height > this.max) {
       this.max = height;
@@ -63,10 +72,11 @@ class Terrain {
     }
   }
 
-  // Massage the height values in a futile attempt to get something that looks less random and more earth-ish.
-  protected perturbHeight(height: number) {
-    // console.log(`height 0: ${height} + ${Math.atan(height) * 0.3} = ${height + Math.atan(height) * 0.3}`);
-    height += (Math.atan(height) - 0.5) * 0.3;
+  // Massage the height values in a futile effort to get something that looks less random and more earth-ish.
+  static perturbHeight(height: number) {
+    let atan = Math.atan(height) * 0.3;
+    // console.log(`height 0: ${height} + ${atan} = ${height + atan}`);
+    height += atan;
     // console.log(`height 1: ${height}:  ${Math.sign(height) * Math.pow(Math.abs(height), 1.2)} = ${Math.sign(height) * Math.pow(Math.abs(height), 1.2)}`);
     height = Math.sign(height) * Math.pow(Math.abs(height), 1.2);
     return height;
