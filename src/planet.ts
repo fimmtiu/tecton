@@ -165,17 +165,18 @@ class Planet {
     {color: '#1298ff', pos: 0.05},
     {color: '#1c63c7', pos: 0.6},
     {color: '#003054', pos: 0.8},
-  ]).rgb(100);
+  ]).rgb(101);
   static readonly LAND_GRADIENT = tinygradient([
     {color: '#00aa00', pos: 0},
     {color: '#009900', pos: 0.2},
     {color: '#785c38', pos: 0.55},
     {color: '#967447', pos: 0.65}, // the snow line is a fairly hard cutoff
     {color: '#ffffff', pos: 0.68},
-  ]).rgb(100);
+  ]).rgb(101);
 
   private setColor(height: number, color: THREE.Color) {
     const gradient = height >= 0 ? Planet.LAND_GRADIENT : Planet.WATER_GRADIENT;
+    // console.log(`height: ${height}, gradient: ${Math.trunc(Math.abs(height) * 100)}`);
     const {r, g, b} = gradient[Math.trunc(Math.abs(height) * 100)].toRgb();
     color.setRGB(r/255, g/255, b/255);
   }

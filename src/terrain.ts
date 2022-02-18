@@ -35,16 +35,20 @@ class Terrain {
 
   // Set the color for each vertex on the planet to reflect the land height/water depth there.
   normalizedHeightAt(pointOnSphere: THREE.Vector3) {
-    let height = FAVOR_WATER;
+    let height = 0;
 
+    // Generate noise in the range 0..1.
     for (let i = 0; i < NOISE_LEVELS.length; i++) {
       let level = NOISE_LEVELS[i];
       height += this.noise(pointOnSphere, level.offset, level.amplitude);
+      // console.log(`loop ${i} height = ${height}`);
     }
+    // console.log(`height 0: ${height}`);
+    height /= MAX_AMPLITUDE;
 
-    // Normalize to the range 0..1.
-    height = (height / MAX_AMPLITUDE) / 2 + 0.5;
+    // console.log(`height 1: ${height} / ${MAX_AMPLITUDE}`);
 
+    // console.log(`height 2: ${height}`);
     // The exponent will smooth valleys and exaggerate peaks... I hope?
     height = Math.pow(height, 1.2);
 
@@ -69,10 +73,12 @@ class Terrain {
   }
 
   protected noise(point: THREE.Vector3, offset: number, amplitude: number) {
-    return noiseGenerator().noise3D(
+    let rawValue = noiseGenerator().noise3D(
       offset * point.x / NOISE_SCALE,
       offset * point.y / NOISE_SCALE,
       offset * point.z / NOISE_SCALE,
-    ) * amplitude;
+    );
+    // console.log(`raw ${rawValue} => ${(rawValue + 1) / 2} * ${amplitude} = ${(rawValue + 1) / 2 * amplitude}`);
+    return (rawValue + 1) / 2 * amplitude;
   }
 }
