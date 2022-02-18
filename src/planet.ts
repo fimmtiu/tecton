@@ -30,7 +30,7 @@ class Planet {
     this.sphere = new THREE.Sphere(ORIGIN, Planet.radius);
     this.mesh = new THREE.Mesh();
     this.visualHelper = new VisualHelper(true, true);
-    this.terrain = new Terrain(this);
+    this.terrain = new Terrain();
 
     this.resize(viewportWidth, viewportHeight);
 

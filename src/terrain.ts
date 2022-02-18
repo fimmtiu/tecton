@@ -26,13 +26,11 @@ class Terrain {
   static readonly minAmplitude = Terrain.perturbHeight(0);
   static readonly maxAmplitude = Terrain.perturbHeight(MAX_AMPLITUDE) - this.minAmplitude;
 
-  protected planet: Planet; // FIXME: Don't need this circular dependency long-term. Just for debugging.
   protected visualHelper: VisualHelper;
   public min = 10000;
   public max = -10000;
 
-  constructor(planet: Planet) {
-    this.planet = planet;
+  constructor() {
     this.visualHelper = new VisualHelper(false, false);
   }
 
