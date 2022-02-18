@@ -32,6 +32,10 @@ class SceneData {
     this.camera.add(this.light);
     scene.add(this.camera);
 
+    // FIXME: Remove, just for debugging to rule out light problems
+    const light = new THREE.AmbientLight(0x404040);
+    scene.add(light);
+
     // FIXME: Temporary hack to ensure that the planet is curved correctly. (The first frame comes out flat.)
     // I'll clean this up more elegantly later.
     this.planet.update(this.camera);

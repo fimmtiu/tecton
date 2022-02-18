@@ -2,7 +2,7 @@ import * as THREE from "three";
 import tinygradient from "tinygradient";
 
 import { PlanetCamera } from "./planet_camera";
-import { getWorldVertexFromMesh, updateGeometry, ORIGIN, sphericalFromCoords, v2s } from "./util";
+import { updateGeometry, ORIGIN, sphericalFromCoords } from "./util";
 import { Terrain } from "./terrain";
 import { VisualHelper } from "./visual_helper";
 import { scene } from "./scene_data";
@@ -11,6 +11,7 @@ export { Planet, PLANET_RADIUS };
 
 const PIXELS_BETWEEN_VERTICES = 10;
 const PLANET_RADIUS = 6370; // each unit is 1 kilometer
+const TEXTURE_SIZE = 1024;
 
 class Planet {
   static readonly radius = PLANET_RADIUS;
@@ -24,13 +25,16 @@ class Planet {
   protected terrain: Terrain;
   protected halfHorizLength!: number;
   protected halfVertLength!: number;
-
+  protected textureData: Uint8Array;
+  protected texture: THREE.Texture;
 
   constructor(viewportWidth: number, viewportHeight: number) {
     this.sphere = new THREE.Sphere(ORIGIN, Planet.radius);
     this.mesh = new THREE.Mesh();
     this.visualHelper = new VisualHelper(true, true);
     this.terrain = new Terrain();
+    this.textureData = new Uint8Array(TEXTURE_SIZE ** 2 * 4);
+    this.texture = new THREE.DataTexture(this.textureData, TEXTURE_SIZE, TEXTURE_SIZE, THREE.RGBAFormat);
 
     this.resize(viewportWidth, viewportHeight);
 
@@ -51,10 +55,8 @@ class Planet {
       width * 12, height * 12,
       this.horizontalVertices - 1, this.verticalVertices - 1,
     );
-    const positions = geometry.attributes.position;
-    geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(positions.count * 3), 3));
 
-    let material = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.FrontSide });
+    let material = new THREE.MeshStandardMaterial({ map: this.texture, side: THREE.FrontSide });
     this.mesh = new THREE.Mesh(geometry, material);
     scene.add(this.mesh);
   }
@@ -63,6 +65,7 @@ class Planet {
     scene.remove(this.mesh);
     (<THREE.Material>this.mesh.material).dispose();
     this.mesh.geometry.dispose();
+    this.texture.dispose();
 
     if (this.edges) {
       this.toggleEdgesVisible();
@@ -79,14 +82,12 @@ class Planet {
     this.mesh.lookAt(camera.position);
 
     // Change the curvature of the planet mesh and update the colors to reflect the terrain.
-    // FIXME: Later, try doing this with a vertex shader instead.
+    // FIXME: Later, try doing this with a vertex and fragment shader, respectively.
     const positions = this.mesh.geometry.getAttribute("position");
-    const colors = this.mesh.geometry.getAttribute("color");
     const topLeftPoint = new THREE.Vector3(), bottomRightPoint = new THREE.Vector3();
     let horizRadiansPerUnit = 0, vertRadiansPerUnit = 0;
     let sphereCoords = new THREE.Spherical(Planet.radius, 0, 0);
     let newPosition = new THREE.Vector3();
-    let color = new THREE.Color();
 
     // When we're zoomed far out, the planet mesh is shaped like a hemisphere.
     // When we're zoomed close in, the planet mesh is a rectangular patch of the sphere's surface that fills the camera.
@@ -114,11 +115,9 @@ class Planet {
       // Get the height from the world position of the vertex and set the vertex to the appropriate color.
       const worldPosition = this.mesh.localToWorld(newPosition.clone());
       const height = this.terrain.normalizedHeightAt(worldPosition);
-      this.setColor(height, color);
-      colors.setXYZ(i, color.r, color.g, color.b);
+      this.setColor(i, height);
 
-      // Add terrain height to the vertex. (We have to do this afterwards because the height is calculated based
-      // on the vertex's location at sea level.)
+      // Add terrain height to the vertex.
       if (height > 0) {
         sphereCoords.radius += this.terrain.scaleHeight(height);
         newPosition.setFromSpherical(sphereCoords);
@@ -126,6 +125,8 @@ class Planet {
       positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
     }
     updateGeometry(this.mesh.geometry);
+    this.texture.updateMatrix();
+    this.texture.needsUpdate = true;
     console.log(`min: ${this.terrain.min}. max: ${this.terrain.max}`);
 
     if (this.edges) {
@@ -174,10 +175,14 @@ class Planet {
     {color: '#ffffff', pos: 0.68},
   ]).rgb(101);
 
-  private setColor(height: number, color: THREE.Color) {
+  private setColor(index: number, height: number) {
     const gradient = height >= 0 ? Planet.LAND_GRADIENT : Planet.WATER_GRADIENT;
     // console.log(`height: ${height}, gradient: ${Math.trunc(Math.abs(height) * 100)}`);
     const {r, g, b} = gradient[Math.trunc(Math.abs(height) * 100)].toRgb();
-    color.setRGB(r/255, g/255, b/255);
+
+    this.textureData[index * 4 + 0] = r;
+    this.textureData[index * 4 + 1] = g;
+    this.textureData[index * 4 + 2] = b;
+    this.textureData[index * 4 + 3] = 255;
   }
 };
