@@ -160,24 +160,37 @@ class Planet {
   }
 
   // We have to pre-generate the gradients for performance reasons. 100 steps should be plenty, right?
-  static readonly WATER_GRADIENT = tinygradient([
+  static readonly GRADIENT_STEPS: number = 101;
+
+  // Make rgb tuples, associated with heights
+  static makeGradientArrayRgb(stops: Array<tinygradient.StopInput>): Array<[number, number, number]> {
+    let gradient = tinygradient(stops).rgb(Planet.GRADIENT_STEPS);
+    return [...Array(Planet.GRADIENT_STEPS).keys()]
+      .map(i => gradient[i].toRgb())
+      .map(({r, g, b}) => [r/255, g/255, b/255])
+  }
+
+  static readonly WATER_GRADIENT_ARRAY_RGB = Planet.makeGradientArrayRgb([
     {color: '#7ad6cf', pos: 0},
     {color: '#1298ff', pos: 0.05},
     {color: '#1c63c7', pos: 0.6},
     {color: '#003054', pos: 0.8},
-  ]).rgb(101);
-  static readonly LAND_GRADIENT = tinygradient([
+  ]);
+
+  static readonly LAND_GRADIENT_ARRAY_RGB = Planet.makeGradientArrayRgb([
     {color: '#00aa00', pos: 0},
     {color: '#009900', pos: 0.2},
     {color: '#785c38', pos: 0.55},
     {color: '#967447', pos: 0.65}, // the snow line is a fairly hard cutoff
     {color: '#ffffff', pos: 0.68},
-  ]).rgb(101);
+  ]);
 
   private setColor(height: number, color: THREE.Color) {
-    const gradient = height >= 0 ? Planet.LAND_GRADIENT : Planet.WATER_GRADIENT;
+    const gradientArrayRgb = height >= 0 ? Planet.LAND_GRADIENT_ARRAY_RGB : Planet.WATER_GRADIENT_ARRAY_RGB;
     // console.log(`height: ${height}, gradient: ${Math.trunc(Math.abs(height) * 100)}`);
-    const {r, g, b} = gradient[Math.trunc(Math.abs(height) * 100)].toRgb();
-    color.setRGB(r/255, g/255, b/255);
+    // const {r, g, b} = gradient[Math.trunc(Math.abs(height) * 100)].toRgb();
+    const heightIndex = Math.trunc(Math.abs(height) * 100);
+    color.setRGB(...gradientArrayRgb[heightIndex]);
   }
+
 };
