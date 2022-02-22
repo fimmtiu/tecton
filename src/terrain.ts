@@ -1,13 +1,10 @@
 import * as THREE from "three";
-import { Planet } from "./planet";
 import { VisualHelper } from "./visual_helper";
 import { noiseGenerator } from "./util";
-import { pingpong } from "three/src/math/MathUtils";
 
 export { Terrain };
 
 const NOISE_SCALE = 6000;
-const FAVOR_WATER = 0.20;
 const MIN_ELEVATION = -11;  // 11 km is the deepest point on the Earth's surface.
 const MAX_ELEVATION = 9;    // Mount Everest is nearly 9 km high.
 const NOISE_LEVELS = [
@@ -20,15 +17,20 @@ const NOISE_LEVELS = [
   { offset: 33.8, amplitude: 1/48 },
   { offset: 41.3, amplitude: 1/64 },
 ];
+const TECTONIC_NOISE_LEVEL = { offset: 1.1, amplitude: 1/2 };
+const TECTONIC_SHARPNESS = 25;
+
 const MAX_AMPLITUDE = NOISE_LEVELS.reduce((n, level) => { return n + level.amplitude }, 0);
 
 class Terrain {
-  static readonly minAmplitude = Terrain.perturbHeight(0);
-  static readonly maxAmplitude = Terrain.perturbHeight(MAX_AMPLITUDE) - this.minAmplitude;
+  static readonly minAmplitude = 0;
+  static readonly maxAmplitude = MAX_AMPLITUDE - this.minAmplitude;
 
   protected visualHelper: VisualHelper;
   public min = 10000;
   public max = -10000;
+
+  static noiseGenerator = noiseGenerator();
 
   constructor() {
     this.visualHelper = new VisualHelper(false, false);
@@ -45,14 +47,11 @@ class Terrain {
       height += this.noise(pointOnSphere, level.offset, level.amplitude);
     }
 
+    height += this.tectonicNoise(pointOnSphere);
+
+
     // Massage the height value, then skew it between -1.0 and 1.0.
-    height = (Terrain.perturbHeight(height) - Terrain.minAmplitude) / Terrain.maxAmplitude;
-
-    // Apply some bonkers thing to it in order to make the coastlines more dramatic. Didn't work.
-    // height *= 1 - (1 / (5 + (10 * height) ** 2));
-
-    // Favour water by skewing heights lower without clamping. (doesn't work; the skew utterly destroys mountains.)
-    // height = height * (1 - FAVOR_WATER) - FAVOR_WATER;
+    height = (height - Terrain.minAmplitude) / Terrain.maxAmplitude;
 
     height = (height + 1) / 2;      // Convert to the range 0..1.
     height = Math.pow(height, 1.3); // Run it through a power function to decrease landmass and make it pointier.
@@ -60,10 +59,15 @@ class Terrain {
     // Convert back to -1..1.
     height = height * 2 - 1;
 
+    // Clamp to the min, max.
     if (height > this.max) {
       this.max = height;
     } else if (height < this.min) {
       this.min = height;
+    }
+
+    if (typeof height === 'undefined') {
+      debugger;
     }
     return height;
   }
@@ -76,25 +80,17 @@ class Terrain {
     }
   }
 
-  // Massage the height values in a futile effort to get something that looks less random and more earth-ish.
-  static perturbHeight(height: number) {
-    return height;
-
-    // All this stuff sucks.
-    let atan = Math.atan(height) * 0.3;
-    // console.log(`height 0: ${height} + ${atan} = ${height + atan}`);
-    height += atan;
-    // console.log(`height 1: ${height}:  ${Math.sign(height) * Math.pow(Math.abs(height), 1.2)} = ${Math.sign(height) * Math.pow(Math.abs(height), 1.2)}`);
-    height = Math.sign(height) * Math.pow(Math.abs(height), 1.2);
-    return height;
-  }
-
   // Returns a predictable but random value in the range -1..1.
   protected noise(point: THREE.Vector3, offset: number, amplitude: number) {
-    return noiseGenerator().noise3D(
+    return Terrain.noiseGenerator.noise3D(
       offset * point.x / NOISE_SCALE,
       offset * point.y / NOISE_SCALE,
       offset * point.z / NOISE_SCALE,
     ) * amplitude;
+  }
+
+  protected tectonicNoise(point: THREE.Vector3) {
+    let noiseValue = this.noise(point, TECTONIC_NOISE_LEVEL.offset, TECTONIC_NOISE_LEVEL.amplitude);
+    return 1/(1 + (TECTONIC_SHARPNESS * noiseValue)**2);
   }
 }
