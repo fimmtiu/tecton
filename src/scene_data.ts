@@ -1,11 +1,13 @@
 import * as THREE from "three";
 import { Planet } from "./planet";
 import { PlanetCamera } from "./planet_camera";
+import { TextureManager } from "./texture_manager";
 
 // This is used so often in so many files that passing it around everywhere became ridiculous.
 const scene = new THREE.Scene();
 
 export { SceneData, scene };
+
 class SceneData {
   public light: THREE.PointLight;
   public planet: Planet;
@@ -21,8 +23,7 @@ class SceneData {
     this.horizDirection = this.vertDirection = this.zoomDirection = 0;
 
     // For now, just a flat background that doesn't move. In the future, maybe it can be a sky-sphere.
-    const texture = new THREE.TextureLoader().load('img/star-field.jpg');
-    scene.background = texture;
+    scene.background = TextureManager.textures["star-field.jpg"];
 
     this.camera.updateOnResize(width, height);
 
@@ -31,10 +32,6 @@ class SceneData {
     this.light.position.copy(this.camera.position);
     this.camera.add(this.light);
     scene.add(this.camera);
-
-    // FIXME: Remove, just for debugging to rule out light problems
-    const light = new THREE.AmbientLight(0x404040);
-    scene.add(light);
 
     // FIXME: Temporary hack to ensure that the planet is curved correctly. (The first frame comes out flat.)
     // I'll clean this up more elegantly later.
