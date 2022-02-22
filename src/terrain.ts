@@ -7,28 +7,33 @@ export { Terrain };
 const NOISE_SCALE = 6000;
 const MIN_ELEVATION = -11;  // 11 km is the deepest point on the Earth's surface.
 const MAX_ELEVATION = 9;    // Mount Everest is nearly 9 km high.
+
+// The amplitudes of all NOISE_LEVELS should add up to 1.
+// Sum of 1/2, 1/4, 1/8... is 1.
 const NOISE_LEVELS = [
-  { offset: 1,    amplitude: 1    },
-  { offset: 5.1,  amplitude: 1/4  },
-  { offset: 9.7,  amplitude: 1/8  },
-  { offset: 14.2, amplitude: 1/16 },
-  { offset: 20.0, amplitude: 1/24 },
-  { offset: 29.5, amplitude: 1/32 },
-  { offset: 33.8, amplitude: 1/48 },
-  { offset: 41.3, amplitude: 1/64 },
+  { offset: 1,    amplitude: 1/2    },
+    // See tectonic noise for 1/4
+  { offset: 5.1,  amplitude: 1/8  },
+  { offset: 9.7,  amplitude: 1/16  },
+  { offset: 14.2, amplitude: 1/32 },
+  { offset: 20.0, amplitude: 1/64 },
+  { offset: 29.5, amplitude: 1/128 },
+  { offset: 33.8, amplitude: 1/256 },
+  { offset: 41.3, amplitude: 1/1024 },
 ];
-const TECTONIC_NOISE_LEVEL = { offset: 1.1, amplitude: 1/2 };
+// Unlike regular noise, tectonic noise is shaped to be very "peaky"
+const TECTONIC_NOISE_LEVEL = { offset: 1.66, amplitude: 1/4 };
 const TECTONIC_SHARPNESS = 25;
 
-const MAX_AMPLITUDE = NOISE_LEVELS.reduce((n, level) => { return n + level.amplitude }, 0);
+
+const MAX_AMPLITUDE = [...NOISE_LEVELS, TECTONIC_NOISE_LEVEL]
+    .reduce((n, level) => { return n + level.amplitude }, 0);
 
 class Terrain {
   static readonly minAmplitude = 0;
   static readonly maxAmplitude = MAX_AMPLITUDE - this.minAmplitude;
 
   protected visualHelper: VisualHelper;
-  public min = 10000;
-  public max = -10000;
 
   static noiseGenerator = noiseGenerator();
 
@@ -44,31 +49,11 @@ class Terrain {
     // Generate a noisy height value.
     for (let i = 0; i < NOISE_LEVELS.length; i++) {
       let level = NOISE_LEVELS[i];
-      height += this.noise(pointOnSphere, level.offset, level.amplitude);
+      height += this.noise(pointOnSphere, level.offset) * level.amplitude;
     }
 
-    height += this.tectonicNoise(pointOnSphere);
+    height += this.tectonicNoise(pointOnSphere) * TECTONIC_NOISE_LEVEL.amplitude;
 
-
-    // Massage the height value, then skew it between -1.0 and 1.0.
-    height = (height - Terrain.minAmplitude) / Terrain.maxAmplitude;
-
-    height = (height + 1) / 2;      // Convert to the range 0..1.
-    height = Math.pow(height, 1.3); // Run it through a power function to decrease landmass and make it pointier.
-
-    // Convert back to -1..1.
-    height = height * 2 - 1;
-
-    // Clamp to the min, max.
-    if (height > this.max) {
-      this.max = height;
-    } else if (height < this.min) {
-      this.min = height;
-    }
-
-    if (typeof height === 'undefined') {
-      debugger;
-    }
     return height;
   }
 
@@ -80,17 +65,18 @@ class Terrain {
     }
   }
 
-  // Returns a predictable but random value in the range -1..1.
-  protected noise(point: THREE.Vector3, offset: number, amplitude: number) {
+  // Returns a predictable but random value in the range [-1, 1].
+  protected noise(point: THREE.Vector3, offset: number) {
     return Terrain.noiseGenerator.noise3D(
       offset * point.x / NOISE_SCALE,
       offset * point.y / NOISE_SCALE,
       offset * point.z / NOISE_SCALE,
-    ) * amplitude;
+    );
   }
 
+  // Returns a number in the range (0, 1]
   protected tectonicNoise(point: THREE.Vector3) {
-    let noiseValue = this.noise(point, TECTONIC_NOISE_LEVEL.offset, TECTONIC_NOISE_LEVEL.amplitude);
+    let noiseValue = this.noise(point, TECTONIC_NOISE_LEVEL.offset);
     return 1/(1 + (TECTONIC_SHARPNESS * noiseValue)**2);
   }
 }

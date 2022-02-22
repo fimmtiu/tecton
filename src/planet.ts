@@ -2,7 +2,7 @@ import * as THREE from "three";
 import tinygradient from "tinygradient";
 
 import { PlanetCamera } from "./planet_camera";
-import { getWorldVertexFromMesh, updateGeometry, ORIGIN, sphericalFromCoords, v2s } from "./util";
+import { updateGeometry, ORIGIN, sphericalFromCoords } from "./util";
 import { Terrain } from "./terrain";
 import { VisualHelper } from "./visual_helper";
 import { scene } from "./scene_data";
@@ -126,7 +126,6 @@ class Planet {
       positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
     }
     updateGeometry(this.mesh.geometry);
-    console.log(`min: ${this.terrain.min}. max: ${this.terrain.max}`);
 
     if (this.edges) {
       this.toggleEdgesVisible();
@@ -189,7 +188,7 @@ class Planet {
     const gradientArrayRgb = height >= 0 ? Planet.LAND_GRADIENT_ARRAY_RGB : Planet.WATER_GRADIENT_ARRAY_RGB;
     // console.log(`height: ${height}, gradient: ${Math.trunc(Math.abs(height) * 100)}`);
     // const {r, g, b} = gradient[Math.trunc(Math.abs(height) * 100)].toRgb();
-    const heightIndex = Math.trunc(Math.abs(height) * 100);
+    const heightIndex = Math.trunc(Math.abs(height) * Planet.GRADIENT_STEPS);
     color.setRGB(...gradientArrayRgb[heightIndex]);
   }
 
