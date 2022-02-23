@@ -22,16 +22,18 @@ class TextureCopier {
 
   copy(srcStartAt: number, destX: number, destY: number) {
     const swatch = this.getSwatch(srcStartAt);
-    let rowCount: number, columnCount: number, xOffset: number;
+    let rowCount: number, rowOffset: number, columnCount: number, xOffset: number;
 
     if (destY < this.swatchEdgeLength / 2) { // at the top edge
       rowCount = this.swatchEdgeLength / 2 + destY;
+      rowOffset = this.swatchEdgeLength - rowCount;
     } else if (this.destTexture.image.height - 1 < (destY + this.swatchEdgeLength / 2)) { // at the bottom edge
       rowCount = this.swatchEdgeLength / 2 + (this.destTexture.image.height - 1 - destY);
+      rowOffset = 0;
     } else {
-      rowCount = this.swatchEdgeLength;
+      rowCount = this.swatchEdgeLength; // in the middle
+      rowOffset = 0;
     }
-    const rowOffset = this.swatchEdgeLength - rowCount;
 
     if (destX < this.swatchEdgeLength / 2) { // at the left edge
       columnCount = this.swatchEdgeLength / 2 + destX;
@@ -40,18 +42,22 @@ class TextureCopier {
       columnCount = this.swatchEdgeLength / 2 + (this.destTexture.image.width - 1 - destX);
       xOffset = this.destTexture.image.width - columnCount;
     } else {
-      columnCount = this.swatchEdgeLength;
-      xOffset = destX;
+      columnCount = this.swatchEdgeLength; // in the middle
+      xOffset = destX - this.swatchEdgeLength / 2;
     }
     const columnOffset = this.swatchEdgeLength - columnCount;
 
-    // console.log(`rC ${rowCount}, rO ${rowOffset}, cC: ${columnCount}, cO: ${columnOffset}`);
     for (let row = 0; row < rowCount; row++) {
       const start = (rowOffset + row) * this.swatchEdgeLength * 4 + columnOffset * 4;
       const rowData = swatch.slice(start, start + columnCount * 4);
-      const byteOffset = (row * this.destTexture.image.width + xOffset) * 4;
-      // console.log(`putting ${rowData.join("")} at (${row} * ${this.destTexture.image.width} + ${xOffset}) * 4 = ${byteOffset}`);
+      const startAtDestinationRow = Math.max(0, destY - this.swatchEdgeLength / 2 + 1) + row;
+      const byteOffset = (startAtDestinationRow * this.destTexture.image.width + xOffset) * 4;
+      console.log(`drew ${rowData.join("")} at (${startAtDestinationRow} * ${this.destTexture.image.width} + ${xOffset}) * 4 = ${byteOffset}`);
       this.destTexture.image.data.set(rowData, byteOffset);
+    }
+
+    if (destX == 0 && destY == 0) {
+      debugger;
     }
   }
 
@@ -60,11 +66,10 @@ class TextureCopier {
       return this.swatchCache[srcStartAt];
     }
 
-    const startPixel = srcStartAt * 4;
     const pixels = new Uint8ClampedArray(this.swatchPixelCount * 4);
 
     for (let row = 0; row < this.swatchEdgeLength; row++) {
-      const rowStartsAt = startPixel + row * this.atlas.image.width * 4;
+      const rowStartsAt = srcStartAt + row * this.atlas.image.width * 4;
       const rowData = this.atlas.image.data.slice(rowStartsAt, rowStartsAt + this.swatchEdgeLength * 4);
       pixels.set(rowData, row * this.swatchEdgeLength * 4);
     }

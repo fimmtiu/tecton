@@ -14,7 +14,7 @@ export { Planet, PLANET_RADIUS };
 const PIXELS_BETWEEN_VERTICES = 10;
 const PLANET_RADIUS = 6370; // each unit is 1 kilometer
 const TEXTURE_SIZE = 1024;
-const ATLAS_INDEX: { [biomeName: string]: number[]} = {
+const ATLAS_INDEX: { [biomeName: string]: number[] } = {
   "snow": [0, 2048, 16, 2064],
   "jungle": [4096, 6144, 4112, 6160],
   "forest": [8192, 10240, 8208, 10256],
@@ -32,7 +32,7 @@ const ATLAS_INDEX: { [biomeName: string]: number[]} = {
   "water8": [8288, 10336, 8304, 10352],
   "water9": [12384, 14432, 12400, 14448],
 }
-const SWATCH_SIZE = ATLAS_INDEX["snow"][2]; // FIXME: cheap cheat
+const SWATCH_SIZE = 16;
 
 class Planet {
   static readonly radius = PLANET_RADIUS;
@@ -174,13 +174,16 @@ class Planet {
     bottomRight.applyQuaternion(rotation);
   }
 
-  // FIXME: This should be done by a fragment shader eventually. This is the lamest way to blit pixels ever.
+  // FIXME: This should be done by a fragment shader eventually. This is a terrible way to blit pixels.
   protected paintTextureOnVertex(x: number, y: number, worldPosition: THREE.Vector3, height: number) {
     const u = x * this.horizontalTexelsPerVertex, v = y * this.verticalTexelsPerVertex;
     const biome = this.terrain.biomeAt(worldPosition, height);
     // const atlasStart = ATLAS_INDEX[biome][THREE.MathUtils.randInt(0, 3)] * 4;
     const atlasStart = ATLAS_INDEX[biome][0] * 4;
 
+    if (u == 0 && v == 0) {
+      console.log(`biome ${biome}, atlasStart ${atlasStart} (${atlasStart / 4}), u ${u}, v${v}`);
+    }
     this.copier.copy(atlasStart, u, v);
   }
 
