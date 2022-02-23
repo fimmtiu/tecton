@@ -178,7 +178,8 @@ class Planet {
   protected paintTextureOnVertex(x: number, y: number, worldPosition: THREE.Vector3, height: number) {
     const u = x * this.horizontalTexelsPerVertex, v = y * this.verticalTexelsPerVertex;
     const biome = this.terrain.biomeAt(worldPosition, height);
-    const atlasStart = ATLAS_INDEX[biome][THREE.MathUtils.randInt(0, 3)] * 4;
+    const swatch = Math.abs(worldPosition.x) ^ Math.abs(worldPosition.y) ^ Math.abs(worldPosition.z) ^ height;
+    const atlasStart = ATLAS_INDEX[biome][Math.floor(swatch) % 4] * 4;
 
     this.copier.copy(atlasStart, u, v);
   }
