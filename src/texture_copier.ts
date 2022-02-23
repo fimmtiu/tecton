@@ -23,6 +23,8 @@ class TextureCopier {
   copy(srcStartAt: number, destX: number, destY: number) {
     const swatch = this.getSwatch(srcStartAt);
     let rowCount: number, rowOffset: number, columnCount: number, xOffset: number;
+    destX = Math.floor(destX);
+    destY = Math.floor(destY);
 
     if (destY < this.swatchEdgeLength / 2) { // at the top edge
       rowCount = this.swatchEdgeLength / 2 + destY;
@@ -52,12 +54,7 @@ class TextureCopier {
       const rowData = swatch.slice(start, start + columnCount * 4);
       const startAtDestinationRow = Math.max(0, destY - this.swatchEdgeLength / 2 + 1) + row;
       const byteOffset = (startAtDestinationRow * this.destTexture.image.width + xOffset) * 4;
-      console.log(`drew ${rowData.join("")} at (${startAtDestinationRow} * ${this.destTexture.image.width} + ${xOffset}) * 4 = ${byteOffset}`);
       this.destTexture.image.data.set(rowData, byteOffset);
-    }
-
-    if (destX == 0 && destY == 0) {
-      debugger;
     }
   }
 

@@ -156,7 +156,7 @@ class Planet {
     updateGeometry(this.mesh.geometry);
     this.texture.updateMatrix();
     this.texture.needsUpdate = true;
-    console.log(`min: ${this.terrain.min}. max: ${this.terrain.max}`);
+    console.log(`min: ${this.terrain.min}. max: ${this.terrain.max}.`);
 
     if (this.edges) {
       this.toggleEdgesVisible();
@@ -178,12 +178,8 @@ class Planet {
   protected paintTextureOnVertex(x: number, y: number, worldPosition: THREE.Vector3, height: number) {
     const u = x * this.horizontalTexelsPerVertex, v = y * this.verticalTexelsPerVertex;
     const biome = this.terrain.biomeAt(worldPosition, height);
-    // const atlasStart = ATLAS_INDEX[biome][THREE.MathUtils.randInt(0, 3)] * 4;
-    const atlasStart = ATLAS_INDEX[biome][0] * 4;
+    const atlasStart = ATLAS_INDEX[biome][THREE.MathUtils.randInt(0, 3)] * 4;
 
-    if (u == 0 && v == 0) {
-      console.log(`biome ${biome}, atlasStart ${atlasStart} (${atlasStart / 4}), u ${u}, v${v}`);
-    }
     this.copier.copy(atlasStart, u, v);
   }
 
