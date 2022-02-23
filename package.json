@@ -32,7 +32,6 @@
   "dependencies": {
     "@types/three": "^0.137.0",
     "simplex-noise": "^3.0.1",
-    "three": "^0.137.0",
-    "tinygradient": "^1.1.5"
+    "three": "^0.137.0"
   }
 }

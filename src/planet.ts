@@ -1,5 +1,4 @@
 import * as THREE from "three";
-// import tinygradient from "tinygradient";
 
 import { PlanetCamera } from "./planet_camera";
 import { updateGeometry, ORIGIN, sphericalFromCoords } from "./util";
@@ -198,30 +197,4 @@ class Planet {
       this.edges = null;
     }
   }
-
-  // // We have to pre-generate the gradients for performance reasons. 100 steps should be plenty, right?
-  // static readonly WATER_GRADIENT = tinygradient([
-  //   {color: '#7ad6cf', pos: 0},
-  //   {color: '#1298ff', pos: 0.05},
-  //   {color: '#1c63c7', pos: 0.6},
-  //   {color: '#003054', pos: 0.8},
-  // ]).rgb(101);
-  // static readonly LAND_GRADIENT = tinygradient([
-  //   {color: '#00aa00', pos: 0},
-  //   {color: '#009900', pos: 0.2},
-  //   {color: '#785c38', pos: 0.55},
-  //   {color: '#967447', pos: 0.65}, // the snow line is a fairly hard cutoff
-  //   {color: '#ffffff', pos: 0.68},
-  // ]).rgb(101);
-
-  // private setColor(index: number, height: number) {
-  //   const gradient = height >= 0 ? Planet.LAND_GRADIENT : Planet.WATER_GRADIENT;
-  //   // console.log(`height: ${height}, gradient: ${Math.trunc(Math.abs(height) * 100)}`);
-  //   const {r, g, b} = gradient[Math.trunc(Math.abs(height) * 100)].toRgb();
-
-  //   this.textureData[index * 4 + 0] = r;
-  //   this.textureData[index * 4 + 1] = g;
-  //   this.textureData[index * 4 + 2] = b;
-  //   this.textureData[index * 4 + 3] = 255;
-  // }
 };
