@@ -1,10 +1,10 @@
 import * as THREE from "three";
-import { Planet } from "./planet";
 import { VisualHelper } from "./visual_helper";
 import { noiseGenerator } from "./util";
-import { pingpong } from "three/src/math/MathUtils";
 
 export { Terrain };
+
+type Biome = Array<[number, string]>;
 
 const NOISE_SCALE = 6000;
 const FAVOR_WATER = 0.20;
@@ -74,6 +74,36 @@ class Terrain {
     } else {
       return height * MAX_ELEVATION;
     }
+  }
+
+  // FIXME: Later, biome calculation will take into account details like latitude, moisture, ocean currents, etc.
+  // For now, though, it's just a simple function of height so that I can get texture mapping working.
+  static readonly biomes: Biome = [
+    [-1.00, "water9"],
+    [-0.80, "water8"],
+    [-0.70, "water7"],
+    [-0.60, "water6"],
+    [-0.50, "water5"],
+    [-0.40, "water4"],
+    [-0.30, "water3"],
+    [-0.20, "water2"],
+    [-0.10, "water1"],
+    [ 0.00, "desert"],
+    [ 0.10, "plain"],
+    [ 0.20, "grassland"],
+    [ 0.30, "jungle"],
+    [ 0.40, "forest"],
+    [ 0.55, "mountain"],
+    [ 0.68, "snow"],
+    [10.00, "spaaaaaaaaaaaace!"],
+  ]
+  biomeAt(_worldPos: THREE.Vector3, normalizedHeight: number) {
+    for (let i = 0; i < Terrain.biomes.length; i++) {
+      if (Terrain.biomes[i + 1][0] > normalizedHeight) {
+        return Terrain.biomes[i][1];
+      }
+    }
+    throw `Couldn't find a biome for height ${normalizedHeight}!`;
   }
 
   // Massage the height values in a futile effort to get something that looks less random and more earth-ish.

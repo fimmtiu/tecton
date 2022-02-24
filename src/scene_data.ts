@@ -1,11 +1,13 @@
 import * as THREE from "three";
 import { Planet } from "./planet";
 import { PlanetCamera } from "./planet_camera";
+import { TextureManager } from "./texture_manager";
 
 // This is used so often in so many files that passing it around everywhere became ridiculous.
 const scene = new THREE.Scene();
 
 export { SceneData, scene };
+
 class SceneData {
   public light: THREE.PointLight;
   public planet: Planet;
@@ -21,8 +23,7 @@ class SceneData {
     this.horizDirection = this.vertDirection = this.zoomDirection = 0;
 
     // For now, just a flat background that doesn't move. In the future, maybe it can be a sky-sphere.
-    const texture = new THREE.TextureLoader().load('img/star-field.jpg');
-    scene.background = texture;
+    scene.background = TextureManager.textures["star-field.jpg"];
 
     this.camera.updateOnResize(width, height);
 
