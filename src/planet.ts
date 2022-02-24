@@ -37,7 +37,8 @@ class Planet {
   static readonly radius = PLANET_RADIUS;
 
   public sphere: THREE.Sphere;
-  protected mesh: THREE.Mesh;
+  protected hemisphereMesh: THREE.Mesh;
+  protected flatMesh: THREE.Mesh;
   protected edges: THREE.LineSegments | null;
   protected visualHelper: VisualHelper;
   protected horizontalVertices!: number;
@@ -54,7 +55,8 @@ class Planet {
 
   constructor(viewportWidth: number, viewportHeight: number) {
     this.sphere = new THREE.Sphere(ORIGIN, Planet.radius);
-    this.mesh = new THREE.Mesh();
+    this.hemisphereMesh = new THREE.Mesh();
+    this.flatMesh = new THREE.Mesh();
     this.visualHelper = new VisualHelper(true, true);
     this.terrain = new Terrain();
     this.textureData = new Uint8ClampedArray(TEXTURE_SIZE ** 2 * 4);
@@ -87,14 +89,17 @@ class Planet {
     );
 
     let material = new THREE.MeshStandardMaterial({ map: this.texture, side: THREE.FrontSide });
-    this.mesh = new THREE.Mesh(geometry, material);
-    scene.add(this.mesh);
+    this.flatMesh = new THREE.Mesh(geometry, material);
+    this.flatMesh.visible = false;
+    scene.add(this.flatMesh);
   }
 
   destroy() {
-    scene.remove(this.mesh);
-    (<THREE.Material>this.mesh.material).dispose();
-    this.mesh.geometry.dispose();
+    scene.remove(this.hemisphereMesh);
+    scene.remove(this.flatMesh);
+    this.hemisphereMesh.geometry.dispose();
+    this.flatMesh.geometry.dispose();
+    (<THREE.Material>this.hemisphereMesh.material).dispose();
     this.texture.dispose();
 
     if (this.edges) {
