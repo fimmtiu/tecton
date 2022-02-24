@@ -23,12 +23,12 @@ class TextureManager {
 
   protected static startLoadingNormalTextures() {
     return NORMAL_TEXTURES.map((name) => {
-      return new Promise((resolve: (value: any) => void) => {
+      return new Promise((resolve, reject) => {
         TextureManager.textures[name] = new THREE.TextureLoader().load(
           `img/${name}`,
-          () => { resolve(name) },
-          (_ev) => {},
-          (err) => { throw err },
+          resolve,
+          () => {},
+          reject,
         );
       });
     });
@@ -36,7 +36,7 @@ class TextureManager {
 
   protected static startLoadingDataTextures() {
     return DATA_TEXTURES.map((name) => {
-      return new Promise((resolve: (value: any) => void) => {
+      return new Promise((resolve, reject) => {
         new THREE.ImageLoader().load(
           `img/${name}`,
           (image) => {
@@ -46,7 +46,7 @@ class TextureManager {
             canvas.height = image.height;
             const context = canvas.getContext("2d");
             if (context === null) {
-              throw "Can't create context for canvas!";
+              return reject(new Error("Can't create context for canvas!"));
             }
 
             context.drawImage(image, 0, 0);
@@ -57,7 +57,7 @@ class TextureManager {
             resolve(name)
           },
           (_ev) => {},
-          (err) => { throw err; },
+          reject,
         );
       });
     });
