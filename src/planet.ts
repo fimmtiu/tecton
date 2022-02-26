@@ -47,9 +47,13 @@ class Planet {
   protected atlas: THREE.DataTexture;
   protected copier: TextureCopier;
   protected fillsCamera = false;
+  protected width: number;
+  protected height: number;
 
   constructor(viewportWidth: number, viewportHeight: number) {
     this.sphere = new THREE.Sphere(ORIGIN, Planet.radius);
+    this.width = viewportWidth;
+    this.height = viewportHeight;
     this.visualHelper = new VisualHelper(true, true);
     this.terrain = new Terrain();
     this.textureData = new Uint8ClampedArray(TEXTURE_SIZE ** 2 * 4);
@@ -82,8 +86,11 @@ class Planet {
   }
 
   resize(width: number, height: number) {
-    this.destroyMeshes();
-    this.createMeshes(width, height);
+    // Don't do anything with spurious resize events; only destroy stuff if things have actually changed.
+    if (width != this.width || height != this.height) {
+      this.destroyMeshes();
+      this.createMeshes(width, height);
+    }
   }
 
   destroy() {
