@@ -36,6 +36,7 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     this.width = newWidth;
     this.height = newHeight;
     this.aspect = newWidth / newHeight;
+    this.planet.resize(newWidth, newHeight);
     this.updateOnMove();
     console.log(`Initial position: ${s2s(this.sphereCoords)}. Position: ${v2s(this.position)}`);
   }

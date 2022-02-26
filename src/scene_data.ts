@@ -36,7 +36,6 @@ class SceneData {
     // FIXME: Temporary hack to ensure that the planet is curved correctly. (The first frame comes out flat.)
     // I'll clean this up more elegantly later.
     this.planet.update(this.camera);
-    this.planet.update(this.camera);
   }
 
   destroy() {
@@ -52,6 +51,7 @@ class SceneData {
 
   updateOnResize(width: number, height: number) {
     this.camera.updateOnResize(width, height);
+    this.planet.update(this.camera);
   }
 
   // -1 for left, 0 for stop, 1 for right.
