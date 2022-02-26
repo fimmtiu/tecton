@@ -56,13 +56,13 @@ class Planet {
     this.height = viewportHeight;
     this.visualHelper = new VisualHelper(true, true);
     this.terrain = new Terrain();
-    this.textureData = new Uint8ClampedArray(TEXTURE_SIZE ** 2 * 4);
+    this.textureData = new Uint8ClampedArray(TEXTURE_SIZE ** 2 * 4).fill(255);
 
     this.texture = new THREE.DataTexture(this.textureData, TEXTURE_SIZE, TEXTURE_SIZE, THREE.RGBAFormat);
     this.texture.flipY = true;
     this.atlas = TextureManager.dataTextures["atlas.png"];
     this.atlas.flipY = true;
-    this.copier = new TextureCopier(this.atlas, this.texture, SWATCH_SIZE);
+    this.copier = new TextureCopier(this.atlas, this.texture, SWATCH_SIZE, TextureManager.dataTextures["alpha.png"]);
 
     this.createMeshes(viewportWidth, viewportHeight);
   }

@@ -7,14 +7,16 @@ export { TextureCopier };
 class TextureCopier {
   protected atlas: THREE.DataTexture;
   protected destTexture: THREE.DataTexture;
+  protected alpha: THREE.DataTexture;
   protected swatchEdgeLength: number;
   protected swatchPixelCount: number;
   protected swatchCache: { [startPixel: number]: Uint8ClampedArray };
 
   // It assumes that your swatches are square and uniform, but the atlas and texture can be any dimensions.
-  constructor(atlas: THREE.DataTexture, destTexture: THREE.DataTexture, swatchEdgeLength: number) {
+  constructor(atlas: THREE.DataTexture, destTexture: THREE.DataTexture, swatchEdgeLength: number, alpha: THREE.DataTexture) {
     this.atlas = atlas;
     this.destTexture = destTexture;
+    this.alpha = alpha;
     this.swatchEdgeLength = swatchEdgeLength;
     this.swatchPixelCount = this.swatchEdgeLength ** 2;
     this.swatchCache = {};
@@ -54,7 +56,26 @@ class TextureCopier {
       const rowData = swatch.slice(start, start + columnCount * 4);
       const startAtDestinationRow = Math.max(0, destY - this.swatchEdgeLength / 2 + 1) + row;
       const byteOffset = (startAtDestinationRow * this.destTexture.image.width + xOffset) * 4;
-      this.destTexture.image.data.set(rowData, byteOffset);
+      // this.destTexture.image.data.set(rowData, byteOffset);
+
+      // OMFG the worst worst worst
+      // A very slow, shitty way to alpha-blend textures together.
+      for (let pixel = 0; pixel < columnCount * 4; pixel += 4) {
+        const offset = byteOffset + pixel;
+        const sourceAlpha = rowData[pixel + 3] / 255;
+        const destinationAlphaPercent = this.destTexture.image.data[offset + 3] / 255;
+        const destinationAlpha = destinationAlphaPercent * (1 - sourceAlpha);
+
+        // if (pixel == 0) {
+        //   console.log(`before: (r ${this.destTexture.image.data[offset + 0]}, g ${this.destTexture.image.data[offset + 1]}, b ${this.destTexture.image.data[offset + 2]}) <= (r ${rowData[pixel + 0]}, g ${rowData[pixel + 1]}, b ${rowData[pixel + 2]})`);
+        // }
+        this.destTexture.image.data[offset + 0] = rowData[pixel + 0] * sourceAlpha + this.destTexture.image.data[offset + 0] * destinationAlpha;
+        this.destTexture.image.data[offset + 1] = rowData[pixel + 1] * sourceAlpha + this.destTexture.image.data[offset + 1] * destinationAlpha;
+        this.destTexture.image.data[offset + 2] = rowData[pixel + 2] * sourceAlpha + this.destTexture.image.data[offset + 2] * destinationAlpha;
+        // if (pixel == 0) {
+        //   console.log(`after: r ${this.destTexture.image.data[offset + 0]}, g ${this.destTexture.image.data[offset + 1]}, b ${this.destTexture.image.data[offset + 2]}`);
+        // }
+      }
     }
   }
 
@@ -69,6 +90,10 @@ class TextureCopier {
       const rowStartsAt = srcStartAt + row * this.atlas.image.width * 4;
       const rowData = this.atlas.image.data.slice(rowStartsAt, rowStartsAt + this.swatchEdgeLength * 4);
       pixels.set(rowData, row * this.swatchEdgeLength * 4);
+    }
+
+    for (let pixel = 0; pixel < this.swatchPixelCount; pixel++) {
+      pixels[pixel * 4 + 3] = this.alpha.image.data[pixel];
     }
 
     this.swatchCache[srcStartAt] = pixels;

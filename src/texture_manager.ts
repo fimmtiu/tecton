@@ -7,6 +7,7 @@ const NORMAL_TEXTURES = [
 ];
 
 const DATA_TEXTURES = [
+  "alpha.png",
   "atlas.png",
 ];
 
