@@ -38,15 +38,13 @@ class Planet {
   static readonly radius = PLANET_RADIUS;
 
   public sphere: THREE.Sphere;
-  protected hemisphereMesh!: PlanetMesh;
-  protected flatMesh!: PlanetMesh;
+  protected mesh!: PlanetMesh;
   protected visualHelper: VisualHelper;
   protected terrain: Terrain;
   protected textureData: Uint8ClampedArray;
   protected texture: THREE.DataTexture;
   protected atlas: THREE.DataTexture;
   protected copier: TextureCopier;
-  protected fillsCamera = false;
   protected width: number;
   protected height: number;
 
@@ -68,52 +66,38 @@ class Planet {
   }
 
   createMeshes(viewportWidth: number, viewportHeight: number) {
-    const hemiMaterial = new THREE.MeshStandardMaterial({ map: this.texture, side: THREE.FrontSide });
-    const flatMaterial = new THREE.MeshStandardMaterial({ map: this.texture, side: THREE.FrontSide });
-
     const horizontalVertices = Math.ceil(viewportWidth / PIXELS_BETWEEN_VERTICES) + 2;
     const verticalVertices = Math.ceil(viewportHeight / PIXELS_BETWEEN_VERTICES) + 2;
-    const hemiVertices = Math.max(horizontalVertices, verticalVertices); // The hemisphere mesh is a square
-    const hemiSide = Math.max(viewportWidth, viewportHeight);
 
-    this.hemisphereMesh = new PlanetMesh(hemiSide, hemiSide, hemiVertices, hemiVertices, hemiMaterial);
-    this.hemisphereMesh.visible = !this.fillsCamera;
-    scene.add(this.hemisphereMesh);
+    const material = new THREE.MeshStandardMaterial({ map: this.texture, side: THREE.FrontSide });
 
-    this.flatMesh = new PlanetMesh(viewportWidth, viewportHeight, horizontalVertices, verticalVertices, flatMaterial);
-    this.flatMesh.visible = this.fillsCamera;
-    scene.add(this.flatMesh);
+    this.mesh = new PlanetMesh(viewportWidth, viewportHeight, horizontalVertices, verticalVertices, material);
+    scene.add(this.mesh);
   }
 
   resize(width: number, height: number) {
     // Don't do anything with spurious resize events; only destroy stuff if things have actually changed.
     if (width != this.width || height != this.height) {
-      this.destroyMeshes();
-      this.createMeshes(width, height);
+      this.mesh.destroy();
+      (<THREE.Material>this.mesh.material).dispose();
+        this.createMeshes(width, height);
     }
   }
 
   destroy() {
-    this.destroyMeshes();
+    this.mesh.destroy();
+    (<THREE.Material>this.mesh.material).dispose();
     this.texture.dispose();
-  }
-
-  destroyMeshes() {
-    this.hemisphereMesh.destroy();
-    this.flatMesh.destroy();
-    // hemisphereMesh and flatMesh share the same Material, so we only have to dispose it once.
-    (<THREE.Material>this.hemisphereMesh.material).dispose();
   }
 
   elevationAt(point: THREE.Vector3) {
     return this.terrain.scaleHeight(this.terrain.normalizedHeightAt(point));
   }
 
-  // FIXME: This method is way too long. Needs extraction.
+  // FIXME: This method is too long. Needs extraction.
   update(camera: PlanetCamera) {
     // Make the planet mesh and all of its child meshes turn to look at the new camera position.
-    this.hemisphereMesh.lookAt(camera.position);
-    this.flatMesh.lookAt(camera.position);
+    this.mesh.lookAt(camera.position);
 
     // Change the curvature of the planet mesh and update the colors to reflect the terrain.
     // FIXME: Later, try doing this with a vertex and fragment shader, respectively.
@@ -121,7 +105,6 @@ class Planet {
     let horizRadiansPerUnit = 0, vertRadiansPerUnit = 0;
     let sphereCoords = new THREE.Spherical(Planet.radius, 0, 0);
     let newPosition = new THREE.Vector3();
-    let currentMesh: PlanetMesh;
 
     // When we're zoomed far out, the planet mesh is shaped like a hemisphere.
     // When we're zoomed close in, the planet mesh is a rectangular patch of the sphere's surface that fills the camera.
@@ -129,64 +112,41 @@ class Planet {
       this.rotateCornersToEquator(topLeftPoint, bottomRightPoint);
       const topLeftSph = sphericalFromCoords(topLeftPoint);
       const bottomRightSph = sphericalFromCoords(bottomRightPoint);
-      horizRadiansPerUnit = Math.abs(bottomRightSph.theta - topLeftSph.theta) / (this.flatMesh.horizontalVertices - 1);
-      vertRadiansPerUnit = Math.abs(bottomRightSph.phi - topLeftSph.phi) / (this.flatMesh.verticalVertices - 1);
-
-      currentMesh = this.flatMesh;
-      if (!this.fillsCamera) {
-        this.fillsCamera = true;
-        if (this.hemisphereMesh.edges) {
-          this.hemisphereMesh.hideEdges();
-          this.flatMesh.showEdges();
-        }
-        this.hemisphereMesh.visible = false;
-        this.flatMesh.visible = true;
-      }
-
+      horizRadiansPerUnit = Math.abs(bottomRightSph.theta - topLeftSph.theta) / (this.mesh.horizontalVertices - 1);
+      vertRadiansPerUnit = Math.abs(bottomRightSph.phi - topLeftSph.phi) / (this.mesh.verticalVertices - 1);
     } else {
-      horizRadiansPerUnit = Math.PI / this.hemisphereMesh.horizontalVertices; // camera is far away
-      vertRadiansPerUnit = Math.PI / this.hemisphereMesh.verticalVertices;
-
-      currentMesh = this.hemisphereMesh;
-      if (this.fillsCamera) {
-        this.fillsCamera = false;
-        if (this.flatMesh.edges) {
-          this.flatMesh.hideEdges();
-          this.hemisphereMesh.showEdges();
-        }
-        this.flatMesh.visible = false;
-        this.hemisphereMesh.visible = true;
-      }
+      horizRadiansPerUnit = Math.PI / this.mesh.horizontalVertices; // camera is far away
+      vertRadiansPerUnit = Math.PI / this.mesh.verticalVertices;
     }
 
-    const positions = currentMesh.geometry.getAttribute("position");
+    const positions = this.mesh.geometry.getAttribute("position");
     for (let i = 0; i < positions.count; i++) {
-      const u = i % currentMesh.horizontalVertices;
-      const v = Math.floor(i / currentMesh.horizontalVertices);
+      const u = i % this.mesh.horizontalVertices;
+      const v = Math.floor(i / this.mesh.horizontalVertices);
 
       // Calculate where this vertex should go on the sea-level sphere.
-      sphereCoords.theta = horizRadiansPerUnit * (u - currentMesh.halfHorizLength);
-      sphereCoords.phi = vertRadiansPerUnit * (v - currentMesh.halfVertLength) + Math.PI / 2;
+      sphereCoords.theta = horizRadiansPerUnit * (u - this.mesh.halfHorizLength);
+      sphereCoords.phi = vertRadiansPerUnit * (v - this.mesh.halfVertLength) + Math.PI / 2;
       sphereCoords.radius = Planet.radius;
       newPosition.setFromSpherical(sphereCoords);
 
       // Add terrain height to the vertex.
-      const worldPosition = currentMesh.localToWorld(newPosition.clone());
+      const worldPosition = this.mesh.localToWorld(newPosition.clone());
       const height = this.terrain.normalizedHeightAt(worldPosition);
-      this.paintTextureOnVertex(currentMesh, u, v, worldPosition, height);
+      this.paintTextureOnVertex(this.mesh, u, v, worldPosition, height);
       if (height > 0) {
         sphereCoords.radius += this.terrain.scaleHeight(height);
         newPosition.setFromSpherical(sphereCoords);
       }
       positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
     }
-    updateGeometry(currentMesh.geometry);
+    updateGeometry(this.mesh.geometry);
     this.texture.needsUpdate = true;
     console.log(`min: ${this.terrain.min}. max: ${this.terrain.max}.`);
 
-    if (currentMesh.edges) {
-      currentMesh.hideEdges();
-      currentMesh.showEdges();
+    if (this.mesh.edges) {
+      this.mesh.hideEdges();
+      this.mesh.showEdges();
     }
     this.visualHelper.update();
   }
@@ -195,7 +155,7 @@ class Planet {
   // equator, but freaks out around the poles. The simplest (though not necessarily best) solution is to just move
   // the corners to near the equator before we calculate the mesh deformation.
   protected rotateCornersToEquator(topLeft: THREE.Vector3, bottomRight: THREE.Vector3) {
-    const rotation = new THREE.Quaternion().setFromEuler(this.flatMesh.rotation).conjugate();
+    const rotation = new THREE.Quaternion().setFromEuler(this.mesh.rotation).conjugate();
     topLeft.applyQuaternion(rotation);
     bottomRight.applyQuaternion(rotation);
   }
@@ -212,11 +172,10 @@ class Planet {
 
   // Optional white lines outlining each face of the mesh.
   toggleEdgesVisible() {
-    const currentMesh = this.fillsCamera ? this.flatMesh : this.hemisphereMesh;
-    if (currentMesh.edges === null) {
-      currentMesh.showEdges();
+    if (this.mesh.edges === null) {
+      this.mesh.showEdges();
     } else {
-      currentMesh.hideEdges();
+      this.mesh.hideEdges();
     }
   }
 };

@@ -32,9 +32,6 @@ class SceneData {
     this.light.position.copy(this.camera.position);
     this.camera.add(this.light);
     scene.add(this.camera);
-
-    // FIXME: Temporary hack to ensure that the planet is curved correctly. (The first frame comes out flat.)
-    // I'll clean this up more elegantly later.
     this.planet.update(this.camera);
   }
 
