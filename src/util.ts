@@ -3,7 +3,7 @@ import * as THREE from "three";
 
 export {
   noiseGenerator, setRandomSeed, updateGeometry, getWorldVertexFromMesh, ORIGIN, ORIGIN_2D, sphericalFromCoords,
-  v2s, s2s,
+  v2s, s2s, convertNonIndexedGeometryToIndexed,
 };
 
 const ORIGIN = new THREE.Vector3(0, 0, 0);
@@ -33,6 +33,44 @@ function updateGeometry(geometry: THREE.BufferGeometry) {
   // We don't care about collision, so these seem unnecessary.
   // geometry.computeBoundingBox();
   // geometry.computeBoundingSphere();
+}
+
+// We don't really care how performant this is, since it won't be used often.
+// (Apparently there's a utility for this in a forthcoming version of three.js, but we can't wait.)
+function convertNonIndexedGeometryToIndexed(geometry: THREE.BufferGeometry) {
+  const positions = geometry.getAttribute("position");
+  const vertexCache: { [rounded: string]: { vec: THREE.Vector3, index: number } } = {};
+  const newPositions = new THREE.BufferAttribute(new Float32Array(positions.count), 3);
+  const index = new THREE.BufferAttribute(new Uint16Array(positions.count), 3);
+  let positionsAdded = 0;
+
+  function addToVertexList(vec: THREE.Vector3) {
+    const id = `${Math.round(vec.x)},${Math.round(vec.y)},${Math.round(vec.z)}`;
+    if (!vertexCache[id]) {
+      vertexCache[id] = { vec: vec, index: positionsAdded };
+      newPositions.setXYZ(positionsAdded, vec.x, vec.y, vec.z);
+      positionsAdded++;
+    }
+    return vertexCache[id]["index"];
+  }
+
+  for (let i = 0; i < positions.count / 3; i++) {
+    const vecA = new THREE.Vector3().fromArray(positions.array, i * 3 + 0);
+    const vecB = new THREE.Vector3().fromArray(positions.array, i * 3 + 3);
+    const vecC = new THREE.Vector3().fromArray(positions.array, i * 3 + 6);
+
+    const posA = addToVertexList(vecA);
+    const posB = addToVertexList(vecB);
+    const posC = addToVertexList(vecC);
+
+    console.log(`[${v2s(vecA)} = ${posA}, ${v2s(vecB)} = ${posB}, ${v2s(vecC)} = ${posC}]`);
+    index.set([posA, posB, posC], i * 3);
+  }
+
+  newPositions.needsUpdate = true;
+  geometry.setAttribute("position", newPositions);
+  geometry.setIndex(index);
+  updateGeometry(geometry);
 }
 
 function getWorldVertexFromMesh(mesh: THREE.Mesh, index: number) {

@@ -146,6 +146,5 @@ test("Copy to 7, 4", () => {
 test("Overlapping copy", () => {
   copier.copy(128, 1, 1);
   copier.copy(128, 3, 2);
-  printGrid();
   expect(result()).toBe("12x2 20x0 4x3 16x1 12x0 4x4 16x2 16x0 16x3 16x0 16x4 108x0");
 });

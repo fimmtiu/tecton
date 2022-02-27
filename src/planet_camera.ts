@@ -87,7 +87,7 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     return this.distance() - Planet.radius;
   }
 
-  // We use this to calculate the planet's curvature. This finds the points at which the edges of the screen
+  // We use this to calculate the planet mesh's curvature. This finds the points at which the edges of the screen
   // intersect the planet, ignoring terrain and assuming it's a smooth sphere.
   copyPlanetIntersectionPoints(outputTopLeft: THREE.Vector3, outputBottomRight: THREE.Vector3) {
     const farPlaneHeight = 2 * Math.tan((this.fov / 2) / (180 / Math.PI)) * this.far;

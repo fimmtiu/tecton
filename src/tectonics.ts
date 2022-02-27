@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Planet } from "./planet";
 import { scene } from "./scene_data";
+import { convertNonIndexedGeometryToIndexed } from "./util";
 
 export { Tectonics };
 
@@ -12,11 +13,12 @@ class Tectonics {
 
   constructor() {
     this.voronoi = new THREE.IcosahedronBufferGeometry(Planet.radius, VORONOI_DENSITY);
-    this.randomlyJitterVertices(this.voronoi, Planet.radius);
+    convertNonIndexedGeometryToIndexed(this.voronoi);
+    // this.randomlyJitterVertices(this.voronoi, Planet.radius);
     this.wrapMeshAroundSphere(this.voronoi, Planet.radius);
 
     const edgeGeometry = new THREE.EdgesGeometry(this.voronoi, 0);
-    edgeGeometry.scale(1.01, 1.01, 1.01); // Prevents weird clipping
+    edgeGeometry.scale(1.1, 1.1, 1.1); // Prevents weird clipping
     this.edges = new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
     scene.add(this.edges);
   }
