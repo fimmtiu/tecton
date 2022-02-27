@@ -8,6 +8,7 @@ import { scene } from "./scene_data";
 import { TextureManager } from "./texture_manager";
 import { TextureCopier } from "./texture_copier";
 import { PlanetMesh } from "./planet_mesh";
+import { Tectonics } from "./tectonics";
 
 export { Planet, PLANET_RADIUS };
 
@@ -47,6 +48,7 @@ class Planet {
   protected copier: TextureCopier;
   protected width: number;
   protected height: number;
+  protected tectonics: Tectonics;
 
   constructor(viewportWidth: number, viewportHeight: number) {
     this.sphere = new THREE.Sphere(ORIGIN, Planet.radius);
@@ -54,6 +56,7 @@ class Planet {
     this.height = viewportHeight;
     this.visualHelper = new VisualHelper(true, true);
     this.terrain = new Terrain();
+    this.tectonics = new Tectonics();
     this.textureData = new Uint8ClampedArray(TEXTURE_SIZE ** 2 * 4);
 
     this.texture = new THREE.DataTexture(this.textureData, TEXTURE_SIZE, TEXTURE_SIZE, THREE.RGBAFormat);

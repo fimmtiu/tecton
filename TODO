@@ -1,0 +1,12 @@
+TO DO
+
+* Investigate Voronoi cells in 3D on a sphere
+  - are there any existing libraries?
+
+  https://www.redblobgames.com/x/1842-delaunay-voronoi-sphere/ : how to do Voronoi cells on a sphere
+  https://github.com/mapbox/delaunator : JS library for fast Delaunay triangulation
+  https://github.com/Fil/d3-geo-voronoi : A library for doing EXACTLY THIS THING. BOOM.
+
+* Texture isn't getting painted at the very bottom corners of the zoomed-in mesh, even though there are vertices there.
+  Are we missing painting the bottom row or something?
+
