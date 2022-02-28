@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Planet } from "./planet";
 import { scene } from "./scene_data";
-import { mergeIdenticalVertices } from "./util";
+import { mergeDuplicateVertices } from "./util";
 
 export { Tectonics };
 
@@ -13,8 +13,8 @@ class Tectonics {
 
   constructor() {
     this.voronoi = new THREE.IcosahedronBufferGeometry(Planet.radius, VORONOI_DENSITY);
-    mergeIdenticalVertices(this.voronoi);
-    // this.randomlyJitterVertices(this.voronoi, Planet.radius);
+    mergeDuplicateVertices(this.voronoi);
+    this.randomlyJitterVertices(this.voronoi, Planet.radius);
     this.wrapMeshAroundSphere(this.voronoi, Planet.radius);
 
     const edgeGeometry = new THREE.EdgesGeometry(this.voronoi, 0);
@@ -27,7 +27,7 @@ class Tectonics {
     const positions = geometry.getAttribute("position");
     for (let i = 0; i < positions.count; i++) {
       const pos = new THREE.Vector3(positions.getX(i), positions.getY(i), positions.getZ(i));
-      const dir = new THREE.Vector3().randomDirection().setLength(radius / 10);
+      const dir = new THREE.Vector3().randomDirection().setLength(radius / 20);
       pos.add(dir);
 
       positions.setXYZ(i, pos.x, pos.y, pos.z);

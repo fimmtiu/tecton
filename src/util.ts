@@ -3,7 +3,7 @@ import * as THREE from "three";
 
 export {
   noiseGenerator, setRandomSeed, updateGeometry, getWorldVertexFromMesh, ORIGIN, ORIGIN_2D, sphericalFromCoords,
-  v2s, s2s, mergeIdenticalVertices,
+  v2s, s2s, mergeDuplicateVertices,
 };
 
 const ORIGIN = new THREE.Vector3(0, 0, 0);
@@ -38,38 +38,40 @@ function updateGeometry(geometry: THREE.BufferGeometry) {
 // Converts a non-indexed BufferGeometry to an indexed one with all duplicate vertices merged.
 // We don't really care how performant this is, since it won't be used often.
 // (Apparently there's a utility for this in a forthcoming version of three.js, but we can't wait.)
-function mergeIdenticalVertices(geometry: THREE.BufferGeometry) {
-  if (!geometry.index) {
-    throw "Non-indexed geometry passed to mergeIdenticalVertices!";
-  }
-
+function mergeDuplicateVertices(geometry: THREE.BufferGeometry) {
   const positions = geometry.getAttribute("position");
   const vertexCache: { [rounded: string]: { vec: THREE.Vector3, index: number } } = {};
-  const newPositions = new THREE.BufferAttribute(new Float32Array(positions.count), 3);
-  const index = new THREE.BufferAttribute(new Uint16Array(positions.count), 3);
+  const index = new THREE.BufferAttribute(new Uint16Array(positions.count), 1);
   let positionsAdded = 0;
 
   function addToVertexList(vec: THREE.Vector3) {
     const id = `${Math.round(vec.x)},${Math.round(vec.y)},${Math.round(vec.z)}`;
     if (!vertexCache[id]) {
       vertexCache[id] = { vec: vec, index: positionsAdded };
-      newPositions.setXYZ(positionsAdded, vec.x, vec.y, vec.z);
       positionsAdded++;
     }
     return vertexCache[id]["index"];
   }
 
-  for (let i = 0; i < positions.count / 3; i++) {
-    const vecA = new THREE.Vector3().fromArray(positions.array, i * 3 + 0);
-    const vecB = new THREE.Vector3().fromArray(positions.array, i * 3 + 3);
-    const vecC = new THREE.Vector3().fromArray(positions.array, i * 3 + 6);
+  for (let i = 0; i < positions.count; i += 3) {
+    // const vecA = new THREE.Vector3().fromArray(positions.array, i * 3 + 0);
+    // const vecB = new THREE.Vector3().fromArray(positions.array, i * 3 + 3);
+    // const vecC = new THREE.Vector3().fromArray(positions.array, i * 3 + 6);
+    const vecA = new THREE.Vector3(positions.getX(i), positions.getY(i), positions.getZ(i))
+    const vecB = new THREE.Vector3(positions.getX(i + 1), positions.getY(i + 1), positions.getZ(i + 1))
+    const vecC = new THREE.Vector3(positions.getX(i + 2), positions.getY(i + 2), positions.getZ(i + 2))
 
     const posA = addToVertexList(vecA);
     const posB = addToVertexList(vecB);
     const posC = addToVertexList(vecC);
 
-    console.log(`[${v2s(vecA)} = ${posA}, ${v2s(vecB)} = ${posB}, ${v2s(vecC)} = ${posC}]`);
-    index.set([posA, posB, posC], i * 3);
+    index.set([posA, posB, posC], i);
+  }
+
+  const newPositions = new THREE.BufferAttribute(new Float32Array(positionsAdded * 3), 3);
+  for (let id in vertexCache) {
+    let vec = vertexCache[id]["vec"];
+    newPositions.setXYZ(vertexCache[id]["index"], vec.x, vec.y, vec.z);
   }
 
   newPositions.needsUpdate = true;
