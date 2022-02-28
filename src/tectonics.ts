@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Planet } from "./planet";
 import { scene } from "./scene_data";
-import { convertNonIndexedGeometryToIndexed } from "./util";
+import { mergeIdenticalVertices } from "./util";
 
 export { Tectonics };
 
@@ -13,7 +13,7 @@ class Tectonics {
 
   constructor() {
     this.voronoi = new THREE.IcosahedronBufferGeometry(Planet.radius, VORONOI_DENSITY);
-    convertNonIndexedGeometryToIndexed(this.voronoi);
+    mergeIdenticalVertices(this.voronoi);
     // this.randomlyJitterVertices(this.voronoi, Planet.radius);
     this.wrapMeshAroundSphere(this.voronoi, Planet.radius);
 

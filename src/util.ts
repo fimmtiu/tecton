@@ -3,7 +3,7 @@ import * as THREE from "three";
 
 export {
   noiseGenerator, setRandomSeed, updateGeometry, getWorldVertexFromMesh, ORIGIN, ORIGIN_2D, sphericalFromCoords,
-  v2s, s2s, convertNonIndexedGeometryToIndexed,
+  v2s, s2s, mergeIdenticalVertices,
 };
 
 const ORIGIN = new THREE.Vector3(0, 0, 0);
@@ -35,9 +35,14 @@ function updateGeometry(geometry: THREE.BufferGeometry) {
   // geometry.computeBoundingSphere();
 }
 
+// Converts a non-indexed BufferGeometry to an indexed one with all duplicate vertices merged.
 // We don't really care how performant this is, since it won't be used often.
 // (Apparently there's a utility for this in a forthcoming version of three.js, but we can't wait.)
-function convertNonIndexedGeometryToIndexed(geometry: THREE.BufferGeometry) {
+function mergeIdenticalVertices(geometry: THREE.BufferGeometry) {
+  if (!geometry.index) {
+    throw "Non-indexed geometry passed to mergeIdenticalVertices!";
+  }
+
   const positions = geometry.getAttribute("position");
   const vertexCache: { [rounded: string]: { vec: THREE.Vector3, index: number } } = {};
   const newPositions = new THREE.BufferAttribute(new Float32Array(positions.count), 3);
