@@ -20,7 +20,7 @@ class Tectonics {
     const edgeGeometry = new THREE.EdgesGeometry(this.voronoi, 0);
     edgeGeometry.scale(1.1, 1.1, 1.1); // Prevents weird clipping
     this.edges = new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
-    scene.add(this.edges);
+    // scene.add(this.edges);
   }
 
   randomlyJitterVertices(geometry: THREE.BufferGeometry, radius: number) {

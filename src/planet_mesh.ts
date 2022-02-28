@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { scene } from "./scene_data";
+import { mergeDuplicateVertices } from "./util";
 
 export { PlanetMesh };
 

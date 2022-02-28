@@ -7,6 +7,9 @@ TO DO
   https://github.com/mapbox/delaunator : JS library for fast Delaunay triangulation
   https://github.com/Fil/d3-geo-voronoi : A library for doing EXACTLY THIS THING. BOOM.
 
+* Is there a way to map a square texture onto a cube without fucking it up _too_ much?
+
 * Texture isn't getting painted at the very bottom corners of the zoomed-in mesh, even though there are vertices there.
   Are we missing painting the bottom row or something?
+   -- can't replicate; is it dependent on a specific viewport size?
 

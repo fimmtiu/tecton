@@ -65,10 +65,10 @@ class Planet {
     this.atlas.flipY = true;
     this.copier = new TextureCopier(this.atlas, this.texture, SWATCH_SIZE);
 
-    this.createMeshes(viewportWidth, viewportHeight);
+    this.createMesh(viewportWidth, viewportHeight);
   }
 
-  createMeshes(viewportWidth: number, viewportHeight: number) {
+  createMesh(viewportWidth: number, viewportHeight: number) {
     const horizontalVertices = Math.ceil(viewportWidth / PIXELS_BETWEEN_VERTICES) + 2;
     const verticalVertices = Math.ceil(viewportHeight / PIXELS_BETWEEN_VERTICES) + 2;
 
@@ -83,7 +83,7 @@ class Planet {
     if (width != this.width || height != this.height) {
       this.mesh.destroy();
       (<THREE.Material>this.mesh.material).dispose();
-        this.createMeshes(width, height);
+        this.createMesh(width, height);
     }
   }
 
