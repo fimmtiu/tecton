@@ -109,7 +109,6 @@ function mergeDuplicateIndexedVertices(geometry: THREE.BufferGeometry) {
     }
     indexCache[i] = vertexCache[id]["index"];
   }
-  console.log(`count: ${positions.count}, added: ${positionsAdded}`);
 
   const newPositions = new THREE.BufferAttribute(new Float32Array(positionsAdded * 3), 3);
   for (let id in vertexCache) {
