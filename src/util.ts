@@ -3,7 +3,7 @@ import * as THREE from "three";
 
 export {
   noiseGenerator, setRandomSeed, updateGeometry, getWorldVertexFromMesh, ORIGIN, ORIGIN_2D, sphericalFromCoords,
-  v2s, s2s, mergeDuplicateVertices,
+  v2s, s2s, mergeDuplicateVertices, shuffle,
 };
 
 const ORIGIN = new THREE.Vector3(0, 0, 0);
@@ -129,6 +129,18 @@ function getWorldVertexFromMesh(mesh: THREE.Mesh, index: number) {
   const positions = mesh.geometry.getAttribute("position");
   const localPos = new THREE.Vector3(positions.getX(index), positions.getY(index), positions.getZ(index));
   return mesh.localToWorld(localPos);
+}
+
+// Copy an array, randomize its contents, return it.
+function shuffle(arr: Array<any>) {
+  const newArray = [...arr];
+  for (let i = 0; i < newArray.length; i++) {
+    const dest = THREE.MathUtils.randInt(0, newArray.length - 1);
+    const temp = newArray[i];
+    newArray[i] = newArray[dest];
+    newArray[dest] = temp;
+  }
+  return newArray;
 }
 
 // These functions are just shorthand helpers for long-winded things that I use often.

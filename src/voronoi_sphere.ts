@@ -21,6 +21,8 @@ class VoronoiSphere {
   protected voronoiMesh: THREE.Mesh;
   protected meshTriangleToCell: Array<number>;
   protected cellToMeshTriangle: Array<number[]>;
+  protected terrainData: Array<TerrainData>;
+  public needsUpdate = true;
 
   constructor() {
     this.meshTriangleToCell = [];
@@ -33,10 +35,73 @@ class VoronoiSphere {
 
     this.voronoiMesh = this.makeTriangleMesh();
     scene.add(this.voronoiMesh);
+
+    this.terrainData = [];
+    for (let i = 0; i < this.polygons.length; i++) {
+      this.terrainData.push(new TerrainData(this));
+    }
   }
 
   destroy() {
     scene.remove(this.voronoiEdges);
+    this.voronoiEdges.geometry.dispose();
+    (<THREE.Material> this.voronoiEdges.material).dispose();
+    scene.remove(this.voronoiMesh);
+    this.voronoiMesh.geometry.dispose();
+  }
+
+  cellCount() {
+    return this.polygons.length;
+  }
+
+  cellData(cell: number) {
+    return this.terrainData[cell];
+  }
+
+  setColor(cell: number, color: number) {
+    this.voronoiMesh.geometry.addGroup(this.cellToMeshTriangle[cell][0], this.cellToMeshTriangle[cell].length, color);
+  }
+
+  neighbours(cell: number) {
+    return this.polygons[cell].properties.neighbours;
+  }
+
+  update() {
+    if (this.needsUpdate) {
+      for (let i = 0; i < this.polygons.length; i++) {
+        const color = this.cellData(i).height() >= 0 ? 1 : 0;
+        this.setColor(i, color);
+      }
+      this.needsUpdate = false;
+    }
+  }
+
+  protected makeEdges() {
+    const polygons = this.polygons;
+    const edges: Array<THREE.Vector3[]> = [];
+    const seen: { [edge: string]: boolean } = {};
+
+    for (let i = 0; i < polygons.length; i++) {
+      const polygon = polygons[i].geometry.coordinates[0];
+      for (let j = 0; j < polygon.length - 1; j++) {
+        const posA = new GeoCoord(polygon[j][1], polygon[j][0]).toWorldVector();
+        const posB = new GeoCoord(polygon[j + 1][1], polygon[j + 1][0]).toWorldVector();
+        const hash1 = `${v2s(posA)},${v2s(posB)}`;
+        const hash2 = `${v2s(posB)},${v2s(posA)}`;
+        if (!seen[hash1] && !seen[hash2]) {
+          edges.push([posA, posB]);
+          seen[hash1] = seen[hash2] = true;
+        }
+      }
+    }
+
+    const positions = new THREE.BufferAttribute(new Float32Array(edges.length * 6), 3);
+    for (let i = 0; i < edges.length; i++) {
+      positions.setXYZ(i * 2, edges[i][0].x, edges[i][0].y, edges[i][0].z);
+      positions.setXYZ(i * 2 + 1, edges[i][1].x, edges[i][1].y, edges[i][1].z);
+    }
+    const geometry = new THREE.BufferGeometry().setAttribute("position", positions);
+    return new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
   }
 
   protected makeTriangleMesh() {
@@ -70,46 +135,6 @@ class VoronoiSphere {
     const geometry = new THREE.BufferGeometry().setAttribute("position", positions);
     mergeDuplicateVertices(geometry);
     return new THREE.Mesh(geometry, COLORS);
-  }
-
-  cellCount() {
-    return this.polygons.length;
-  }
-
-  setColor(cell: number, color: number) {
-    this.voronoiMesh.geometry.addGroup(this.cellToMeshTriangle[cell][0], this.cellToMeshTriangle[cell].length, color);
-  }
-
-  neighbours(cell: number) {
-    return this.polygons[cell].properties.neighbours;
-  }
-
-  protected makeEdges() {
-    const polygons = this.polygons;
-    const edges: Array<THREE.Vector3[]> = [];
-    const seen: { [edge: string]: boolean } = {};
-
-    for (let i = 0; i < polygons.length; i++) {
-      const polygon = polygons[i].geometry.coordinates[0];
-      for (let j = 0; j < polygon.length - 1; j++) {
-        const posA = new GeoCoord(polygon[j][1], polygon[j][0]).toWorldVector();
-        const posB = new GeoCoord(polygon[j + 1][1], polygon[j + 1][0]).toWorldVector();
-        const hash1 = `${v2s(posA)},${v2s(posB)}`;
-        const hash2 = `${v2s(posB)},${v2s(posA)}`;
-        if (!seen[hash1] && !seen[hash2]) {
-          edges.push([posA, posB]);
-          seen[hash1] = seen[hash2] = true;
-        }
-      }
-    }
-
-    const positions = new THREE.BufferAttribute(new Float32Array(edges.length * 6), 3);
-    for (let i = 0; i < edges.length; i++) {
-      positions.setXYZ(i * 2, edges[i][0].x, edges[i][0].y, edges[i][0].z);
-      positions.setXYZ(i * 2 + 1, edges[i][1].x, edges[i][1].y, edges[i][1].z);
-    }
-    const geometry = new THREE.BufferGeometry().setAttribute("position", positions);
-    return new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
   }
 
   protected voronoiStartingPoints() {
@@ -148,5 +173,25 @@ class VoronoiSphere {
       vec.normalize().multiplyScalar(radius);
       positions.setXYZ(i, vec.x, vec.y, vec.z);
     }
+  }
+}
+
+class TerrainData {
+  protected parent: VoronoiSphere;
+  protected _height: number;
+
+  constructor(parent: VoronoiSphere) {
+    this.parent = parent;
+    this._height = 0;
+  }
+
+  // We need the accessors so that we can update the parent's 'needsUpdate' when it changes.
+  height() {
+    return this._height;
+  }
+
+  setHeight(height: number) {
+    this._height = height;
+    this.parent.needsUpdate = true;
   }
 }
