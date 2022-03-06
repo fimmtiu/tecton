@@ -7,7 +7,6 @@ export { Terrain };
 type Biome = Array<[number, string]>;
 
 const NOISE_SCALE = 6000;
-// const FAVOR_WATER = 0.20;
 const MIN_ELEVATION = -11;  // 11 km is the deepest point on the Earth's surface.
 const MAX_ELEVATION = 9;    // Mount Everest is nearly 9 km high.
 const NOISE_LEVELS = [
