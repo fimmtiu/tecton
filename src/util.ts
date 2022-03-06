@@ -82,7 +82,7 @@ function mergeDuplicateNonIndexedVertices(geometry: THREE.BufferGeometry) {
     newPositions.setXYZ(vertexCache[id]["index"], vec.x, vec.y, vec.z);
   }
 
-  newPositions.needsUpdate = true;
+  newPositions.needsUpdate = true; // FIXME: need this?
   geometry.setAttribute("position", newPositions);
   geometry.setIndex(index);
   updateGeometry(geometry);
