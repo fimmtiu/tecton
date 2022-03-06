@@ -1,12 +1,14 @@
 import * as THREE from "three";
 
 import { VoronoiSphere } from "./voronoi_sphere";
-import { shuffle } from "./util";
+import { shuffle, sample } from "./util";
 
 export { Tectonics };
 
 const INITIAL_LAND_CELLS = 20;
 const INITIAL_WATER_CELLS = 60;
+const SWITCH_CELLS = 20;
+const SWITCH_SPREAD_CHANCE = 0.4;
 
 class Tectonics {
   protected voronoiSphere: VoronoiSphere;
@@ -14,6 +16,7 @@ class Tectonics {
   constructor() {
     this.voronoiSphere = new VoronoiSphere();
     this.fillCellsWithLandAndWater();
+    this.addIslandsAndLakes();
     this.voronoiSphere.update();
 
     let land = 0, water = 0;
@@ -50,6 +53,23 @@ class Tectonics {
           seen[neighbor] = true;
         }
       }
+    }
+  }
+
+  addIslandsAndLakes() {
+    for (let i = 0; i < SWITCH_CELLS; i++) {
+      const cell = THREE.MathUtils.randInt(0, this.voronoiSphere.cellCount() - 1);
+      this.toggleCell(cell, SWITCH_SPREAD_CHANCE);
+    }
+  }
+
+  protected toggleCell(cell: number, spreadChance: number) {
+    const cellData = this.voronoiSphere.cellData(cell);
+    cellData.setHeight(-cellData.height());
+
+    if (Math.random() < spreadChance) {
+      const randomNeighbour = sample(this.voronoiSphere.neighbours(cell));
+      this.toggleCell(randomNeighbour, spreadChance / 2);
     }
   }
 }

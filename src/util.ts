@@ -3,7 +3,7 @@ import * as THREE from "three";
 
 export {
   noiseGenerator, setRandomSeed, updateGeometry, getWorldVertexFromMesh, ORIGIN, ORIGIN_2D, sphericalFromCoords,
-  v2s, s2s, mergeDuplicateVertices, shuffle,
+  v2s, s2s, mergeDuplicateVertices, shuffle, sample,
 };
 
 const ORIGIN = new THREE.Vector3(0, 0, 0);
@@ -141,6 +141,11 @@ function shuffle(arr: Array<any>) {
     newArray[dest] = temp;
   }
   return newArray;
+}
+
+// Return a random element from an array.
+function sample(arr: Array<any>) {
+  return arr[THREE.MathUtils.randInt(0, arr.length - 1)];
 }
 
 // These functions are just shorthand helpers for long-winded things that I use often.
