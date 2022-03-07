@@ -122,10 +122,10 @@ class PlateSphere {
       const [cellId, plate] = <[number, Plate]> queue.shift();
       this.plateCells[cellId].plate = plate;
       this.plateCells[cellId].plate = plate;
-      for (let neighbor of shuffle(this.neighbours(cellId))) {
-        if (!seen[neighbor]) {
-          queue.push([neighbor, plate]);
-          seen[neighbor] = true;
+      for (let neighbour of shuffle(this.neighbours(cellId))) {
+        if (!seen[neighbour]) {
+          queue.push([neighbour, plate]);
+          seen[neighbour] = true;
         }
       }
     }

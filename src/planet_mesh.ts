@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { scene } from "./scene_data";
+import { disposeMesh } from "./util/geometry";
 
 export { PlanetMesh };
 
@@ -33,8 +33,7 @@ class PlanetMesh extends THREE.Mesh {
   }
 
   destroy() {
-    scene.remove(this);
-    this.geometry.dispose();
+    disposeMesh(this);
     this.hideEdges();
   }
 
@@ -49,9 +48,7 @@ class PlanetMesh extends THREE.Mesh {
 
   hideEdges() {
     if (this.edges) {
-      this.edges.removeFromParent();
-      (<THREE.Material>this.edges.material).dispose();
-      this.edges.geometry.dispose();
+      disposeMesh(this.edges);
       this.edges = null;
     }
   }

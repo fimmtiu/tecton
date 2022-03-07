@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Planet } from "./planet";
 import { ORIGIN } from "./util";
+import { disposeMesh } from "./util/geometry";
 import { scene } from "./scene_data";
 
 export { VisualHelper };
@@ -41,9 +42,7 @@ class VisualHelper {
     }
 
     for (let point of this.points) {
-      scene.remove(point);
-      (<THREE.Material>point.material).dispose();
-      point.geometry.dispose();
+      disposeMesh(point);
     }
     this.points = [];
   }

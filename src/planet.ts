@@ -10,6 +10,7 @@ import { TextureManager } from "./texture_manager";
 import { TextureCopier } from "./texture_copier";
 import { PlanetMesh } from "./planet_mesh";
 import { Tectonics } from "./tectonics";
+import { Climate } from "./climate";
 
 export { Planet, PLANET_RADIUS };
 
@@ -43,6 +44,7 @@ class Planet {
   protected mesh!: PlanetMesh;
   protected visualHelper: VisualHelper;
   protected terrain: Terrain;
+  protected climate: Climate;
   protected textureData: Uint8ClampedArray;
   protected texture: THREE.DataTexture;
   protected atlas: THREE.DataTexture;
@@ -58,6 +60,7 @@ class Planet {
     this.visualHelper = new VisualHelper(true, true);
     this.terrain = new Terrain();
     this.tectonics = new Tectonics();
+    this.climate = new Climate();
     this.textureData = new Uint8ClampedArray(TEXTURE_SIZE ** 2 * 4);
 
     this.texture = new THREE.DataTexture(this.textureData, TEXTURE_SIZE, TEXTURE_SIZE, THREE.RGBAFormat);
@@ -83,15 +86,13 @@ class Planet {
     // Don't do anything with spurious resize events; only destroy stuff if things have actually changed.
     if (width != this.width || height != this.height) {
       this.mesh.destroy();
-      (<THREE.Material>this.mesh.material).dispose();
-        this.createMesh(width, height);
+      this.createMesh(width, height);
     }
   }
 
   destroy() {
     this.tectonics.destroy();
     this.mesh.destroy();
-    (<THREE.Material>this.mesh.material).dispose();
     this.texture.dispose();
   }
 

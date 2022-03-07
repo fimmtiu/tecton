@@ -1,6 +1,11 @@
 import * as THREE from "three";
 
-export { updateGeometry, mergeDuplicateVertices, getWorldVertexFromMesh, randomlyJitterVertices, wrapMeshAroundSphere };
+import { scene } from "../scene_data";
+
+export {
+  updateGeometry, mergeDuplicateVertices, getWorldVertexFromMesh, randomlyJitterVertices, wrapMeshAroundSphere,
+  disposeMesh,
+ };
 
 // Tell three.js that this geometry has changed.
 function updateGeometry(geometry: THREE.BufferGeometry) {
@@ -127,5 +132,19 @@ function wrapMeshAroundSphere(geometry: THREE.BufferGeometry, radius: number) {
     const vec = new THREE.Vector3(positions.getX(i), positions.getY(i), positions.getZ(i));
     vec.normalize().multiplyScalar(radius);
     positions.setXYZ(i, vec.x, vec.y, vec.z);
+  }
+}
+
+function disposeMesh(mesh: THREE.Mesh | THREE.Points | THREE.LineSegments) {
+  scene.remove(mesh);
+  mesh.removeFromParent();
+  mesh.geometry.dispose();
+
+  if (mesh.material instanceof THREE.Material) {
+    mesh.material.dispose();
+  } else {
+    for (let material of mesh.material) {
+      material.dispose();
+    }
   }
 }
