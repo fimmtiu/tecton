@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Planet } from "./planet";
+import { Planet, PLANET_RADIUS } from "./planet";
 import { v2s, s2s, ORIGIN } from "./util";
 
 export { PlanetCamera };
@@ -13,9 +13,9 @@ const FIELD_OF_VIEW = 50;
 const ROTATION_SPEED = 0.01;
 const MIN_VERT_ANGLE = 0.005;
 const MAX_VERT_ANGLE = Math.PI - MIN_VERT_ANGLE;
-const MAX_ZOOM = 1 / (Math.tan((FIELD_OF_VIEW / 2) / (180 / Math.PI)) / Planet.radius / 1.2);
-const MIN_ZOOM = Planet.radius * 1.01;
-const ZOOM_SPEED = Planet.radius / 60;
+const MAX_ZOOM = 1 / (Math.tan((FIELD_OF_VIEW / 2) / (180 / Math.PI)) / PLANET_RADIUS / 1.2);
+const MIN_ZOOM = PLANET_RADIUS * 1.01;
+const ZOOM_SPEED = PLANET_RADIUS / 60;
 
 class PlanetCamera extends THREE.PerspectiveCamera {
   public width: number;
@@ -87,7 +87,7 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     return this.distance() - Planet.radius;
   }
 
-  // We use this to calculate the planet's curvature. This finds the points at which the edges of the screen
+  // We use this to calculate the planet mesh's curvature. This finds the points at which the edges of the screen
   // intersect the planet, ignoring terrain and assuming it's a smooth sphere.
   copyPlanetIntersectionPoints(outputTopLeft: THREE.Vector3, outputBottomRight: THREE.Vector3) {
     const farPlaneHeight = 2 * Math.tan((this.fov / 2) / (180 / Math.PI)) * this.far;

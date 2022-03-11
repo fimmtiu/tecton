@@ -8,6 +8,7 @@ import { scene } from "./scene_data";
 import { TextureManager } from "./texture_manager";
 import { TextureCopier } from "./texture_copier";
 import { PlanetMesh } from "./planet_mesh";
+import { Tectonics } from "./tectonics";
 
 export { Planet, PLANET_RADIUS };
 
@@ -47,6 +48,7 @@ class Planet {
   protected copier: TextureCopier;
   protected width: number;
   protected height: number;
+  protected tectonics: Tectonics;
 
   constructor(viewportWidth: number, viewportHeight: number) {
     this.sphere = new THREE.Sphere(ORIGIN, Planet.radius);
@@ -54,6 +56,7 @@ class Planet {
     this.height = viewportHeight;
     this.visualHelper = new VisualHelper(true, true);
     this.terrain = new Terrain();
+    this.tectonics = new Tectonics();
     this.textureData = new Uint8ClampedArray(TEXTURE_SIZE ** 2 * 4);
 
     this.texture = new THREE.DataTexture(this.textureData, TEXTURE_SIZE, TEXTURE_SIZE, THREE.RGBAFormat);
@@ -62,10 +65,10 @@ class Planet {
     this.atlas.flipY = true;
     this.copier = new TextureCopier(this.atlas, this.texture, SWATCH_SIZE);
 
-    this.createMeshes(viewportWidth, viewportHeight);
+    this.createMesh(viewportWidth, viewportHeight);
   }
 
-  createMeshes(viewportWidth: number, viewportHeight: number) {
+  createMesh(viewportWidth: number, viewportHeight: number) {
     const horizontalVertices = Math.ceil(viewportWidth / PIXELS_BETWEEN_VERTICES) + 2;
     const verticalVertices = Math.ceil(viewportHeight / PIXELS_BETWEEN_VERTICES) + 2;
 
@@ -80,7 +83,7 @@ class Planet {
     if (width != this.width || height != this.height) {
       this.mesh.destroy();
       (<THREE.Material>this.mesh.material).dispose();
-        this.createMeshes(width, height);
+        this.createMesh(width, height);
     }
   }
 
@@ -98,6 +101,7 @@ class Planet {
   update(camera: PlanetCamera) {
     // Make the planet mesh and all of its child meshes turn to look at the new camera position.
     this.mesh.lookAt(camera.position);
+    this.mesh.visible = false;
 
     // Change the curvature of the planet mesh and update the colors to reflect the terrain.
     // FIXME: Later, try doing this with a vertex and fragment shader, respectively.

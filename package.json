@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "@types/three": "^0.137.0",
+    "d3-geo-voronoi": "^2.0.1",
     "simplex-noise": "^3.0.1",
     "three": "^0.137.0"
   }
