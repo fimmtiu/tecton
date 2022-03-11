@@ -88,6 +88,7 @@ class Planet {
   }
 
   destroy() {
+    this.tectonics.destroy();
     this.mesh.destroy();
     (<THREE.Material>this.mesh.material).dispose();
     this.texture.dispose();
