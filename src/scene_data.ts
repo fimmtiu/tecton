@@ -67,15 +67,20 @@ class SceneData {
   }
 
   dataAtPoint(screenX: number, screenY: number) {
-    let worldPos = new THREE.Vector3();
-    let ray = new THREE.Ray();
+    const worldPos = new THREE.Vector3();
+    const ray = new THREE.Ray();
 
     ray.origin.setFromMatrixPosition(this.camera.matrixWorld);
-    ray.direction.set(screenX, screenY, 0.5 ).unproject(this.camera).sub(ray.origin).normalize();
+    ray.direction.set(screenX, screenY, 0.5).unproject(this.camera).sub(ray.origin).normalize();
 
     if (this.camera.intersect(ray, worldPos)) {
+      const dataAtPoint = this.planet.dataAtPoint(worldPos);
+
       return {
-        "elevation": Math.round(this.planet.elevationAt(worldPos) * 1000),
+        "elevation": dataAtPoint.elevation,
+        "voronoiCell": dataAtPoint.voronoiCell,
+        "plate": dataAtPoint.plate,
+        "neighbours": dataAtPoint.neighbours,
       };
     }
     return null;

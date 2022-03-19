@@ -8,10 +8,36 @@ import { v2s, mergeDuplicateVertices } from "./util";
 
 export { VoronoiSphere };
 
-const VORONOI_DENSITY = 20;
+// TODO: I'd really like to do some Lloyd's relaxation on the Voronoi cells to reduce the number of little tiny edges
+// that you can barely see. They cause some weird-looking effects.
+
+const VORONOI_DENSITY = 10;
 const COLORS = [
-  new THREE.MeshBasicMaterial({ color: 0x4287f5 }), // water
-  new THREE.MeshBasicMaterial({ color: 0x4da632 }), // land
+  new THREE.MeshBasicMaterial({ color: 0x4287f5 }), // water plates
+  new THREE.MeshBasicMaterial({ color: 0x4789ed }),
+  new THREE.MeshBasicMaterial({ color: 0x2754a3 }),
+  new THREE.MeshBasicMaterial({ color: 0x1d5bc6 }),
+  new THREE.MeshBasicMaterial({ color: 0x47caff }),
+  new THREE.MeshBasicMaterial({ color: 0x87d0f2 }),
+  new THREE.MeshBasicMaterial({ color: 0x369edb }),
+  new THREE.MeshBasicMaterial({ color: 0x376cc6 }),
+
+  new THREE.MeshBasicMaterial({ color: 0x4da632 }), // land plates
+  new THREE.MeshBasicMaterial({ color: 0x008000 }),
+  new THREE.MeshBasicMaterial({ color: 0x98fb98 }),
+  new THREE.MeshBasicMaterial({ color: 0x90ee90 }),
+  new THREE.MeshBasicMaterial({ color: 0x8fbc8f }),
+  new THREE.MeshBasicMaterial({ color: 0xadff2f }),
+  new THREE.MeshBasicMaterial({ color: 0x00ff00 }),
+  new THREE.MeshBasicMaterial({ color: 0x00ff7f }),
+  new THREE.MeshBasicMaterial({ color: 0x7fff00 }),
+  new THREE.MeshBasicMaterial({ color: 0x32cd32 }),
+  new THREE.MeshBasicMaterial({ color: 0x00fa9a }),
+  new THREE.MeshBasicMaterial({ color: 0x7cfc00 }),
+  new THREE.MeshBasicMaterial({ color: 0x3cb371 }),
+  new THREE.MeshBasicMaterial({ color: 0x2e8b57 }),
+  new THREE.MeshBasicMaterial({ color: 0x228b22 }),
+  new THREE.MeshBasicMaterial({ color: 0x006400 }),
 ];
 
 class VoronoiSphere {
@@ -30,16 +56,16 @@ class VoronoiSphere {
     this.voronoi = DGV.geoVoronoi(this.voronoiStartingPoints());
     this.polygons = this.voronoi.polygons().features;
 
+    this.terrainData = [];
+    for (let i = 0; i < this.polygons.length; i++) {
+      this.terrainData.push(new TerrainData(this));
+    }
+
     this.voronoiEdges = this.makeEdges();
     scene.add(this.voronoiEdges);
 
     this.voronoiMesh = this.makeTriangleMesh();
     scene.add(this.voronoiMesh);
-
-    this.terrainData = [];
-    for (let i = 0; i < this.polygons.length; i++) {
-      this.terrainData.push(new TerrainData(this));
-    }
   }
 
   destroy() {
@@ -62,46 +88,103 @@ class VoronoiSphere {
     this.voronoiMesh.geometry.addGroup(this.cellToMeshTriangle[cell][0], this.cellToMeshTriangle[cell].length, color);
   }
 
-  neighbours(cell: number) {
+  neighbours(cell: number): number[] {
     return this.polygons[cell].properties.neighbours;
   }
 
   update() {
     if (this.needsUpdate) {
       for (let i = 0; i < this.polygons.length; i++) {
-        const color = this.cellData(i).height() >= 0 ? 1 : 0;
+        const color = this.cellData(i).height() >= 0 ? this.cellData(i).plate + 8 : this.cellData(i).plate;
         this.setColor(i, color);
       }
+
+      scene.remove(this.voronoiEdges);
+      this.voronoiEdges.geometry.dispose();
+      this.voronoiEdges = this.makeEdges();
+      scene.add(this.voronoiEdges);
+
       this.needsUpdate = false;
     }
   }
 
+  cellAtPoint(point: THREE.Vector3) {
+    const coord = GeoCoord.fromWorldVector(point);
+    const cell = this.voronoi.find(coord.lon, coord.lat);
+    console.log(`${coord.str}: ${cell} of ${this.terrainData.length}`);
+    return cell;
+  }
+
+  dataAtPoint(point: THREE.Vector3) {
+    const cell = this.cellAtPoint(point);
+    return {
+      "cell": cell,
+      "plate": this.terrainData[cell].plate,
+      "neighbours": this.neighbours(cell),
+    };
+  }
+
+  static readonly LINE_MATERIALS = [
+    new THREE.LineBasicMaterial({ color: 0x000000 }), // away
+    new THREE.LineBasicMaterial({ color: 0xffffff }), // neutral
+    new THREE.LineBasicMaterial({ color: 0x000000 }), // towards
+  ];
+
   protected makeEdges() {
     const polygons = this.polygons;
     const edges: Array<THREE.Vector3[]> = [];
+    const plates: Array<number[]> = [];
     const seen: { [edge: string]: boolean } = {};
 
     for (let i = 0; i < polygons.length; i++) {
       const polygon = polygons[i].geometry.coordinates[0];
       for (let j = 0; j < polygon.length - 1; j++) {
-        const posA = new GeoCoord(polygon[j][1], polygon[j][0]).toWorldVector();
-        const posB = new GeoCoord(polygon[j + 1][1], polygon[j + 1][0]).toWorldVector();
+        const geoA = new GeoCoord(polygon[j][1], polygon[j][0]);
+        const geoB = new GeoCoord(polygon[j + 1][1], polygon[j + 1][0]);
+        const posA = geoA.toWorldVector();
+        const posB = geoB.toWorldVector();
         const hash1 = `${v2s(posA)},${v2s(posB)}`;
         const hash2 = `${v2s(posB)},${v2s(posA)}`;
         if (!seen[hash1] && !seen[hash2]) {
+          const thisPlate = this.cellData(i).plate;
+          const adjacentPlate = this.cellData(this.neighbour(i, geoA, geoB)).plate;
+          console.log(`i ${i}, j ${j}, ${polygons[i].properties.neighbours.length} neighbours. self ${thisPlate}, neighbours ${polygons[i].properties.neighbours.map((n: number) => { return this.cellData(n).plate })}. adj ${adjacentPlate}`);
           edges.push([posA, posB]);
+          plates.push([thisPlate, adjacentPlate]);
           seen[hash1] = seen[hash2] = true;
         }
       }
     }
 
     const positions = new THREE.BufferAttribute(new Float32Array(edges.length * 6), 3);
+    const geometry = new THREE.BufferGeometry().setAttribute("position", positions);
     for (let i = 0; i < edges.length; i++) {
       positions.setXYZ(i * 2, edges[i][0].x, edges[i][0].y, edges[i][0].z);
       positions.setXYZ(i * 2 + 1, edges[i][1].x, edges[i][1].y, edges[i][1].z);
+
+      let color = 1;
+      if (plates[i][0] % 2 > plates[i][1] % 2) {
+        color = 0;
+      } else if (plates[i][0] % 2 < plates[i][1] % 2) {
+        color = 2;
+      }
+      geometry.addGroup(i * 2, 2, color);
     }
-    const geometry = new THREE.BufferGeometry().setAttribute("position", positions);
-    return new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
+    return new THREE.LineSegments(geometry, VoronoiSphere.LINE_MATERIALS);
+  }
+
+  // Find the neighbouring cell which shares the given line segment.
+  protected neighbour(cell: number, posA: GeoCoord, posB: GeoCoord) {
+    for (let n of this.neighbours(cell)) {
+      const polygon = this.polygons[n].geometry.coordinates[0];
+      for (let i = 0; i < polygon.length - 1; i++) {
+        if (polygon[i][0] == posB.lon && polygon[i][1] == posB.lat &&
+            polygon[i + 1][0] == posA.lon && polygon[i + 1][1] == posA.lat) {
+          return n;
+        }
+      }
+    }
+    throw `Can't find a neighbour for cell ${cell}!`;
   }
 
   protected makeTriangleMesh() {
@@ -178,10 +261,12 @@ class VoronoiSphere {
 
 class TerrainData {
   protected parent: VoronoiSphere;
+  public plate: number;
   protected _height: number;
 
-  constructor(parent: VoronoiSphere) {
+  constructor(parent: VoronoiSphere, plate = 0) {
     this.parent = parent;
+    this.plate = plate;
     this._height = 0;
   }
 
