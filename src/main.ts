@@ -61,6 +61,9 @@ TextureManager.loadAll(() => {
     case '.':
       sceneData.zoom(1);
       break;
+    case 'd':
+      debugger;
+      break;
     case 'h':
       sceneData.planet.toggleEdgesVisible();
       break;
