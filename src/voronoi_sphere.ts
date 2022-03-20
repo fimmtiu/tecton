@@ -4,11 +4,11 @@ import * as DGV from "d3-geo-voronoi";
 import { Planet } from "./planet";
 import { scene } from "./scene_data";
 import { GeoCoord } from "./geo_coord";
-import { v2s, mergeDuplicateVertices } from "./util";
+import { mergeDuplicateVertices } from "./util";
 
 export { VoronoiSphere };
 
-// TODO: I'd really like to do some Lloyd's relaxation on the Voronoi cells to reduce the number of little tiny edges
+// TODO: I'd like to do some Lloyd's relaxation on the Voronoi cells to reduce the number of little tiny edges
 // that you can barely see. They cause some weird-looking effects.
 
 const VORONOI_DENSITY = 10;
@@ -111,7 +111,6 @@ class VoronoiSphere {
   cellAtPoint(point: THREE.Vector3) {
     const coord = GeoCoord.fromWorldVector(point);
     const cell = this.voronoi.find(coord.lon, coord.lat);
-    console.log(`${coord.str}: ${cell} of ${this.terrainData.length}`);
     return cell;
   }
 
@@ -125,9 +124,9 @@ class VoronoiSphere {
   }
 
   static readonly LINE_MATERIALS = [
-    new THREE.LineBasicMaterial({ color: 0x000000 }), // away
+    new THREE.LineBasicMaterial({ color: 0xff0000 }), // away
     new THREE.LineBasicMaterial({ color: 0xffffff }), // neutral
-    new THREE.LineBasicMaterial({ color: 0x000000 }), // towards
+    new THREE.LineBasicMaterial({ color: 0x0000ff }), // towards
   ];
 
   protected makeEdges() {
@@ -141,15 +140,12 @@ class VoronoiSphere {
       for (let j = 0; j < polygon.length - 1; j++) {
         const geoA = new GeoCoord(polygon[j][1], polygon[j][0]);
         const geoB = new GeoCoord(polygon[j + 1][1], polygon[j + 1][0]);
-        const posA = geoA.toWorldVector();
-        const posB = geoB.toWorldVector();
-        const hash1 = `${v2s(posA)},${v2s(posB)}`;
-        const hash2 = `${v2s(posB)},${v2s(posA)}`;
+        const hash1 = `${geoA.str()},${geoB.str()}`;
+        const hash2 = `${geoB.str()},${geoA.str()}`;
         if (!seen[hash1] && !seen[hash2]) {
           const thisPlate = this.cellData(i).plate;
           const adjacentPlate = this.cellData(this.neighbour(i, geoA, geoB)).plate;
-          console.log(`i ${i}, j ${j}, ${polygons[i].properties.neighbours.length} neighbours. self ${thisPlate}, neighbours ${polygons[i].properties.neighbours.map((n: number) => { return this.cellData(n).plate })}. adj ${adjacentPlate}`);
-          edges.push([posA, posB]);
+          edges.push([geoA.toWorldVector(), geoB.toWorldVector()]);
           plates.push([thisPlate, adjacentPlate]);
           seen[hash1] = seen[hash2] = true;
         }
@@ -174,12 +170,12 @@ class VoronoiSphere {
   }
 
   // Find the neighbouring cell which shares the given line segment.
-  protected neighbour(cell: number, posA: GeoCoord, posB: GeoCoord) {
+  protected neighbour(cell: number, geoA: GeoCoord, geoB: GeoCoord) {
     for (let n of this.neighbours(cell)) {
       const polygon = this.polygons[n].geometry.coordinates[0];
       for (let i = 0; i < polygon.length - 1; i++) {
-        if (polygon[i][0] == posB.lon && polygon[i][1] == posB.lat &&
-            polygon[i + 1][0] == posA.lon && polygon[i + 1][1] == posA.lat) {
+        if (polygon[i][0] == geoB.lon && polygon[i][1] == geoB.lat &&
+            polygon[i + 1][0] == geoA.lon && polygon[i + 1][1] == geoA.lat) {
           return n;
         }
       }

@@ -41,7 +41,7 @@ class Tectonics {
     for (let i = 0; i < INITIAL_LAND_CELLS + INITIAL_WATER_CELLS; i++) {
       const cell = THREE.MathUtils.randInt(0, this.voronoiSphere.cellCount() - 1);
       const terrain = i >= INITIAL_LAND_CELLS ? -1 : 1;
-      const plate = i >= INITIAL_LAND_CELLS ? i % 8 + 8 : i % 8;
+      const plate = i >= INITIAL_LAND_CELLS ? i % 8 : i % 8 + 8;
       queue.push([cell, terrain, plate]);
     }
 
