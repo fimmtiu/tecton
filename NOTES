@@ -1,21 +1,71 @@
 NOTES
 
-Vertex 0 is the top left corner. Vertex `positions.count - 1` is the bottom right corner.
+Things Tectonics needs to do:
 
-this.highlightPoints([
-  getVertexFromGeometry(this.mesh.geometry, 0), // Top left
-  getVertexFromGeometry(this.mesh.geometry, this.horizontalVertices), // Top right
-  getVertexFromGeometry(this.mesh.geometry, (this.horizontalVertices + 1) * this.verticalVertices), // Bottom left
-  getVertexFromGeometry(this.mesh.geometry, (this.horizontalVertices + 1) * this.verticalVertices + this.horizontalVertices), // Bottom Right
-]);
+- Generate a CubeField of height/ruggedness based on the underlying plates.
+- Get the height at any arbitrary point based on the CubeField values plus noise.
+- Show tectonic plate boundaries for visualization/debugging purposes.
+  - Maybe one mesh with thin lines for interior lines and thick ones for exterior ones?
+  - Color the plate-boundary lines to indicate direction from each other.
+
+Tectonics interface:
+
+- heightAt(pos: THREE.Vector3)
+- showPlates(show: boolean)
+- destroy()
+
+TerrainCubeField interface:
+  - Data: height, ruggedness
+
+  - nearnessToWater(cell: number)
+    returns 0.0 -> 1.0 representing how many of the nearby cells (5x5 grid) are water vs. land.
+    0.0 if they're all land, 1.0 if they're all water
+
+PlateSphere interface:
+
+- makeEdgesMesh()
+-
 
 
 
+Don't use the word "Voronoi" in any public interfaces. It's an implementation detail, not the purpose of a class.
 
-      // if ((u == -HALF_MESH_LENGTH && v == -HALF_MESH_LENGTH) || (u == 0 && v == -HALF_MESH_LENGTH) || (u == HALF_MESH_LENGTH && v == -HALF_MESH_LENGTH) ||
-      //     (u == -HALF_MESH_LENGTH && v == 0) || (u == 0 && v == 0) || (u == HALF_MESH_LENGTH && v == 0) ||
-      //     (u == -HALF_MESH_LENGTH && v == HALF_MESH_LENGTH) || (u == 0 && v == HALF_MESH_LENGTH) || (u == HALF_MESH_LENGTH && v == HALF_MESH_LENGTH)) {
-      //   console.log(`mesh(${u}, ${v}) => sphere(r: ${sphereCoords.radius}, t: ${sphereCoords.theta}, p: ${sphereCoords.phi}) => world(x ${newPosition.x}, y ${newPosition.y}, z ${newPosition.z - moveBackDistance})`);
-      // }
+To generate the CubeField:
+ - Create the starting heights of each cell
+   - Land cells:
+     - If within 100 km of a water cell, ranges between 1m to 90m
+     - Otherwise, use noise to very gradually vary it between 90m and 600m.
+   - Water cells:
+     - If within 100 km of a land cell, ranges between -1m to -100m
+     - Otherwise, use noise to very gradually vary it between -100m and -6,000m.
 
+Variations for coastlines are dependent on how much coastline is near the given cell. Maybe check the
 
+ - For each line segment
+   - If it's a plate boundary
+     - If they're colliding
+       - If one cell is ocean and one is land
+         - The ocean cell gets very little continental shelf
+         - The land cell gets mountainous
+       - If both are ocean
+         - A trench forms along the boundary (counter-intuitive, I know!)
+       - If both are land
+         - An orogenous mountain range forms along the boundary
+     - If they're heading apart
+       - If one cell is ocean and one is land
+         - The ocean cell gets a long continental shelf
+         - The land cell gets flat
+       - If both are ocean
+         - Oceanic ridges form along the boundary, getting progressively smaller the further away they get
+       - If both are land
+         - Rift valleys form along the boundary
+
+The height of a mountain range is dependent on the magnitude of the collision between two plates.
+Low mountains may be high ruggedness (young) or low ruggedness (old). High mountains will be medium rugged.
+
+Consider adding extra low-ruggedness mountain stripes inside plates to represent really old mountains like the
+Appalachians whose plate collisions were too long ago to have happened at the current boundaries.
+
+Later we'll want determine the type of rock (igneous, metamorphic, sedimentary, etc.) in this step as well, which will
+come into play later when we're calculating groundwater capacity, erosion, etc. (Maybe soil depth as well.) That can get
+a separate CubeField.

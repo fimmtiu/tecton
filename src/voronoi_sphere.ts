@@ -108,14 +108,9 @@ class VoronoiSphere {
     }
   }
 
-  cellAtPoint(point: THREE.Vector3) {
+  dataAtPoint(point: THREE.Vector3) {
     const coord = GeoCoord.fromWorldVector(point);
     const cell = this.voronoi.find(coord.lon, coord.lat);
-    return cell;
-  }
-
-  dataAtPoint(point: THREE.Vector3) {
-    const cell = this.cellAtPoint(point);
     return {
       "cell": cell,
       "plate": this.terrainData[cell].plate,
