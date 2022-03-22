@@ -94,8 +94,14 @@ class Planet {
     this.texture.dispose();
   }
 
-  elevationAt(point: THREE.Vector3) {
-    return this.terrain.scaleHeight(this.terrain.normalizedHeightAt(point));
+  dataAtPoint(worldPos: THREE.Vector3) {
+    const voronoiData = this.tectonics.voronoiSphere.dataAtPoint(worldPos);
+    return {
+      "elevation": Math.round(this.terrain.scaleHeight(this.terrain.normalizedHeightAt(worldPos)) * 1000),
+      "voronoiCell": voronoiData.cell,
+      "neighbours": voronoiData.neighbours,
+      "plate": voronoiData.plate,
+    }
   }
 
   // FIXME: This method is too long. Needs extraction.

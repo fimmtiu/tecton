@@ -12,10 +12,19 @@ const randomSeedInput = document.getElementById("random-seed") as HTMLInputEleme
 if (randomSeedInput === null) {
   throw "Can't find the #random-seed input box!";
 }
-const elevation = document.getElementById("elevation") as HTMLSpanElement;
-if (elevation === null) {
-  throw "Can't find the #elevation span!";
+
+function getSpan(name: string) {
+  const span = document.getElementById(name) as HTMLSpanElement;
+  if (span === null) {
+    throw `Can't find the #${name} span!`;
+  }
+  return span;
 }
+
+const elevationSpan = getSpan("elevation");
+const cellSpan = getSpan("voronoi-cell");
+const plateSpan = getSpan("plate");
+const neighboursSpan = getSpan("neighbours");
 
 const renderer = new THREE.WebGLRenderer();
 
@@ -101,7 +110,10 @@ TextureManager.loadAll(() => {
     let data = sceneData.dataAtPoint(x, y);
 
     if (data) {
-      elevation.innerHTML = `${data["elevation"]} m`;
+      elevationSpan.innerHTML = `${data.elevation} m`;
+      cellSpan.innerHTML = `${data.voronoiCell}`;
+      plateSpan.innerHTML = `${data.plate}`;
+      neighboursSpan.innerHTML = `${data.neighbours}`;
     }
   }
 
