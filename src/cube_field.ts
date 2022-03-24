@@ -139,13 +139,15 @@ abstract class CubeField<CellType> {
     return box;
   }
 
+  static readonly DEFAULT_LINE_MATERIAL = [new THREE.LineBasicMaterial({ color: 0xffffff })];
+
   // Return a wire mesh showing the edges of each field cell.
-  public edges() {
+  public edges(materials: THREE.LineBasicMaterial[] = CubeField.DEFAULT_LINE_MATERIAL, scaleFactor = 1.0) {
     const box = this.box();
     const edgeGeometry = new THREE.EdgesGeometry(box, 0);
-    edgeGeometry.scale(1.1, 1.1, 1.1);
+    edgeGeometry.scale(scaleFactor, scaleFactor, scaleFactor);
     box.dispose();
-    return new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
+    return new THREE.LineSegments(edgeGeometry, materials);
   }
 
   // Find the center of every rectangular face of the grid and collect them into a Points geometry.

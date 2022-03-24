@@ -4,9 +4,9 @@ import { ORIGIN } from "./util";
 import { disposeMesh } from "./util/geometry";
 import { scene } from "./scene_data";
 
-export { VisualHelper };
+export { VisualHelper, COLORS };
 
-const COLORS = [0xffae00, 0x00ffff, 0xff1e00] //, 0xc800ff]; // orange, aqua, red, purple
+const COLORS = [0xffae00, 0x00ffff, 0xff1e00, 0xc800ff, 0x0000ff, 0x00ff00]; // orange, aqua, red, purple, blue, green
 // const BLUE = new THREE.Color(0, 0, 1);
 // const RED = new THREE.Color(1, 0, 0);
 

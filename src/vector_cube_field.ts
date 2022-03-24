@@ -37,7 +37,7 @@ class VectorCubeField extends CubeField<THREE.Vector2> {
   // protected arrows: Array<THREE.ArrowHelper>;
 
   constructor(cellsPerEdge: number) {
-    super(cellsPerEdge, () => { return new THREE.Vector2 });
+    super(cellsPerEdge, () => { return new THREE.Vector2() });
 
     // this.arrows = [];
 

@@ -3,7 +3,7 @@ import * as D3GeoVoronoi from "d3-geo-voronoi";
 
 import { Planet } from "../planet";
 import { scene } from "../scene_data";
-import { sample, shuffle } from "../util";
+import { v2s, sample, shuffle } from "../util";
 import { GeoCoord } from "../util/geo_coord";
 import { mergeDuplicateVertices, randomlyJitterVertices, wrapMeshAroundSphere } from "../util/geometry";
 import { PlateCell, Plate, PlateBoundary, PLATE_COLORS } from "./plates";
@@ -15,7 +15,7 @@ export { PlateSphere };
 
 const VORONOI_DENSITY = 10;
 const STARTING_LAND_CELLS = 8;
-const STARTING_WATER_CELLS = 15;
+const STARTING_WATER_CELLS = 15; // TODO: Instead of this, could we make water spread faster than land?
 const SWITCH_CELLS = 10;
 const SWITCH_SPREAD_CHANCE = 0.4;
 
@@ -43,7 +43,7 @@ class PlateSphere {
     this.fillCellsWithLandAndWater();
     this.addIslandsAndLakes();
     this.logLandWaterRatio();
-    // this.constructPlateBoundaries();
+    this.constructPlateBoundaries();
 
     this.voronoiEdges = this.makeEdges();
     scene.add(this.voronoiEdges);
@@ -60,7 +60,6 @@ class PlateSphere {
     this.voronoiMesh.geometry.dispose();
   }
 
-  // FIXME: do we still need this?
   cellCount() {
     return this.polygons.length;
   }
@@ -104,7 +103,7 @@ class PlateSphere {
   }
 
   // Converts d3-geo-voronoi's [lon, lat] coordinates for each point to THREE.Vector3s in world-space.
-  protected convertLineSegments(cell: number) {
+  protected convertLineSegments(cell: number): Array<THREE.Vector3> {
     const coords = this.polygons[cell].geometry.coordinates[0];
     return coords.map((coord: number[]) => { return new GeoCoord(coord[1], coord[0]).toWorldVector(); });
   }
@@ -148,6 +147,25 @@ class PlateSphere {
     }
   }
 
+  protected constructPlateBoundaries() {
+    const seen: { [edge: string]: boolean } = {};
+
+    for (let i = 0; i < this.plateCells.length; i++) {
+      const cell = this.plateCells[i];
+      for (let j = 0; j < cell.lineSegments.length - 1; j++) {
+        const pointA = cell.lineSegments[j], pointB = cell.lineSegments[j + 1];
+        const hash1 = `${v2s(pointA)},${v2s(pointB)}`;
+        const hash2 = `${v2s(pointB)},${v2s(pointA)}`;
+        if (!seen[hash1] && !seen[hash2]) {
+          const thisPlate = this.plateCells[i];
+          const adjacentPlate = this.plateCells[this.neighbour(i, pointA, pointB)];
+          this.plateBoundaries.push(new PlateBoundary(thisPlate, adjacentPlate));
+          seen[hash1] = seen[hash2] = true;
+        }
+      }
+    }
+  }
+
   // FIXME: Just for debugging; can remove this later.
   protected logLandWaterRatio() {
     let land = 0, water = 0;
@@ -168,41 +186,18 @@ class PlateSphere {
   ];
 
   protected makeEdges() {
-    const polygons = this.polygons;
-    const edges: Array<THREE.Vector3[]> = [];
-    const edgePlates: Array<Plate[]> = [];
-    const seen: { [edge: string]: boolean } = {};
-
-    for (let i = 0; i < polygons.length; i++) {              // FIXME: use plateCells instead
-      const polygon = polygons[i].geometry.coordinates[0];
-      for (let j = 0; j < polygon.length - 1; j++) {
-        const geoA = new GeoCoord(polygon[j][1], polygon[j][0]);
-        const geoB = new GeoCoord(polygon[j + 1][1], polygon[j + 1][0]);
-        const hash1 = `${geoA.str()},${geoB.str()}`;
-        const hash2 = `${geoB.str()},${geoA.str()}`;
-        if (!seen[hash1] && !seen[hash2]) {
-          const thisPlate = this.plateCells[i].plate;
-          const adjacentPlate = this.plateCells[this.neighbour(i, geoA, geoB)].plate;
-          edges.push([geoA.toWorldVector(), geoB.toWorldVector()]);
-          edgePlates.push([thisPlate, adjacentPlate].sort((a, b) => { return a.id - b.id }));
-          seen[hash1] = seen[hash2] = true;
-        }
-      }
-    }
-
-    const positions = new THREE.BufferAttribute(new Float32Array(edges.length * 6), 3);
+    const positions = new THREE.BufferAttribute(new Float32Array(this.plateBoundaries.length * 6), 3);
     const geometry = new THREE.BufferGeometry().setAttribute("position", positions);
-    for (let i = 0; i < edges.length; i++) {
-      positions.setXYZ(i * 2, edges[i][0].x, edges[i][0].y, edges[i][0].z);
-      positions.setXYZ(i * 2 + 1, edges[i][1].x, edges[i][1].y, edges[i][1].z);
+    for (let i = 0; i < this.plateBoundaries.length; i++) {
+      const boundary = this.plateBoundaries[i];
+      positions.setXYZ(i * 2, boundary.startPoint.x, boundary.startPoint.y, boundary.startPoint.z);
+      positions.setXYZ(i * 2 + 1, boundary.endPoint.x, boundary.endPoint.y, boundary.endPoint.z);
 
       let color = 1;
-      if (edgePlates[i][0].interactsWithOthers && edgePlates[i][1].interactsWithOthers) {
-        if (edgePlates[i][0].id % 2 > edgePlates[i][1].id % 2) {
-          color = 0;
-        } else if (edgePlates[i][0].id % 2 < edgePlates[i][1].id % 2) {
-          color = 2;
-        }
+      if (boundary.convergence > 0.3) {
+        color = 0;
+      } else if (boundary.convergence < -0.3) {
+        color = 2;
       }
       geometry.addGroup(i * 2, 2, color);
     }
@@ -210,12 +205,11 @@ class PlateSphere {
   }
 
   // Find the neighbouring cell which shares the given line segment.
-  protected neighbour(cell: number, geoA: GeoCoord, geoB: GeoCoord) {
+  protected neighbour(cell: number, pointA: THREE.Vector3, pointB: THREE.Vector3) {
     for (let n of this.neighbours(cell)) {
-      const polygon = this.polygons[n].geometry.coordinates[0];
-      for (let i = 0; i < polygon.length - 1; i++) {
-        if (polygon[i][0] == geoB.lon && polygon[i][1] == geoB.lat &&
-            polygon[i + 1][0] == geoA.lon && polygon[i + 1][1] == geoA.lat) {
+      const cell = this.plateCells[n];
+      for (let i = 0; i < cell.lineSegments.length - 1; i++) {
+        if (cell.lineSegments[i].equals(pointB) && cell.lineSegments[i + 1].equals(pointA)) {
           return n;
         }
       }

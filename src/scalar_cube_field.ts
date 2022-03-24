@@ -4,7 +4,7 @@ export { ScalarCubeField };
 
 class ScalarCubeField extends CubeField<number> {
   constructor(cellsPerEdge: number) {
-    super(cellsPerEdge, () => { return 0 });
+    super(cellsPerEdge, () => 0);
   }
 }
 

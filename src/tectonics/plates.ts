@@ -36,11 +36,11 @@ const PLATE_COLORS = WATER_PLATE_COLORS.concat(LAND_PLATE_COLORS);
 
 class PlateCell {
   public readonly id: number;
-  public readonly lineSegments: Array<number[]>;
+  public readonly lineSegments: Array<THREE.Vector3>;
   public readonly center: THREE.Vector3;
   public plate: Plate;
 
-  constructor(id: number, plate: Plate, lineSegments: Array<number[]>) {
+  constructor(id: number, plate: Plate, lineSegments: Array<THREE.Vector3>) {
     this.id = id;
     this.lineSegments = lineSegments;
     this.center = this.centroid();
@@ -50,14 +50,15 @@ class PlateCell {
   // Calculates the centroid of an irregular convex polygon. This is more work than I thought it would be.
   // We chop up the polygon into triangles, calculate the centroids and areas of those triangles, then
   // calculate the average for each coordinate weighted by triangle area. Oy!
+  // FIXME: Do we still need this?
   protected centroid() {
     const triangleAreas = [];
     const triangleCentroids = [];
-    const firstVertex = new GeoCoord(this.lineSegments[0][1], this.lineSegments[0][0]).toWorldVector();
+    const firstVertex = this.lineSegments[0];
 
     for (let i = 1; i < this.lineSegments.length - 2; i++) {
-      const secondVertex = new GeoCoord(this.lineSegments[i][1], this.lineSegments[i][0]).toWorldVector();
-      const thirdVertex = new GeoCoord(this.lineSegments[i + 1][1], this.lineSegments[i + 1][0]).toWorldVector();
+      const secondVertex = this.lineSegments[i];
+      const thirdVertex = this.lineSegments[i + 1];
 
       triangleAreas.push(this.triangleArea(firstVertex, secondVertex, thirdVertex));
       triangleCentroids.push(new THREE.Vector3(
@@ -109,6 +110,8 @@ class Plate {
 }
 
 class PlateBoundary {
+  static relativePlateVelocities: { [hash: string]: number } = {};
+
   public readonly startPoint: THREE.Vector3;
   public readonly endPoint: THREE.Vector3;
   public readonly plateCells: PlateCell[];
@@ -116,20 +119,20 @@ class PlateBoundary {
 
   constructor(cellA: PlateCell, cellB: PlateCell) {
     this.plateCells = [cellA, cellB];
-    const sharedLineSegment = this.sharedLineSegment();
+    const sharedLineSegment = this.sharedLineSegment(); // FIXME: needs a consistent order
     this.startPoint = sharedLineSegment[0];
     this.endPoint = sharedLineSegment[1];
     this.convergence = this.calculateConvergence();
   }
 
   protected sharedLineSegment() {
-    for (let i = 0; i < this.plateCells[0].lineSegments.length - 1; i++) {
-      for (let j = 0; j < this.plateCells[1].lineSegments.length - 1; j++) {
-        const a = this.plateCells[0].lineSegments[i], b = this.plateCells[0].lineSegments[i + 1],
-              c = this.plateCells[1].lineSegments[j], d = this.plateCells[1].lineSegments[j + 1];
-        if ((a[0] == c[0] && a[1] == c[1] && b[0] == d[0] && b[1] == d[1]) ||
-            (a[0] == d[0] && a[1] == d[1] && b[0] == c[0] && b[1] == c[1])) {
-          return [new GeoCoord(a[1], a[0]).toWorldVector(), new GeoCoord(b[1], b[0]).toWorldVector()];
+    const sortedCells = this.plateCells.sort((a, b) => a.plate.id - b.plate.id);
+    for (let i = 0; i < sortedCells[0].lineSegments.length - 1; i++) {
+      for (let j = 0; j < sortedCells[1].lineSegments.length - 1; j++) {
+        const a = sortedCells[0].lineSegments[i], b = sortedCells[0].lineSegments[i + 1],
+              c = sortedCells[1].lineSegments[j], d = sortedCells[1].lineSegments[j + 1];
+        if (a.equals(c) && b.equals(d) || a.equals(d) && b.equals(c)) {
+          return [a, b];
         }
       }
     }
@@ -146,6 +149,27 @@ class PlateBoundary {
     // Find the difference in angle between them...
     // LAST STOP needs more thought.
 
-    return THREE.MathUtils.randFloat(-1.0, 1.0); // FIXME: just a stopgap for now.
+
+    // This is a stopgap alternative that just sets the relative plate velocities randomly instead of calculating it
+    // based on the plate directions. Someday we'll revisit that.
+    if (this.plateCells[0].plate.interactsWithOthers && this.plateCells[1].plate.interactsWithOthers) {
+      return this.relativePlateVelocity(this.plateCells[0].plate, this.plateCells[1].plate);
+    }
+    return 0.0;
+  }
+
+  protected relativePlateVelocity(plateA: Plate, plateB: Plate) {
+    const key = `${plateA.id},${plateB.id}`;
+
+    if (!PlateBoundary.relativePlateVelocities[key]) {
+      if (plateA.id % 2 > plateB.id % 2) {
+        PlateBoundary.relativePlateVelocities[key] = THREE.MathUtils.randFloat(0.3, 1.0);
+      } else if (plateA.id % 2 < plateB.id % 2) {
+        PlateBoundary.relativePlateVelocities[key] = THREE.MathUtils.randFloat(-1.0, -0.3);
+      } else {
+        PlateBoundary.relativePlateVelocities[key] = THREE.MathUtils.randFloat(-0.3, 0.3);
+      }
+    }
+    return PlateBoundary.relativePlateVelocities[key];
   }
 }
