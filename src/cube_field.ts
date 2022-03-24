@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { PointsMaterial } from "three";
 
 import { PLANET_RADIUS } from "./planet";
 import { wrapMeshAroundSphere } from "./util/geometry";
@@ -150,7 +149,7 @@ abstract class CubeField<CellType> {
   }
 
   // Find the center of every rectangular face of the grid and collect them into a Points geometry.
-  public centers() {
+  public centers(materials: THREE.PointsMaterial[], scaleFactor = 1.0) {
     const box = this.box(), positions = box.getAttribute("position");
     const pointPositions = new THREE.BufferAttribute(new Float32Array(this.cellCount * 3), 3);
 
@@ -160,13 +159,13 @@ abstract class CubeField<CellType> {
         const br_i = tl_i + this.cellsPerEdge + 2;
         const topLeft = new THREE.Vector3(positions.getX(tl_i), positions.getY(tl_i), positions.getZ(tl_i));
         const bottomRight = new THREE.Vector3(positions.getX(br_i), positions.getY(br_i), positions.getZ(br_i));
-        topLeft.add(bottomRight).normalize().multiplyScalar(PLANET_RADIUS * 1.1);
+        topLeft.add(bottomRight).normalize().multiplyScalar(PLANET_RADIUS * scaleFactor);
         pointPositions.setXYZ(face * this.cellsPerFace + i, topLeft.x, topLeft.y, topLeft.z);
       }
     }
 
     box.dispose();
     const pointsGeometry = new THREE.BufferGeometry().setAttribute('position', pointPositions);
-    return new THREE.Points(pointsGeometry, new PointsMaterial({ color: 0xff4400, size: 400 }));
+    return new THREE.Points(pointsGeometry, materials);
   }
 }

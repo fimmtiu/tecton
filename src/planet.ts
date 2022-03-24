@@ -97,12 +97,12 @@ class Planet {
   }
 
   dataAtPoint(worldPos: THREE.Vector3) {
-    const voronoiData = this.tectonics.plateSphere.dataAtPoint(worldPos);
+    const plateData = this.tectonics.plateSphere.dataAtPoint(worldPos);
     return {
       "elevation": Math.round(this.terrain.scaleHeight(this.terrain.normalizedHeightAt(worldPos)) * 1000),
-      "voronoiCell": voronoiData.cell,
-      "neighbours": voronoiData.neighbours,
-      "plate": voronoiData.plate,
+      "voronoiCell": plateData.cell.id,
+      "neighbours": plateData.neighbours,
+      "plate": plateData.plate.id,
     }
   }
 

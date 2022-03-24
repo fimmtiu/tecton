@@ -85,8 +85,8 @@ class PlateSphere {
     const coord = GeoCoord.fromWorldVector(point);
     const cell = this.voronoi.find(coord.lon, coord.lat);
     return {
-      "cell": this.plateCells[cell].id,
-      "plate": this.plateCells[cell].plate.id,
+      "cell": this.plateCells[cell],
+      "plate": this.plateCells[cell].plate,
       "neighbours": this.neighbours(cell),
     };
   }
@@ -184,7 +184,7 @@ class PlateSphere {
           const thisPlate = this.plateCells[i].plate;
           const adjacentPlate = this.plateCells[this.neighbour(i, geoA, geoB)].plate;
           edges.push([geoA.toWorldVector(), geoB.toWorldVector()]);
-          edgePlates.push([thisPlate, adjacentPlate]);
+          edgePlates.push([thisPlate, adjacentPlate].sort((a, b) => { return a.id - b.id }));
           seen[hash1] = seen[hash2] = true;
         }
       }
@@ -197,10 +197,12 @@ class PlateSphere {
       positions.setXYZ(i * 2 + 1, edges[i][1].x, edges[i][1].y, edges[i][1].z);
 
       let color = 1;
-      if (edgePlates[i][0].id % 2 > edgePlates[i][1].id % 2) {
-        color = 0;
-      } else if (edgePlates[i][0].id % 2 < edgePlates[i][1].id % 2) {
-        color = 2;
+      if (edgePlates[i][0].interactsWithOthers && edgePlates[i][1].interactsWithOthers) {
+        if (edgePlates[i][0].id % 2 > edgePlates[i][1].id % 2) {
+          color = 0;
+        } else if (edgePlates[i][0].id % 2 < edgePlates[i][1].id % 2) {
+          color = 2;
+        }
       }
       geometry.addGroup(i * 2, 2, color);
     }

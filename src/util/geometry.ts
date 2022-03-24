@@ -20,9 +20,9 @@ function updateGeometry(geometry: THREE.BufferGeometry) {
 }
 
 // Most of three.js's geometry generators will create geometries with three vertices per face. This means that every
-// mesh has three times as many vertices as it needs. When we're doing per-vertex calculation, we need to rewrite the
-// points array to only have one vertex that's shared between multiple faces. We don't really care how performant this
-// is, since it won't be used often.
+// mesh has way more vertices than it needs. When we're doing per-vertex calculation, we need to rewrite the points
+// array to only have one vertex that's shared between multiple faces. We don't really care how performant this is,
+// since it won't be used often.
 // (Apparently there's a utility for this in a forthcoming version of three.js, but we can't wait.)
 function mergeDuplicateVertices(geometry: THREE.BufferGeometry) {
   if (geometry.index) {
