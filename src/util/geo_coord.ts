@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { PLANET_RADIUS } from "./planet";
+import { PLANET_RADIUS } from "../planet";
 
 export { GeoCoord };
 

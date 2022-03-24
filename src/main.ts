@@ -70,9 +70,6 @@ TextureManager.loadAll(() => {
     case '.':
       sceneData.zoom(1);
       break;
-    case 'd':
-      debugger;
-      break;
     case 'h':
       sceneData.planet.toggleEdgesVisible();
       break;
@@ -100,6 +97,9 @@ TextureManager.loadAll(() => {
     case ',':
     case '.':
       sceneData.zoom(0);
+      break;
+    case 'd':
+      debugger;
       break;
     }
   }

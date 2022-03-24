@@ -1,7 +1,8 @@
 import * as THREE from "three";
 
 import { PlanetCamera } from "./planet_camera";
-import { updateGeometry, ORIGIN, sphericalFromCoords } from "./util";
+import { ORIGIN, sphericalFromCoords } from "./util";
+import { updateGeometry } from "./util/geometry";
 import { Terrain } from "./terrain";
 import { VisualHelper } from "./visual_helper";
 import { scene } from "./scene_data";
@@ -95,7 +96,7 @@ class Planet {
   }
 
   dataAtPoint(worldPos: THREE.Vector3) {
-    const voronoiData = this.tectonics.voronoiSphere.dataAtPoint(worldPos);
+    const voronoiData = this.tectonics.plateSphere.dataAtPoint(worldPos);
     return {
       "elevation": Math.round(this.terrain.scaleHeight(this.terrain.normalizedHeightAt(worldPos)) * 1000),
       "voronoiCell": voronoiData.cell,

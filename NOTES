@@ -14,23 +14,30 @@ Tectonics interface:
 - showPlates(show: boolean)
 - destroy()
 
-TerrainCubeField interface:
+HeightCubeField interface:
   - Data: height, ruggedness
-
+  - drawLine(start: THREE.Vector3, end: THREE.Vector3, height: number, ruggedness: number)
+  - setCell(height: number, ruggedness: number)
   - nearnessToWater(cell: number)
     returns 0.0 -> 1.0 representing how many of the nearby cells (5x5 grid) are water vs. land.
     0.0 if they're all land, 1.0 if they're all water
 
+Plate:
+  - Data: number, direction, land vs. water
+
+PlateBoundary:
+  - Data: startPoint, endPoint, plateA, plateB, magnitude
+
 PlateSphere interface:
 
-- makeEdgesMesh()
--
+- Data: plateBoundaries: PlateBoundary[]
+- makeEdgesMesh(): THREE.LineSegments
+- plateAtPoint(point: THREE.Vector3): Plate
 
 
 
-Don't use the word "Voronoi" in any public interfaces. It's an implementation detail, not the purpose of a class.
 
-To generate the CubeField:
+To generate the HeightCubeField:
  - Create the starting heights of each cell
    - Land cells:
      - If within 100 km of a water cell, ranges between 1m to 90m
