@@ -80,7 +80,6 @@ class SceneData {
         "elevation": dataAtPoint.elevation,
         "voronoiCell": dataAtPoint.voronoiCell,
         "plate": dataAtPoint.plate,
-        "neighbours": dataAtPoint.neighbours,
       };
     }
     return null;

@@ -46,10 +46,10 @@ class PlateSphere {
     this.constructPlateBoundaries();
 
     this.voronoiEdges = this.makeEdges();
-    scene.add(this.voronoiEdges);
+    // scene.add(this.voronoiEdges);
 
     this.voronoiMesh = this.makeTriangleMesh();
-    scene.add(this.voronoiMesh);
+    // scene.add(this.voronoiMesh);
   }
 
   destroy() {
@@ -86,7 +86,6 @@ class PlateSphere {
     return {
       "cell": this.plateCells[cell],
       "plate": this.plateCells[cell].plate,
-      "neighbours": this.neighbours(cell),
     };
   }
 
@@ -176,7 +175,7 @@ class PlateSphere {
         water++;
       }
     }
-    console.log(`${land} land cells, ${water} water cells (${land / water * 100}% land)`);
+    console.log(`${land} land cells, ${water} water cells (${land / (land + water) * 100}% land)`);
   }
 
   static readonly LINE_MATERIALS = [

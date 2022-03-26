@@ -1,19 +1,27 @@
 import * as THREE from "three";
 
+import { v2s } from "./util";
 import { PLANET_RADIUS } from "./planet";
 import { wrapMeshAroundSphere } from "./util/geometry";
+import { TangentCubeGeometry } from "./util/tangent_cube_geometry";
 
 export { CubeField };
 
 
 abstract class CubeField<CellType> {
   static readonly neighbours = [
-    { north: 2, south: 3, east: 5, west: 4 }, // right face
-    { north: 2, south: 3, east: 4, west: 5 }, // left face
-    { north: 5, south: 4, east: 0, west: 1 }, // top face
-    { north: 3, south: 5, east: 0, west: 1 }, // bottom face
-    { north: 2, south: 3, east: 0, west: 1 }, // front face
-    { north: 3, south: 2, east: 0, west: 1 }, // back face
+    // { north: 2, south: 3, east: 5, west: 4 }, // right face
+    // { north: 2, south: 3, east: 4, west: 5 }, // left face
+    // { north: 5, south: 4, east: 0, west: 1 }, // top face
+    // { north: 3, south: 5, east: 0, west: 1 }, // bottom face
+    // { north: 2, south: 3, east: 0, west: 1 }, // front face
+    // { north: 3, south: 2, east: 0, west: 1 }, // back face
+    { north: 3, south: 1, east: 2, west: 4 }, // top face
+    { north: 0, south: 5, east: 2, west: 4 }, // front face
+    { north: 0, south: 5, east: 3, west: 1 }, // right face
+    { north: 5, south: 0, east: 2, west: 4 }, // back face
+    { north: 0, south: 5, east: 1, west: 3 }, // left face
+    { north: 1, south: 3, east: 2, west: 4 }, // bottom face
   ];
 
   public readonly cellsPerEdge: number;
@@ -133,8 +141,51 @@ abstract class CubeField<CellType> {
   westNeighbour(cell: number)      { return this.neighbour(cell, 8); }
 
   protected box() {
-    const side_length = 2 * PLANET_RADIUS;
-    const box = new THREE.BoxGeometry(side_length, side_length, side_length, this.cellsPerEdge, this.cellsPerEdge, this.cellsPerEdge);
+    // const positions = new THREE.BufferAttribute(new Float32Array(this.cellsPerFace * 6 * 3), 3);
+    // const box = new THREE.BufferGeometry().setAttribute("position", positions);
+    // const cellLength = 2 * PLANET_RADIUS / this.cellsPerEdge;
+
+    function tangentAdjustment(n: number) {
+      n = Math.tan(Math.PI / 2 * n - Math.PI / 4);
+      return n + (1.0 / 9007199254740992.0) * n;
+    }
+
+    // for (let face = 0; face < 6; face++) {
+    //   for (let cell = 0; cell < this.cellsPerFace; cell++) {
+    //     const s = (cell % this.cellsPerEdge) / this.cellsPerEdge;
+    //     const t = Math.floor(cell / this.cellsPerEdge) / this.cellsPerEdge;
+    //     const u = tangentAdjustment(s), v = tangentAdjustment(t);
+
+
+    //     const point = new THREE.Vector3();
+    //     point.normalize().multiplyScalar(PLANET_RADIUS);
+
+    //     positions.setXYZ(face * this.cellsPerFace + cell, point.x, point.y, point.z);
+    //   }
+    // }
+
+
+
+    // const sideLength = 2 * PLANET_RADIUS;
+    // const box = new THREE.BoxGeometry(sideLength, sideLength, sideLength, this.cellsPerEdge, this.cellsPerEdge, this.cellsPerEdge);
+    // const positions = box.getAttribute("position");
+
+    // for (let face = 0; face < 6; face++) {
+    //   for (let cell = 0; cell < this.cellsPerFace; cell++) {
+    //     const x = Math.floor(cell / this.cellsPerEdge) - (this.cellsPerEdge / 2);
+    //     const y = cell % this.cellsPerEdge - (this.cellsPerEdge / 2);
+    //     const point = new THREE.Vector3();
+    //     point.normalize().multiplyScalar(PLANET_RADIUS);
+
+    //     const wouldaBeen = new THREE.Vector3(positions.getX(face * this.cellsPerFace + cell), positions.getY(face * this.cellsPerFace + cell), positions.getZ(face * this.cellsPerFace + cell));
+    //     wouldaBeen.normalize().multiplyScalar(PLANET_RADIUS);
+    //     console.log(`${face} x ${cell}: ${v2s(wouldaBeen)} --> ${v2s(point)}`);
+
+    //     positions.setXYZ(face * this.cellsPerFace + cell, point.x, point.y, point.z);
+    //   }
+    // }
+
+    const box = new TangentCubeGeometry(2 * PLANET_RADIUS, this.cellsPerEdge);
     wrapMeshAroundSphere(box, PLANET_RADIUS);
     return box;
   }

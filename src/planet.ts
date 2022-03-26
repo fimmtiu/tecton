@@ -101,7 +101,6 @@ class Planet {
     return {
       "elevation": Math.round(this.terrain.scaleHeight(this.terrain.normalizedHeightAt(worldPos)) * 1000),
       "voronoiCell": plateData.cell.id,
-      "neighbours": plateData.neighbours,
       "plate": plateData.plate.id,
     }
   }
@@ -173,7 +172,7 @@ class Planet {
     bottomRight.applyQuaternion(rotation);
   }
 
-  // FIXME: This should be done by a fragment shader eventually. This is a terrible way to blit pixels.
+  // FIXME: This should be done by a fragment shader eventually. This is a ludicrously bad way to blit pixels.
   protected paintTextureOnVertex(mesh: PlanetMesh, x: number, y: number, worldPosition: THREE.Vector3, height: number) {
     const u = x * mesh.horizontalTexelsPerVertex, v = y * mesh.verticalTexelsPerVertex;
     const biome = this.terrain.biomeAt(worldPosition, height);

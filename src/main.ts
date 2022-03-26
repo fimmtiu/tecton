@@ -24,7 +24,6 @@ function getSpan(name: string) {
 const elevationSpan = getSpan("elevation");
 const cellSpan = getSpan("voronoi-cell");
 const plateSpan = getSpan("plate");
-const neighboursSpan = getSpan("neighbours");
 
 const renderer = new THREE.WebGLRenderer();
 
@@ -113,7 +112,6 @@ TextureManager.loadAll(() => {
       elevationSpan.innerHTML = `${data.elevation} m`;
       cellSpan.innerHTML = `${data.voronoiCell}`;
       plateSpan.innerHTML = `${data.plate}`;
-      neighboursSpan.innerHTML = `${data.neighbours}`;
     }
   }
 
