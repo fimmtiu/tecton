@@ -1,6 +1,5 @@
 import * as THREE from "three";
 
-import { v2s } from "./util";
 import { PLANET_RADIUS } from "./planet";
 import { wrapMeshAroundSphere } from "./util/geometry";
 import { TangentCubeGeometry } from "./util/tangent_cube_geometry";
@@ -10,18 +9,12 @@ export { CubeField };
 
 abstract class CubeField<CellType> {
   static readonly neighbours = [
-    // { north: 2, south: 3, east: 5, west: 4 }, // right face
-    // { north: 2, south: 3, east: 4, west: 5 }, // left face
-    // { north: 5, south: 4, east: 0, west: 1 }, // top face
-    // { north: 3, south: 5, east: 0, west: 1 }, // bottom face
-    // { north: 2, south: 3, east: 0, west: 1 }, // front face
-    // { north: 3, south: 2, east: 0, west: 1 }, // back face
-    { north: 3, south: 1, east: 2, west: 4 }, // top face
-    { north: 0, south: 5, east: 2, west: 4 }, // front face
-    { north: 0, south: 5, east: 3, west: 1 }, // right face
-    { north: 5, south: 0, east: 2, west: 4 }, // back face
-    { north: 0, south: 5, east: 1, west: 3 }, // left face
-    { north: 1, south: 3, east: 2, west: 4 }, // bottom face
+    { north: 2, south: 3, east: 5, west: 4 }, // right face
+    { north: 2, south: 3, east: 4, west: 5 }, // left face
+    { north: 5, south: 4, east: 0, west: 1 }, // top face
+    { north: 3, south: 5, east: 0, west: 1 }, // bottom face
+    { north: 2, south: 3, east: 0, west: 1 }, // front face
+    { north: 3, south: 2, east: 0, west: 1 }, // back face
   ];
 
   public readonly cellsPerEdge: number;
@@ -190,15 +183,13 @@ abstract class CubeField<CellType> {
     return box;
   }
 
-  static readonly DEFAULT_LINE_MATERIAL = [new THREE.LineBasicMaterial({ color: 0xffffff })];
-
   // Return a wire mesh showing the edges of each field cell.
-  public edges(materials: THREE.LineBasicMaterial[] = CubeField.DEFAULT_LINE_MATERIAL, scaleFactor = 1.0) {
+  public edges(color = 0xffffff, scaleFactor = 1.0) {
     const box = this.box();
     const edgeGeometry = new THREE.EdgesGeometry(box, 0);
     edgeGeometry.scale(scaleFactor, scaleFactor, scaleFactor);
     box.dispose();
-    return new THREE.LineSegments(edgeGeometry, materials);
+    return new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({ color: color }));
   }
 
   // Find the center of every rectangular face of the grid and collect them into a Points geometry.

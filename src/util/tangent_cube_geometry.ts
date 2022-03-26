@@ -31,11 +31,17 @@ class TangentCubeGeometry extends THREE.BufferGeometry {
 
 		this.setIndex(indices);
 		this.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+		this.addGroup(0, numberOfVertices, 1);
 
-		function buildPlane(u: number, v: number, w: number, udir: number, vdir: number, wDir: number) {
+		function tangentAdjustment(n: number) {
+      n = Math.tan(Math.PI / 2 * n - Math.PI / 4);
+      return n + (1.0 / 9007199254740992.0) * n;
+    }
+
+		function buildPlane(u: number, v: number, w: number, udir: number, vdir: number, wdir: number) {
 			const segmentSize = sideLength / segmentsPerSide;
 			const lengthHalf = sideLength / 2;
-			const depthHalf = sideLength / 2 * wDir;
+			const depthHalf = sideLength / 2 * wdir;
 			const segmentsPlusOne = segmentsPerSide + 1;
 			const vector = new THREE.Vector3();
 

@@ -7,12 +7,12 @@ export { Tectonics };
 
 
 class Tectonics {
-  public plateSphere: PlateSphere; // FIXME: Move this back to protected once we're done debugging
+  public plateSphere: PlateSphere; // FIXME set this back to protected when we're done debugging
   public heights: HeightCubeField;
 
   constructor() {
     this.plateSphere = new PlateSphere();
-    this.heights = new HeightCubeField(100, this.plateSphere);
+    this.heights = new HeightCubeField(10, this.plateSphere);
   }
 
   destroy() {

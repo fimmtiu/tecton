@@ -23,7 +23,7 @@ class HeightCubeField extends CubeField<HeightCell> {
   constructor(cellsPerEdge: number, plateSphere: PlateSphere) {
     super(cellsPerEdge, () => { return new HeightCell() });
 
-    scene.add(this.edges([new THREE.LineBasicMaterial({ color: 0xea00ff })], 1.1));
+    scene.add(this.edges(0xea00ff, 1.05));
 
     this.centersMesh = this.centers(MATERIALS);
     this.showCentersMesh = this.centers(MATERIALS, 1.01);
@@ -36,6 +36,6 @@ class HeightCubeField extends CubeField<HeightCell> {
       this.showCentersMesh.geometry.addGroup(i, 1, data["plate"].isLand ? 0 : 1);
     }
 
-    scene.add(this.showCentersMesh);
+    // scene.add(this.showCentersMesh);
   }
 }
