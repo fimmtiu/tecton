@@ -134,50 +134,6 @@ abstract class CubeField<CellType> {
   westNeighbour(cell: number)      { return this.neighbour(cell, 8); }
 
   protected box() {
-    // const positions = new THREE.BufferAttribute(new Float32Array(this.cellsPerFace * 6 * 3), 3);
-    // const box = new THREE.BufferGeometry().setAttribute("position", positions);
-    // const cellLength = 2 * PLANET_RADIUS / this.cellsPerEdge;
-
-    function tangentAdjustment(n: number) {
-      n = Math.tan(Math.PI / 2 * n - Math.PI / 4);
-      return n + (1.0 / 9007199254740992.0) * n;
-    }
-
-    // for (let face = 0; face < 6; face++) {
-    //   for (let cell = 0; cell < this.cellsPerFace; cell++) {
-    //     const s = (cell % this.cellsPerEdge) / this.cellsPerEdge;
-    //     const t = Math.floor(cell / this.cellsPerEdge) / this.cellsPerEdge;
-    //     const u = tangentAdjustment(s), v = tangentAdjustment(t);
-
-
-    //     const point = new THREE.Vector3();
-    //     point.normalize().multiplyScalar(PLANET_RADIUS);
-
-    //     positions.setXYZ(face * this.cellsPerFace + cell, point.x, point.y, point.z);
-    //   }
-    // }
-
-
-
-    // const sideLength = 2 * PLANET_RADIUS;
-    // const box = new THREE.BoxGeometry(sideLength, sideLength, sideLength, this.cellsPerEdge, this.cellsPerEdge, this.cellsPerEdge);
-    // const positions = box.getAttribute("position");
-
-    // for (let face = 0; face < 6; face++) {
-    //   for (let cell = 0; cell < this.cellsPerFace; cell++) {
-    //     const x = Math.floor(cell / this.cellsPerEdge) - (this.cellsPerEdge / 2);
-    //     const y = cell % this.cellsPerEdge - (this.cellsPerEdge / 2);
-    //     const point = new THREE.Vector3();
-    //     point.normalize().multiplyScalar(PLANET_RADIUS);
-
-    //     const wouldaBeen = new THREE.Vector3(positions.getX(face * this.cellsPerFace + cell), positions.getY(face * this.cellsPerFace + cell), positions.getZ(face * this.cellsPerFace + cell));
-    //     wouldaBeen.normalize().multiplyScalar(PLANET_RADIUS);
-    //     console.log(`${face} x ${cell}: ${v2s(wouldaBeen)} --> ${v2s(point)}`);
-
-    //     positions.setXYZ(face * this.cellsPerFace + cell, point.x, point.y, point.z);
-    //   }
-    // }
-
     const box = new TangentCubeGeometry(2 * PLANET_RADIUS, this.cellsPerEdge);
     wrapMeshAroundSphere(box, PLANET_RADIUS);
     return box;

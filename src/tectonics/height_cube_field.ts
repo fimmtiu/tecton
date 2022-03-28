@@ -36,6 +36,6 @@ class HeightCubeField extends CubeField<HeightCell> {
       this.showCentersMesh.geometry.addGroup(i, 1, data["plate"].isLand ? 0 : 1);
     }
 
-    // scene.add(this.showCentersMesh);
+    scene.add(this.showCentersMesh);
   }
 }

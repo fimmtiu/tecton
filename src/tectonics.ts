@@ -2,6 +2,7 @@ import * as THREE from "three";
 
 import { PlateSphere } from "./tectonics/plate_sphere";
 import { HeightCubeField } from "./tectonics/height_cube_field";
+import { timeFunction } from "./util";
 
 export { Tectonics };
 
@@ -12,7 +13,8 @@ class Tectonics {
 
   constructor() {
     this.plateSphere = new PlateSphere();
-    this.heights = new HeightCubeField(10, this.plateSphere);
+
+    this.heights = timeFunction("Creating new heightmap", () => new HeightCubeField(10, this.plateSphere));
   }
 
   destroy() {

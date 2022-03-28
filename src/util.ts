@@ -2,7 +2,7 @@ import SimplexNoise from "simplex-noise";
 import * as THREE from "three";
 
 export {
-  ORIGIN, ORIGIN_2D, noiseGenerator, setRandomSeed, sphericalFromCoords, v2s, s2s, shuffle, sample,
+  ORIGIN, ORIGIN_2D, noiseGenerator, setRandomSeed, sphericalFromCoords, v2s, s2s, shuffle, sample, timeFunction,
 };
 
 const ORIGIN = new THREE.Vector3(0, 0, 0);
@@ -37,6 +37,15 @@ function shuffle(arr: Array<any>) {
 // Return a random element from an array.
 function sample(arr: Array<any>) {
   return arr[THREE.MathUtils.randInt(0, arr.length - 1)];
+}
+
+// A trivial way to benchmark a chunk of code.
+function timeFunction(description: string, fn: () => any) {
+  const start_at = Date.now();
+  const retval = fn();
+  const end_at = Date.now();
+  console.log(`${description}: ${end_at - start_at} ms`);
+  return retval;
 }
 
 // These functions are just shorthand helpers for long-winded things that I use often.
