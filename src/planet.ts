@@ -16,7 +16,7 @@ export { Planet, PLANET_RADIUS };
 
 const PIXELS_BETWEEN_VERTICES = 10;
 const PLANET_RADIUS = 6370; // each unit is 1 kilometer
-const TEXTURE_SIZE = 1024;
+const TEXTURE_SIZE = 1600;
 const ATLAS_INDEX: { [biomeName: string]: number[] } = {
   "snow": [0, 2048, 16, 2064],
   "jungle": [4096, 6144, 4112, 6160],

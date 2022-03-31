@@ -55,9 +55,7 @@ class Terrain {
 
     height = (height + 1) / 2;      // Convert to the range 0..1.
     height = Math.pow(height, 1.3); // Run it through a power function to decrease landmass and make it pointier.
-
-    // Convert back to -1..1.
-    height = height * 2 - 1;
+    height = height * 2 - 1;        // Convert back to -1..1.
 
     if (height > this.max) {
       this.max = height;
