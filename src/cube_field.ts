@@ -1,8 +1,8 @@
 import * as THREE from "three";
 
 import { PLANET_RADIUS } from "./planet";
-import { disposeMesh, wrapMeshAroundSphere } from "./util/geometry";
-import { TangentSphereGeometry } from "./util/tangent_sphere_geometry";
+import { disposeMesh } from "./util/geometry";
+import { TangentSphere } from "./util/tangent_sphere";
 
 export { CubeField };
 
@@ -22,7 +22,7 @@ abstract class CubeField<CellType> {
   public readonly verticesPerFace: number;
   public readonly cellCount: number;
   protected cells: CellType[];
-  protected box: THREE.Mesh;
+  protected box: TangentSphere;
 
   constructor(cellsPerEdge: number, initialValue: () => CellType) {
     this.cellsPerEdge = cellsPerEdge;
@@ -34,8 +34,7 @@ abstract class CubeField<CellType> {
       this.cells.push(initialValue());
     }
 
-    const boxGeometry = new TangentSphereGeometry(this.cellsPerEdge);
-    this.box = new THREE.Mesh(boxGeometry);
+    this.box = new TangentSphere(this.cellsPerEdge);
     this.box.visible = false;
   }
 
