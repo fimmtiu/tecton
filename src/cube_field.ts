@@ -60,6 +60,10 @@ abstract class CubeField<CellType> {
     return this.cells[0];
   }
 
+  faceAtPoint(pointOnSphere: THREE.Vector3) {
+    return this.box.faceContainingPoint(pointOnSphere);
+  }
+
   update() {
     // no-op by default, can be overridden in child classes
   }

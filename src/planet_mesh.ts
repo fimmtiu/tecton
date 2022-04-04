@@ -10,7 +10,6 @@ class PlanetMesh extends THREE.Mesh {
   public verticalTexelsPerVertex: number;
   public halfHorizLength: number;
   public halfVertLength: number;
-  public edges: THREE.LineSegments | null;
 
   constructor(
     width: number, height: number,
@@ -27,29 +26,13 @@ class PlanetMesh extends THREE.Mesh {
     this.halfVertLength = (verticalVertices - 1) / 2;
     this.horizontalTexelsPerVertex = textureSize / horizontalVertices;
     this.verticalTexelsPerVertex = textureSize / verticalVertices;
-    this.edges = null;
 
     console.log(`New mesh: ${horizontalVertices} x ${verticalVertices} vertices.`);
   }
 
   destroy() {
     disposeMesh(this);
-    this.hideEdges();
   }
 
-  showEdges() {
-    if (!this.edges) {
-      const edgeGeometry = new THREE.EdgesGeometry(this.geometry, 0);
-      edgeGeometry.scale(1.001, 1.001, 1.001); // Prevents weird clipping
-      this.edges = new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
-      this.add(this.edges); // Makes the edges turn when the mesh turns
-    }
-  }
-
-  hideEdges() {
-    if (this.edges) {
-      disposeMesh(this.edges);
-      this.edges = null;
-    }
-  }
+  // There used to be more methods here, but they got moved/removed. Maybe we should merge this class into Planet now.
 }

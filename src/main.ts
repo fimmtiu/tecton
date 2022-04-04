@@ -69,9 +69,6 @@ TextureManager.loadAll(() => {
     case '.':
       sceneData.zoom(1);
       break;
-    case 'h':
-      sceneData.planet.toggleEdgesVisible();
-      break;
     }
   }
 
@@ -110,7 +107,7 @@ TextureManager.loadAll(() => {
 
     if (data) {
       elevationSpan.innerHTML = `${data.elevation} m`;
-      cellSpan.innerHTML = `${data.voronoiCell}`;
+      cellSpan.innerHTML = `${data.voronoiCell} (face ${data.face})`;
       plateSpan.innerHTML = `${data.plate}`;
     }
   }

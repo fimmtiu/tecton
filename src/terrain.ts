@@ -45,6 +45,7 @@ class Terrain {
       "elevation": Math.round(this.scaleHeight(this.normalizedHeightAt(pointOnSphere)) * 1000),
       "voronoiCell": plateData.cell.id,
       "plate": plateData.plate.id,
+      "face": this.heightMap.faceAtPoint(pointOnSphere),
     }
   }
 

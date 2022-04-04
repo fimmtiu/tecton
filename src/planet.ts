@@ -135,7 +135,6 @@ class Planet {
       // Add terrain height to the vertex.
       const worldPosition = this.mesh.localToWorld(newPosition.clone());
       const height = this.terrain.normalizedHeightAt(worldPosition);
-      console.log(`height: ${height}`);
       this.paintTextureOnVertex(this.mesh, u, v, worldPosition, height);
       if (height > 0) {
         sphereCoords.radius += this.terrain.scaleHeight(height);
@@ -147,10 +146,6 @@ class Planet {
     this.texture.needsUpdate = true;
     console.log(`min: ${this.terrain.min}. max: ${this.terrain.max}.`);
 
-    if (this.mesh.edges) {
-      this.mesh.hideEdges();
-      this.mesh.showEdges();
-    }
     this.visualHelper.update();
   }
 
@@ -171,14 +166,5 @@ class Planet {
     const atlasStart = ATLAS_INDEX[biome][Math.floor(swatch) % 4] * 4;
 
     this.copier.copy(atlasStart, u, v);
-  }
-
-  // Optional white lines outlining each face of the mesh.
-  toggleEdgesVisible() {
-    if (this.mesh.edges === null) {
-      this.mesh.showEdges();
-    } else {
-      this.mesh.hideEdges();
-    }
   }
 };

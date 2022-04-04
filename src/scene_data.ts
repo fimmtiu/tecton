@@ -74,13 +74,7 @@ class SceneData {
     ray.direction.set(screenX, screenY, 0.5).unproject(this.camera).sub(ray.origin).normalize();
 
     if (this.camera.intersect(ray, worldPos)) {
-      const dataAtPoint = this.planet.dataAtPoint(worldPos);
-
-      return {
-        "elevation": dataAtPoint.elevation,
-        "voronoiCell": dataAtPoint.voronoiCell,
-        "plate": dataAtPoint.plate,
-      };
+      return this.planet.dataAtPoint(worldPos);
     }
     return null;
   }
