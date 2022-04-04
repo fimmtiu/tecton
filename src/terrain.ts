@@ -1,5 +1,7 @@
 import * as THREE from "three";
-import { VisualHelper } from "./visual_helper";
+
+import { PlateSphere } from "./terrain/plate_sphere";
+import { HeightCubeField } from "./terrain/height_cube_field";
 import { noiseGenerator } from "./util";
 
 export { Terrain };
@@ -22,20 +24,35 @@ const NOISE_LEVELS = [
 const MAX_AMPLITUDE = NOISE_LEVELS.reduce((n, level) => { return n + level.amplitude }, 0);
 
 class Terrain {
-  static readonly minAmplitude = Terrain.perturbHeight(0);
-  static readonly maxAmplitude = Terrain.perturbHeight(MAX_AMPLITUDE) - this.minAmplitude;
-
-  protected visualHelper: VisualHelper;
+  protected plateSphere: PlateSphere;
+  public heightMap: HeightCubeField;
   public min = 10000;
   public max = -10000;
 
   constructor() {
-    this.visualHelper = new VisualHelper(false, false);
+    this.plateSphere = new PlateSphere();
+    this.heightMap = new HeightCubeField(10, this.plateSphere);
   }
 
-  // Return the height at the given point as a float between -1.0 and 1.0, inclusive.
-  // (To get the height in kilometers, pass this number to scaleHeight().)
+  destroy() {
+    this.plateSphere.destroy();
+    this.heightMap.destroy();
+  }
+
+  dataAtPoint(pointOnSphere: THREE.Vector3) {
+    const plateData = this.plateSphere.dataAtPoint(pointOnSphere);
+    return {
+      "elevation": Math.round(this.scaleHeight(this.normalizedHeightAt(pointOnSphere)) * 1000),
+      "voronoiCell": plateData.cell.id,
+      "plate": plateData.plate.id,
+    }
+  }
+
+  // Return the height at the given point as a float between -1.0 and 1.0, inclusive. (0.0 is sea level.)
+  // To get the height in kilometers, pass this number to scaleHeight().
   normalizedHeightAt(pointOnSphere: THREE.Vector3) {
+    return this.heightMap.cellAtPoint(pointOnSphere).height;
+
     let height = 0;
 
     // Generate a noisy height value.
@@ -44,8 +61,8 @@ class Terrain {
       height += this.noise(pointOnSphere, level.offset, level.amplitude);
     }
 
-    // Massage the height value, then skew it between -1.0 and 1.0.
-    height = (Terrain.perturbHeight(height) - Terrain.minAmplitude) / Terrain.maxAmplitude;
+    // Skew the height value between -1.0 and 1.0.
+    height = (height - MIN_ELEVATION) / MAX_AMPLITUDE;
 
     // Apply some bonkers thing to it in order to make the coastlines more dramatic. Didn't work.
     // height *= 1 - (1 / (5 + (10 * height) ** 2));
@@ -101,19 +118,6 @@ class Terrain {
       }
     }
     throw `Couldn't find a biome for height ${normalizedHeight}!`;
-  }
-
-  // Massage the height values in a futile effort to get something that looks less random and more earth-ish.
-  static perturbHeight(height: number) {
-    return height;
-
-    // All this stuff sucks.
-    let atan = Math.atan(height) * 0.3;
-    // console.log(`height 0: ${height} + ${atan} = ${height + atan}`);
-    height += atan;
-    // console.log(`height 1: ${height}:  ${Math.sign(height) * Math.pow(Math.abs(height), 1.2)} = ${Math.sign(height) * Math.pow(Math.abs(height), 1.2)}`);
-    height = Math.sign(height) * Math.pow(Math.abs(height), 1.2);
-    return height;
   }
 
   // Returns a predictable but random value in the range -1..1.

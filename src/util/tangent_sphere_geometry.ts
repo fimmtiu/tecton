@@ -1,8 +1,9 @@
 import * as THREE from "three";
 
+import { PLANET_RADIUS } from "../planet"
 import { v2s } from "../util";
 
-export { TangentCubeGeometry };
+export { TangentSphereGeometry };
 
 // When you wrap a cube around a sphere, the grid cells get very distorted: huge and bulging in the center of faces, but
 // tiny and tightly packed around the corners. To minimize this distortion, we can apply a simple tangent adjustment to
@@ -12,11 +13,17 @@ export { TangentCubeGeometry };
 //
 // Like THREE.BoxGeometry, we create our cube faces with 0 in the upper left corner and N in the lower right,
 // proceeding horizontally.
-class TangentCubeGeometry extends THREE.BufferGeometry {
-  constructor(sideLength = 1, segmentsPerSide = 1) {
-    super();
-    this.type = "TangentCubeGeometry";
+class TangentSphereGeometry extends THREE.BufferGeometry {
+  protected cornerPlanes: THREE.Plane[];
+  public radius: number;
 
+  constructor(segmentsPerSide = 1, radius = PLANET_RADIUS) {
+    super();
+    this.type = "TangentSphereGeometry";
+
+    this.radius = radius;
+    this.cornerPlanes = this.makeCornerPlanes();
+    const sideLength = radius * 2;
     segmentsPerSide = Math.floor(segmentsPerSide);
 
     const indices: number[] = [];
@@ -36,10 +43,10 @@ class TangentCubeGeometry extends THREE.BufferGeometry {
     this.addGroup(0, numberOfVertices, 1);
 
     // FIXME: I'm doing something slightly wrong here, I think. Every other version of this code that I've seen just
-    // does a straight tan() on the UV, but when I do that I reverse my problem, where there are tiny cells in the
-    // center of faces (where the tan() function is right around the X axis) and giant faces at the corners. Doing
-    // the pow(uv, 1/6) call fixes the problem and gives us nice-looking cells, but none of the other implementations
-    // I've looked at have done anything like that, so I think I might be compensating for a bug. Will revisit someday.
+    // does a straight tan() on the UV, but when I do that I reverse my problem, making tiny cells in the center of
+    // faces (where the tan() function is right around the X axis) and giant faces at the corners. Doing the
+    // pow(uv, 1/6) call fixes the problem and gives us nice-looking cells, but none of the other implementations I've
+    // looked at do anything similar, so I think I might be compensating for a bug. Will revisit someday.
     function uvWithTangentAdjustment(n: number) {
       let unitUV = n / segmentsPerSide * 2 - 1; // A coordinate in the range [-1, 1], where 0 is the center.
       let cellSpaceUV = n - segmentsPerSide / 2; // A coordinate in the range [-segmentsPerSide/2, segmentsPerSide/2].
@@ -85,39 +92,38 @@ class TangentCubeGeometry extends THREE.BufferGeometry {
 
       numberOfVertices += vertexCounter;
     }
+  }
 
-    // const cellAreas = [];
-    // const segmentsPlusOne = segmentsPerSide + 1;
-    // for (let iy = 0; iy < segmentsPerSide; iy++) {
-    // 	for (let ix = 0; ix < segmentsPerSide; ix++) {
-    // 		const tlIndex = (iy * segmentsPlusOne + ix) * 3;
-    // 		const brIndex = ((iy + 1) * segmentsPlusOne + ix + 1) * 3;
-    // 		const tl = new THREE.Vector3(vertices[tlIndex], vertices[tlIndex + 1], vertices[tlIndex + 2]);
-    // 		const br = new THREE.Vector3(vertices[brIndex], vertices[brIndex + 1], vertices[brIndex + 2]);
-    // 		const area = (br.y - tl.y) * (br.z - tl.z);
-    // 		console.log(`tl: ${tlIndex} ${v2s(tl)}, br ${brIndex} ${v2s(br)}, area ${area}`);
-    // 		cellAreas.push(area);
-    // 	}
-    // }
+  cellForUV(u: number, v: number) {
 
-    // const perfectMeanArea = (sideLength / segmentsPerSide) ** 2;
-    // const errors = cellAreas.map((area) => Math.abs(area - perfectMeanArea));
-    // const errorSum = errors.reduce((prev, cur) => prev + cur);
-    // console.log(`pma: ${perfectMeanArea}`);
-    // console.log(`mean error: ${errorSum} / ${cellAreas.length} = ${Math.floor(errorSum / cellAreas.length)}`);
+  }
 
-    // let min = 0, max = 0;
-    // for (let i = 1; i < errors.length; i++) {
-    // 	if (errors[i] < errors[min]) {
-    // 		min = i;
-    // 	}
-    // 	if (errors[i] > errors[max]) {
-    // 		max = i;
-    // 	}
-    // }
+  // Problem: We need a cheap way to determine which grid cell a given point-on-sphere lies inside. That's a calculation
+  // we're going to do many times per frame. Raycasting works, but is orders of magnitude too slow.
+  //
+  // Solution: Imagine a cube which fits snugly inside the sphere. To determine which face a particular point-on-sphere
+  // is inside, we create six planes that define the sides of that cube. This lets us find the correct face with cheap
+  // "which side of the plane is this point on" tests, and then we can do some trigonometry to work out the grid cell
+  // within that face. Hopefully that will be cheaper than rays.
+  protected makeCornerPlanes() {
+    return [
+      new THREE.Plane(new THREE.Vector3( 1, 0, 0), this.radius), // right face
+      new THREE.Plane(new THREE.Vector3(-1, 0, 0), this.radius), // left face
+      new THREE.Plane(new THREE.Vector3(0,  1, 0), this.radius), // top face
+      new THREE.Plane(new THREE.Vector3(0, -1, 0), this.radius), // bottom face
+      new THREE.Plane(new THREE.Vector3(0, 0,  1), this.radius), // front face
+      new THREE.Plane(new THREE.Vector3(0, 0, -1), this.radius), // back face
+    ];
+  }
 
-    // console.log(` Best: ${min} (area ${cellAreas[min]}, error ${errors[min]}, ${Math.floor(errors[min] / perfectMeanArea * 10000) / 100}%`);
-    // console.log(`Worst: ${max} (area ${cellAreas[max]}, error ${errors[max]}, ${Math.floor(errors[max] / perfectMeanArea * 10000) / 100}%`);
-    // console.log(`Average: ${errorSum} / ${cellAreas.length} = ${Math.floor(errorSum / cellAreas.length / perfectMeanArea * 10000) / 100}`);
+  protected faceContainingPoint(pointOnSphere: THREE.Vector3) {
+    // Future optimization: Remember the last face that we returned and start looking from there, instead of searching
+    // from 0 upwards every time.
+    for (let face = 0; face < 6; face++) {
+      if (this.cornerPlanes[face].distanceToPoint(pointOnSphere) >= 0) {
+        return face;
+      }
+    }
+    throw `Can't find a face for ${v2s(pointOnSphere)}!`;
   }
 }
