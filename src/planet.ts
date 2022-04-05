@@ -100,6 +100,7 @@ class Planet {
   update(camera: PlanetCamera) {
     // Make the planet mesh and all of its child meshes turn to look at the new camera position.
     this.mesh.lookAt(camera.position);
+    this.mesh.visible = false;
 
     // Change the curvature of the planet mesh and update the colors to reflect the terrain.
     // FIXME: Later, try doing this with a vertex and fragment shader, respectively.
