@@ -35,38 +35,41 @@ function getUnitUVFromScale(scale) {
     return getUnitUVFromUncorrectedScale(uncorrectScale(scale));
 }
 
-// A coordinate in the range [-1, 1], where 0 is the center.
-function uvWithTangentAdjustment(coordinate) {
+// Takes a [0..segmentsPerSide] coordinate.
+// Returns a coordinate in the range [-1, 1], where 0 is the center.
+function getUvFromCoordinate(coordinate) {
     return (coordinate - segmentsPerSide / 2) * getScaleFromUnitUV(coordinate / segmentsPerSide * 2 - 1);
 }
 
+// Takes a [-segmentsPerSide/2, segmentsPerSide/2] number.
+// Returns a [0..segmentsPerSide] number.
 function getCoordinateFromUv(correctedScaledUV) {
-    // MAGIC GOES HERE;
+    console.log(`woop csuv ${correctedScaledUV}, csuv/sps*2 ${correctedScaledUV / segmentsPerSide * 2}, m1 ${correctedScaledUV / segmentsPerSide * 2 - 1}, m1x ${correctedScaledUV / (segmentsPerSide * 2 - 1)}`);
+    correctedScaledUV = getUnitUVFromScale(correctedScaledUV) / (segmentsPerSide * 2);
+    return correctedScaledUV + segmentsPerSide / 2;
 };
 
-
-function inverse(scaledCellSpaceUV) {
-    return 1000;
+function uvWithTangentAdjustment(n) {
+    let unitUV = n / segmentsPerSide * 2 - 1; // A coordinate in the range [-1, 1], where 0 is the center.
+    let cellSpaceUV = n - segmentsPerSide / 2; // A coordinate in the range [-segmentsPerSide/2, segmentsPerSide/2].
+    let scale = Math.tan(Math.pow(Math.abs(unitUV), 1/6) * (Math.PI / 4));
+    scale += (1.0 / 9007199254740992.0) * scale; // correct tiny floating-point inaccuracies
+    return cellSpaceUV * scale;
 }
 
 
 function testInverse(x, fn1, fn2) {
     console.log("");
     console.log(`${fn1.name} <-> ${fn2.name}`);
+    let originalUv = uvWithTangentAdjustment(x);
     let result = fn1(x);
     let inverted = fn2(result);
-    console.log(JSON.stringify({x, result, inverted}, null, 2));
+    console.log(JSON.stringify({x, originalUv, result, inverted}, null, 2));
 
 }
 
 
-testInverse(10, correctScale, uncorrectScale);
-testInverse(10, getUncorrectedScaleFromUnitUV, getUnitUVFromUncorrectedScale);
+testInverse(8, correctScale, uncorrectScale);
+testInverse(8, getUncorrectedScaleFromUnitUV, getUnitUVFromUncorrectedScale);
 testInverse(8, getScaleFromUnitUV, getUnitUVFromScale);
-
-/*
-let n = 8;
-let scaledCellSpaceUV = uvWithTangentAdjustment(n);
-let inverted = inverse(scaledCellSpaceUV);
-console.log(JSON.stringify({n, scaledCellSpaceUV, inverted}, null, 2));
- */
+testInverse(8, getUvFromCoordinate, getCoordinateFromUv);
