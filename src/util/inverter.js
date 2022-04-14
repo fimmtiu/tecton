@@ -44,9 +44,7 @@ function getUvFromCoordinate(coordinate) {
 // Takes a [-segmentsPerSide/2, segmentsPerSide/2] number.
 // Returns a [0..segmentsPerSide] number.
 function getCoordinateFromUv(correctedScaledUV) {
-    console.log(`woop csuv ${correctedScaledUV}, csuv/sps*2 ${correctedScaledUV / segmentsPerSide * 2}, m1 ${correctedScaledUV / segmentsPerSide * 2 - 1}, m1x ${correctedScaledUV / (segmentsPerSide * 2 - 1)}`);
-    correctedScaledUV = getUnitUVFromScale(correctedScaledUV) / (segmentsPerSide * 2);
-    return correctedScaledUV + segmentsPerSide / 2;
+    // MAGIC
 };
 
 function uvWithTangentAdjustment(n) {
