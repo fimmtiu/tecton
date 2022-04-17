@@ -2,6 +2,7 @@ import * as THREE from "three";
 
 import { PLANET_RADIUS } from "../planet"
 import { v2s, sphericalFromCoords } from "../util";
+import { wrapMeshAroundSphere } from "../util/geometry";
 
 export { TangentSphere };
 
@@ -41,37 +42,37 @@ class TangentSphere extends THREE.Mesh {
     this.geometry.setIndex(indices);
     this.geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
     this.geometry.addGroup(0, numberOfVertices, 1);
+    wrapMeshAroundSphere(this.geometry, PLANET_RADIUS);
 
-    // FIXME: I'm doing something slightly wrong here, I think. Every other version of this code that I've seen just
-    // does a straight tan() on the UV, but when I do that I reverse my problem, making tiny cells in the center of
-    // faces (where the tan() function is right around the X axis) and giant faces at the corners. Doing the
-    // pow(uv, 1/6) call fixes the problem and gives us nice-looking cells, but none of the other implementations I've
-    // looked at do anything similar, so I think I might be compensating for a bug. Will revisit someday.
-    function uvWithTangentAdjustment(n: number) {
-      let unitUV = n / segmentsPerSide * 2 - 1; // A coordinate in the range [-1, 1], where 0 is the center.
-      let cellSpaceUV = n - segmentsPerSide / 2; // A coordinate in the range [-segmentsPerSide/2, segmentsPerSide/2].
-      let scale = Math.tan(Math.pow(Math.abs(unitUV), 1/6) * (Math.PI / 4));
-      scale += (1.0 / 9007199254740992.0) * scale; // correct tiny floating-point inaccuracies
-      return cellSpaceUV * scale;
+    // [0..segmentsPerSide] -> [0..1]
+    function coordToSt(coord: number) {
+      return coord / segmentsPerSide;
+    }
+
+    // [0..1] -> [-1..1]
+    function stToUv(st: number) {
+      let uv = Math.tan((Math.PI / 2) * st - Math.PI / 4);
+      uv += (1.0 / 9007199254740992.0) * uv; // correct tiny floating-point inaccuracies with tan()
+      return uv;
     }
 
     function buildPlane(u: number, v: number, w: number, udir: number, vdir: number, wdir: number) {
-      const segmentSize = sideLength / segmentsPerSide;
-      const depthHalf = sideLength / 2 * wdir;
+      const halfSideLength = sideLength / 2;
+      const depthLength = halfSideLength * wdir;
       const segmentsPlusOne = segmentsPerSide + 1;
       const vector = new THREE.Vector3();
 
       let vertexCounter = 0;
 
       for (let iy = 0; iy < segmentsPlusOne; iy++) {
-        const y = uvWithTangentAdjustment(iy) * segmentSize;
+        const y = stToUv(coordToSt(iy)) * halfSideLength;
 
         for (let ix = 0; ix < segmentsPlusOne; ix++) {
-          const x = uvWithTangentAdjustment(ix) * segmentSize;
+          const x = stToUv(coordToSt(ix)) * halfSideLength;
 
           vector.setComponent(u, x * udir);
           vector.setComponent(v, y * vdir);
-          vector.setComponent(w, depthHalf);
+          vector.setComponent(w, depthLength);
           vertices.push(vector.x, vector.y, vector.z);
 
           vertexCounter += 1;
