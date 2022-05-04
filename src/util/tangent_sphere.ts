@@ -1,10 +1,8 @@
 import * as THREE from "three";
 
 import { PLANET_RADIUS } from "../planet"
-import { scene } from "../scene_data";
 import { v2s, sphericalFromCoords } from "../util";
 import { wrapMeshAroundSphere } from "../util/geometry";
-import { COLORS } from "../visual_helper";
 
 export { TangentSphere };
 
@@ -54,7 +52,7 @@ class TangentSphere extends THREE.Mesh {
     this.geometry.setIndex(indices);
     this.geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
     this.geometry.addGroup(0, indices.length, 1);
-    // wrapMeshAroundSphere(this.geometry, this.radius);
+    wrapMeshAroundSphere(this.geometry, this.radius);
   }
 
   cellIndexAtPoint(face: number, pointOnSphere: THREE.Vector3) {
@@ -75,6 +73,9 @@ class TangentSphere extends THREE.Mesh {
     );
 
     // Calculate which cell it falls in.
+    if (face == 4) {
+      console.log(`${face}x${Math.floor(faceCoords.y) * this.segmentsPerSide + Math.floor(faceCoords.x)}: (u ${faceCoordsUv.x}, v ${faceCoordsUv.y}), (x ${faceCoords.x}, y ${faceCoords.y})`);
+    }
     return Math.floor(faceCoords.y) * this.segmentsPerSide + Math.floor(faceCoords.x);
   }
 
@@ -108,7 +109,7 @@ class TangentSphere extends THREE.Mesh {
     const halfSideLength = this.radius;
     const depthLength = halfSideLength * wdir;
     const segmentsPlusOne = this.segmentsPerSide + 1;
-    const startingVertices = vertices.length;
+    const startingVertices = vertices.length / 3;
     const vector = new THREE.Vector3();
 
     for (let iy = 0; iy < segmentsPlusOne; iy++) {
