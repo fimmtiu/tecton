@@ -1,4 +1,5 @@
 import * as THREE from "three";
+
 import { SceneData, scene } from "./scene_data";
 import { setRandomSeed } from "./util";
 import { TextureManager } from "./texture_manager";
@@ -107,7 +108,7 @@ TextureManager.loadAll(() => {
 
     if (data) {
       elevationSpan.innerHTML = `${data.elevation} m`;
-      cellSpan.innerHTML = `${data.voronoiCell} (face ${data.face})`;
+      cellSpan.innerHTML = `${data.voronoiCell} (grid ${data.face}x${data.gridCell})`;
       plateSpan.innerHTML = `${data.plate}`;
     }
   }

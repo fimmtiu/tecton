@@ -46,6 +46,7 @@ class Terrain {
       "voronoiCell": plateData.cell.id,
       "plate": plateData.plate.id,
       "face": this.heightMap.faceAtPoint(pointOnSphere),
+      "gridCell": this.heightMap.cellIndexAtPoint(pointOnSphere),
     }
   }
 

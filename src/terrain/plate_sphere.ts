@@ -77,7 +77,7 @@ class PlateSphere {
     scene.remove(this.voronoiMesh);
     this.voronoiMesh.geometry.dispose();
     this.voronoiMesh = this.makeTriangleMesh();
-    scene.add(this.voronoiMesh);
+    // scene.add(this.voronoiMesh);
   }
 
   dataAtPoint(point: THREE.Vector3) {

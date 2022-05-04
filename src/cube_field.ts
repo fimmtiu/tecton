@@ -35,7 +35,6 @@ abstract class CubeField<CellType> {
     }
 
     this.box = new TangentSphere(this.cellsPerEdge);
-    this.box.visible = false;
   }
 
   destroy() {
@@ -51,13 +50,18 @@ abstract class CubeField<CellType> {
   }
 
   cellAtPoint(pointOnSphere: THREE.Vector3) {
-    // const caster = new THREE.Raycaster(ORIGIN, pointOnSphere.clone().normalize());
-    // const results = caster.intersectObject(this.box);
-    // if (results.length > 0) {
-      // console.log(`Results for ${v2s(pointOnSphere)} -> ${results}`);
-      // debugger;
-    // }
+    const face = this.box.faceContainingPoint(pointOnSphere);
+    const cell = this.box.cellIndexAtPoint(face, pointOnSphere);
+    // console.log(`face: ${face}, cell ${cell}, index ${face * this.cellsPerFace + cell}, max ${this.cells.length}`);
+
     return this.cells[0];
+    return this.cells[face * this.cellsPerFace + cell];
+  }
+
+  // FIXME: Just for debugging.
+  cellIndexAtPoint(pointOnSphere: THREE.Vector3) {
+    const face = this.box.faceContainingPoint(pointOnSphere);
+    return this.box.cellIndexAtPoint(face, pointOnSphere);
   }
 
   faceAtPoint(pointOnSphere: THREE.Vector3) {

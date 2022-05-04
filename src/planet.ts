@@ -55,7 +55,7 @@ class Planet {
     this.sphere = new THREE.Sphere(ORIGIN, Planet.radius);
     this.width = viewportWidth;
     this.height = viewportHeight;
-    this.visualHelper = new VisualHelper(true, true);
+    this.visualHelper = new VisualHelper(true, false);
     this.terrain = new Terrain();
     this.climate = new Climate();
     this.textureData = new Uint8ClampedArray(TEXTURE_SIZE ** 2 * 4);
