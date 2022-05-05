@@ -1,8 +1,10 @@
 import * as THREE from "three";
 
 import { PLANET_RADIUS } from "../planet"
-import { v2s, sphericalFromCoords } from "../util";
+import { scene } from "../scene_data";
+import { v2s, ORIGIN, sphericalFromCoords } from "../util";
 import { wrapMeshAroundSphere } from "../util/geometry";
+import { COLORS } from "../visual_helper";
 
 export { TangentSphere };
 
@@ -19,7 +21,7 @@ const ROTATIONS_TO_TOP_FACE = [
 
 // When you wrap a cube around a sphere, the grid cells get very distorted: huge and bulging in the center of faces, but
 // tiny and tightly packed around the corners. To minimize this distortion, we can apply a simple tangent adjustment to
-// to the cube's grid lines to make the wrapped cells more uniform in size. We could do something fancier like a COBE
+// the cube's grid lines to make the wrapped cells more uniform in size. We could do something fancier like a COBE
 // quadrilateralized sphere if we needed to, but this is probably okay for now. Most of this file is a hastily
 // simplified version of THREE's BoxGeometry class.
 //
@@ -36,6 +38,10 @@ class TangentSphere extends THREE.Mesh {
     this.visible = false;
     this.radius = radius;
     this.cornerPlanes = this.makeCornerPlanes();
+    for (let i = 0; i < 6; i++) {
+      const helper = new THREE.PlaneHelper(this.cornerPlanes[i], this.radius * 1.16, COLORS[i]);
+      scene.add(helper);
+    }
 
     const indices: number[] = [];
     const vertices: number[] = [];
@@ -64,7 +70,7 @@ class TangentSphere extends THREE.Mesh {
 
     // Find the (x, y) coordinates of that point on the cube face.
     const pointOnFace = new THREE.Vector3().setFromSpherical(sphTop);
-    let faceCoordsUv = new THREE.Vector2(pointOnFace.x / PLANET_RADIUS, -pointOnFace.z / PLANET_RADIUS);
+    let faceCoordsUv = new THREE.Vector2(-pointOnFace.x / PLANET_RADIUS, pointOnFace.z / PLANET_RADIUS);
 
     // Invert the tangent adjustment on it.
     let faceCoords = new THREE.Vector2(
@@ -73,9 +79,6 @@ class TangentSphere extends THREE.Mesh {
     );
 
     // Calculate which cell it falls in.
-    if (face == 4) {
-      console.log(`${face}x${Math.floor(faceCoords.y) * this.segmentsPerSide + Math.floor(faceCoords.x)}: (u ${faceCoordsUv.x}, v ${faceCoordsUv.y}), (x ${faceCoords.x}, y ${faceCoords.y})`);
-    }
     return Math.floor(faceCoords.y) * this.segmentsPerSide + Math.floor(faceCoords.x);
   }
 
@@ -156,24 +159,47 @@ class TangentSphere extends THREE.Mesh {
   protected makeCornerPlanes() {
     const distance = this.radius / Math.sqrt(3);
     return [
-      new THREE.Plane(new THREE.Vector3(-1, 0, 0), distance), // right face
-      new THREE.Plane(new THREE.Vector3( 1, 0, 0), distance), // left face
-      new THREE.Plane(new THREE.Vector3(0, -1, 0), distance), // top face
-      new THREE.Plane(new THREE.Vector3(0,  1, 0), distance), // bottom face
-      new THREE.Plane(new THREE.Vector3(0, 0, -1), distance), // front face
-      new THREE.Plane(new THREE.Vector3(0, 0,  1), distance), // back face
+      new THREE.Plane(new THREE.Vector3(-1,  0,  0), distance), // right side
+      new THREE.Plane(new THREE.Vector3( 1,  0,  0), distance), // left side
+      new THREE.Plane(new THREE.Vector3( 0, -1,  0), distance), // top side
+      new THREE.Plane(new THREE.Vector3( 0,  1,  0), distance), // bottom side
+      new THREE.Plane(new THREE.Vector3( 0,  0, -1), distance), // front side
+      new THREE.Plane(new THREE.Vector3( 0,  0,  1), distance), // back side
     ];
   }
 
   public faceContainingPoint(pointOnSphere: THREE.Vector3) { // FIXME make protected later
+    const line = new THREE.Line3(ORIGIN, pointOnSphere);
+
     // Future optimization: Remember the last face that we returned and start looking from there, instead of searching
     // from 0 upwards every time.
     for (let face = 0; face < 6; face++) {
-      if (this.cornerPlanes[face].distanceToPoint(pointOnSphere) <= 0) {
+      if (this.cornerPlanes[face].intersectsLine(line)) {
         return face;
       }
     }
     debugger;
     throw `Can't find a face for ${v2s(pointOnSphere)}!`;
   }
+
+
+  //   let matches = [];
+  //   for (let face = 0; face < 6; face++) {
+  //     const dist = this.cornerPlanes[face].distanceToPoint(pointOnSphere);
+  //     if (dist <= 0) {
+  //       matches.push([face, dist]);
+  //     }
+  //   }
+  //   if (matches.length > 1) {
+  //     console.log(`Too many matches! ${matches} at ${v2s(pointOnSphere)}`);
+  //   }
+
+  //   for (let face = 0; face < 6; face++) {
+  //     if (this.cornerPlanes[face].distanceToPoint(pointOnSphere) <= 0) {
+  //       return face;
+  //     }
+  //   }
+  //   debugger;
+  //   throw `Can't find a face for ${v2s(pointOnSphere)}!`;
+  // }
 }
