@@ -155,7 +155,7 @@ class TangentSphere extends THREE.Mesh {
   // Solution: Imagine a cube which fits snugly inside the sphere. To determine which face a particular point-on-sphere
   // belongs to, we create six planes that define the sides of that cube. This lets us find the correct face with cheap
   // "which side of the plane is this point on" tests, and then we can do some trigonometry to work out the grid cell
-  // within that face. Hopefully that will be cheap enough.
+  // within that face. Hopefully that will be fast enough.
   protected makeCornerPlanes() {
     const distance = this.radius / Math.sqrt(3);
     return [
@@ -168,38 +168,32 @@ class TangentSphere extends THREE.Mesh {
     ];
   }
 
+  // At the edges where the planes intersect you'll have some points that match more than one plane. In that case,
+  // we want to return the plane that's closest to the point.
+  //
+  // Future optimization: Remember the last face that we returned and start looking from there, instead of searching
+  // from 0 upwards every time.
   public faceContainingPoint(pointOnSphere: THREE.Vector3) { // FIXME make protected later
-    const line = new THREE.Line3(ORIGIN, pointOnSphere);
+    let firstFace: number|null = null;
+    let firstDistance: number|null = null;
 
-    // Future optimization: Remember the last face that we returned and start looking from there, instead of searching
-    // from 0 upwards every time.
     for (let face = 0; face < 6; face++) {
-      if (this.cornerPlanes[face].intersectsLine(line)) {
-        return face;
+      const dist = this.cornerPlanes[face].distanceToPoint(pointOnSphere);
+
+      if (dist <= 0) {
+        if (firstDistance === null) {
+          firstDistance = dist;
+          firstFace = face;
+        } else {
+          return firstDistance < dist ? firstFace : face;
+        }
       }
     }
-    debugger;
-    throw `Can't find a face for ${v2s(pointOnSphere)}!`;
+
+    if (firstDistance !== null) {
+      return firstFace;
+    } else {
+      throw `Can't find a face for ${v2s(pointOnSphere)}!`;
+    }
   }
-
-
-  //   let matches = [];
-  //   for (let face = 0; face < 6; face++) {
-  //     const dist = this.cornerPlanes[face].distanceToPoint(pointOnSphere);
-  //     if (dist <= 0) {
-  //       matches.push([face, dist]);
-  //     }
-  //   }
-  //   if (matches.length > 1) {
-  //     console.log(`Too many matches! ${matches} at ${v2s(pointOnSphere)}`);
-  //   }
-
-  //   for (let face = 0; face < 6; face++) {
-  //     if (this.cornerPlanes[face].distanceToPoint(pointOnSphere) <= 0) {
-  //       return face;
-  //     }
-  //   }
-  //   debugger;
-  //   throw `Can't find a face for ${v2s(pointOnSphere)}!`;
-  // }
 }
