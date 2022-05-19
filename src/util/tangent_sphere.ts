@@ -2,21 +2,21 @@ import * as THREE from "three";
 
 import { PLANET_RADIUS } from "../planet"
 import { scene } from "../scene_data";
-import { v2s, ORIGIN, sphericalFromCoords } from "../util";
+import { v2s, s2s, ORIGIN, sphericalFromCoords } from "../util";
 import { wrapMeshAroundSphere } from "../util/geometry";
-import { COLORS } from "../visual_helper";
+import { COLORS, VisualHelper } from "../visual_helper";
 
 export { TangentSphere };
 
 const PI_2 = Math.PI / 2;
 const PI_4 = Math.PI / 4;
 const ROTATIONS_TO_TOP_FACE = [
-  new THREE.Quaternion().setFromEuler(new THREE.Euler(0, PI_2, -PI_2, "ZYX")), // right side
-  new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -PI_2, PI_2, "ZYX")), // left side
-  new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0)),               // top side
-  new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI, 0, 0, "XYZ")),  // bottom side
-  new THREE.Quaternion().setFromEuler(new THREE.Euler(PI_2, 0, 0, "XYZ")),     // front side
-  new THREE.Quaternion().setFromEuler(new THREE.Euler(-PI_2, 0, 0, "XYZ")),    // back side
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(-PI_2, -PI_2, 0)), // right side
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(-PI_2, PI_2, 0)),  // left side
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0)),         // top side
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI, 0, 0)),   // bottom side -- not 100% sure on this one!
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(-PI_2, 0, 0)),     // front side
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(PI_2, 0, 0)),      // back side
 ];
 
 // When you wrap a cube around a sphere, the grid cells get very distorted: huge and bulging in the center of faces, but
@@ -38,10 +38,10 @@ class TangentSphere extends THREE.Mesh {
     this.visible = false;
     this.radius = radius;
     this.cornerPlanes = this.makeCornerPlanes();
-    for (let i = 0; i < 6; i++) {
-      const helper = new THREE.PlaneHelper(this.cornerPlanes[i], this.radius * 1.16, COLORS[i]);
-      scene.add(helper);
-    }
+    // for (let i = 0; i < 6; i++) {
+    //   const helper = new THREE.PlaneHelper(this.cornerPlanes[i], this.radius * 1.16, COLORS[i]);
+    //   scene.add(helper);
+    // }
 
     const indices: number[] = [];
     const vertices: number[] = [];
@@ -79,7 +79,7 @@ class TangentSphere extends THREE.Mesh {
     );
 
     // Calculate which cell it falls in.
-    return Math.floor(faceCoords.y) * this.segmentsPerSide + Math.floor(faceCoords.x);
+    return Math.floor(faceCoords.y) * this.segmentsPerSide + (this.segmentsPerSide - Math.floor(faceCoords.x) - 1);
   }
 
   // [0..segmentsPerSide] -> [0..1]
@@ -109,17 +109,16 @@ class TangentSphere extends THREE.Mesh {
     udir: number, vdir: number, wdir: number,
     indices: number[], vertices: number[]
   ) {
-    const halfSideLength = this.radius;
-    const depthLength = halfSideLength * wdir;
+    const depthLength = this.radius * wdir;
     const segmentsPlusOne = this.segmentsPerSide + 1;
-    const startingVertices = vertices.length / 3;
+    const initialVertices = vertices.length / 3;
     const vector = new THREE.Vector3();
 
     for (let iy = 0; iy < segmentsPlusOne; iy++) {
-      const y = this.stToUv(this.coordToSt(iy)) * halfSideLength;
+      const y = this.stToUv(this.coordToSt(iy)) * this.radius;
 
       for (let ix = 0; ix < segmentsPlusOne; ix++) {
-        const x = this.stToUv(this.coordToSt(ix)) * halfSideLength;
+        const x = this.stToUv(this.coordToSt(ix)) * this.radius;
 
         vector.setComponent(u, x * udir);
         vector.setComponent(v, y * vdir);
@@ -130,10 +129,10 @@ class TangentSphere extends THREE.Mesh {
 
     for (let iy = 0; iy < this.segmentsPerSide; iy++) {
       for (let ix = 0; ix < this.segmentsPerSide; ix++) {
-        const a = startingVertices + ix + segmentsPlusOne * iy;
-        const b = startingVertices + ix + segmentsPlusOne * (iy + 1);
-        const c = startingVertices + (ix + 1) + segmentsPlusOne * (iy + 1);
-        const d = startingVertices + (ix + 1) + segmentsPlusOne * iy;
+        const a = initialVertices + ix + segmentsPlusOne * iy;
+        const b = initialVertices + ix + segmentsPlusOne * (iy + 1);
+        const c = initialVertices + (ix + 1) + segmentsPlusOne * (iy + 1);
+        const d = initialVertices + (ix + 1) + segmentsPlusOne * iy;
 
         indices.push(a, b, d);
         indices.push(b, c, d);
@@ -185,12 +184,12 @@ class TangentSphere extends THREE.Mesh {
           firstDistance = dist;
           firstFace = face;
         } else {
-          return firstDistance < dist ? firstFace : face;
+          return firstDistance < dist ? <number>firstFace : face;
         }
       }
     }
 
-    if (firstDistance !== null) {
+    if (firstFace !== null) {
       return firstFace;
     } else {
       throw `Can't find a face for ${v2s(pointOnSphere)}!`;

@@ -46,7 +46,7 @@ To generate the HeightCubeField:
      - If within 100 km of a land cell, ranges between -1m to -100m
      - Otherwise, use noise to very gradually vary it between -100m and -6,000m.
 
-Variations for coastlines are dependent on how much coastline is near the given cell. Maybe check the
+Variations for coastlines are dependent on how much coastline is near the given cell.
 
  - For each line segment
    - If it's a plate boundary

@@ -52,9 +52,8 @@ abstract class CubeField<CellType> {
   cellAtPoint(pointOnSphere: THREE.Vector3) {
     const face = this.box.faceContainingPoint(pointOnSphere);
     const cell = this.box.cellIndexAtPoint(face, pointOnSphere);
-    // console.log(`face: ${face}, cell ${cell}, index ${face * this.cellsPerFace + cell}, max ${this.cells.length}`);
 
-    return this.cells[0];
+    // return this.cells[0];
     return this.cells[face * this.cellsPerFace + cell];
   }
 
