@@ -52,9 +52,16 @@ abstract class CubeField<CellType> {
   cellAtPoint(pointOnSphere: THREE.Vector3) {
     const face = this.box.faceContainingPoint(pointOnSphere);
     const cell = this.box.cellIndexAtPoint(face, pointOnSphere);
+    const cellId = face * this.cellsPerFace + cell;
+
+    // const cpf = this.cellsPerFace;
+    // function cellToStr(cellId: number) {
+    //   return `${cellId} (${Math.floor(cellId / cpf)}, ${cellId % cpf})`;
+    // }
+    // console.log(`Neighbours of ${cellId} (${face} x ${cell}): N ${cellToStr(this.neighbour(cellId, 1))}, E ${cellToStr(this.neighbour(cellId, 5))}, S ${cellToStr(this.neighbour(cellId, 7))}, W ${cellToStr(this.neighbour(cellId, 3))}`);
 
     // return this.cells[0];
-    return this.cells[face * this.cellsPerFace + cell];
+    return this.cells[cellId];
   }
 
   // FIXME: Just for debugging.
@@ -80,7 +87,7 @@ abstract class CubeField<CellType> {
   //     3 * 5
   //     6 7 8
   neighbour(cell: number, dir: number) {
-    const face = Math.floor(this.cellCount / cell);
+    const face = Math.floor(cell / this.cellsPerFace);
     const x = cell % this.cellsPerEdge;
     const y = Math.floor((cell % this.cellsPerFace) / this.cellsPerEdge);
 
