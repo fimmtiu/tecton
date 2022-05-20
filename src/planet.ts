@@ -55,7 +55,7 @@ class Planet {
     this.sphere = new THREE.Sphere(ORIGIN, Planet.radius);
     this.width = viewportWidth;
     this.height = viewportHeight;
-    this.visualHelper = new VisualHelper(true, true);
+    this.visualHelper = new VisualHelper(true, false);
     this.terrain = new Terrain();
     this.climate = new Climate();
     this.textureData = new Uint8ClampedArray(TEXTURE_SIZE ** 2 * 4);
@@ -101,8 +101,7 @@ class Planet {
     // Make the planet mesh and all of its child meshes turn to look at the new camera position.
     this.mesh.lookAt(camera.position);
 
-    // Change the curvature of the planet mesh and update the colors to reflect the terrain.
-    // FIXME: Later, try doing this with a vertex and fragment shader, respectively.
+    // Change the curvature of the planet mesh. (FIXME: Try doing this with a vertex shader later.)
     const topLeftPoint = new THREE.Vector3(), bottomRightPoint = new THREE.Vector3();
     let horizRadiansPerUnit = 0, vertRadiansPerUnit = 0;
     let sphereCoords = new THREE.Spherical(Planet.radius, 0, 0);

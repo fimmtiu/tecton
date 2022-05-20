@@ -23,6 +23,14 @@ const NOISE_LEVELS = [
 ];
 const MAX_AMPLITUDE = NOISE_LEVELS.reduce((n, level) => { return n + level.amplitude }, 0);
 
+// Some commonly used heights expressed in the -1.0 - 1.0 range.
+const HEIGHT_1_M = 1 / (MAX_ELEVATION * 1000);
+const HEIGHT_90_M = 90 / (MAX_ELEVATION * 1000);
+const HEIGHT_600_M = 600 / (MAX_ELEVATION * 1000);
+const DEPTH_1_M = 1 / (MIN_ELEVATION * 1000);
+const DEPTH_100_M = 100 / (MIN_ELEVATION * 1000);
+const DEPTH_6000_M = 6000 / (MIN_ELEVATION * 1000);
+
 class Terrain {
   protected plateSphere: PlateSphere;
   public heightMap: HeightCubeField;
@@ -32,6 +40,37 @@ class Terrain {
   constructor() {
     this.plateSphere = new PlateSphere();
     this.heightMap = new HeightCubeField(100, this.plateSphere);
+
+    // Set the initial heights for all heightmap cells.
+    for (let i = 0; i < this.heightMap.cellCount; i++) {
+      const heightCell = this.heightMap.get(i);
+
+      if (heightCell.nearnessToWater == 1) {
+        // Open ocean. Vary gradually between -100m and -6,000m.
+        heightCell.height = this.randomHeightBetween(heightCell.center, DEPTH_100_M, DEPTH_6000_M);
+
+      } else if (heightCell.nearnessToWater == 0) {
+        // Landlocked. Vary gradually between 90m and 600m.
+        heightCell.height = this.randomHeightBetween(heightCell.center, HEIGHT_90_M, HEIGHT_600_M);
+
+      } else {
+        // Near a coastline.
+        if (heightCell.height > 0) {
+          // If land, slope gradually from 1m to 90m.
+          heightCell.height = heightCell.nearnessToWater * HEIGHT_90_M + HEIGHT_1_M;
+
+        } else {
+          // If water, slope gradually from -1m to -100m.
+          heightCell.height = heightCell.nearnessToWater * DEPTH_100_M + DEPTH_1_M;
+        }
+      }
+
+      if (heightCell.height > this.max) {
+        this.max = heightCell.height;
+      } else if (heightCell.height < this.min) {
+        this.min = heightCell.height;
+      }
+    }
   }
 
   destroy() {
@@ -59,34 +98,6 @@ class Terrain {
   // To get the height in kilometers, pass this number to scaleHeight().
   normalizedHeightAt(pointOnSphere: THREE.Vector3) {
     return this.heightMap.cellAtPoint(pointOnSphere).height;
-
-    let height = 0;
-
-    // Generate a noisy height value.
-    for (let i = 0; i < NOISE_LEVELS.length; i++) {
-      let level = NOISE_LEVELS[i];
-      height += this.noise(pointOnSphere, level.offset, level.amplitude);
-    }
-
-    // Skew the height value between -1.0 and 1.0.
-    height = (height - MIN_ELEVATION) / MAX_AMPLITUDE;
-
-    // Apply some bonkers thing to it in order to make the coastlines more dramatic. Didn't work.
-    // height *= 1 - (1 / (5 + (10 * height) ** 2));
-
-    // Favour water by skewing heights lower without clamping. (doesn't work; the skew utterly destroys mountains.)
-    // height = height * (1 - FAVOR_WATER) - FAVOR_WATER;
-
-    height = (height + 1) / 2;      // Convert to the range 0..1.
-    height = Math.pow(height, 1.3); // Run it through a power function to decrease landmass and make it pointier.
-    height = height * 2 - 1;        // Convert back to -1..1.
-
-    if (height > this.max) {
-      this.max = height;
-    } else if (height < this.min) {
-      this.min = height;
-    }
-    return height;
   }
 
   scaleHeight(height: number) {
@@ -134,5 +145,21 @@ class Terrain {
       offset * point.y / NOISE_SCALE,
       offset * point.z / NOISE_SCALE,
     ) * amplitude;
+  }
+
+  protected randomHeightBetween(pointOnSphere: THREE.Vector3, min: number, max: number) {
+    const range = max - min;
+    let height = 0;
+
+    for (let level of NOISE_LEVELS) {
+      height += this.noise(pointOnSphere, level.offset, level.amplitude);
+    }
+
+    height = height / MAX_AMPLITUDE;  // Skew the height value between -1.0 and 1.0.
+    height = (height + 1) / 2;        // Convert it to the range 0..1.
+    height = Math.pow(height, 1.3);   // Run it through a power function to make it pointier.
+    height = height * range + min;    // Convert it to the range min..max.
+
+    return height;
   }
 }

@@ -200,6 +200,7 @@ class PlateSphere {
       }
       geometry.addGroup(i * 2, 2, color);
     }
+    geometry.scale(1.08, 1.08, 1.08);
     return new THREE.LineSegments(geometry, PlateSphere.LINE_MATERIALS);
   }
 

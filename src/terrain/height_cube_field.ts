@@ -10,6 +10,7 @@ import { v2s } from "../util";
 export { HeightCubeField };
 
 class HeightCell {
+  public center = new THREE.Vector3();
   public height = 0;
   public ruggedness = 0;
   public nearnessToWater = 0; // 0 is landlocked, 0.5 is near a coastline, 1.0 is at sea.
@@ -35,15 +36,19 @@ class HeightCubeField extends CubeField<HeightCell> {
     this.showCentersMesh = this.centers(MATERIALS, 1.01);
     this.closeToWaterDistance = Math.floor(CLOSE_TO_WATER_THRESHOLD / (PLANET_RADIUS / this.cellsPerEdge));
 
+    // Do a quick pass over all the cells to indicate whether they're land or water.
     const positions = this.centersMesh.geometry.getAttribute("position");
     for (let i = 0; i < positions.count; i++) {
-      const center = new THREE.Vector3(positions.getX(i), positions.getY(i), positions.getZ(i));
-      const data = plateSphere.dataAtPoint(center);
-      this.get(i).height = data["plate"].isLand ? 1 : -1;
+      const heightCell = this.get(i);
+      heightCell.center = new THREE.Vector3(positions.getX(i), positions.getY(i), positions.getZ(i));
+      const data = plateSphere.dataAtPoint(heightCell.center);
+      heightCell.height = data["plate"].isLand ? 1 : -1;
       this.showCentersMesh.geometry.addGroup(i, 1, data["plate"].isLand ? 0 : 1);
     }
 
+    // Calculate the nearnessToWater for all cells.
     this.update();
+
     // scene.add(this.edges(0xea00ff, 1.01)); // show cell boundaries
     // scene.add(this.showCentersMesh);       // show a dot at the center of each cell
   }
