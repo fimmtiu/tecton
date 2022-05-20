@@ -46,10 +46,10 @@ class PlateSphere {
     this.constructPlateBoundaries();
 
     this.voronoiEdges = this.makeEdges();
-    // scene.add(this.voronoiEdges);
+    scene.add(this.voronoiEdges);
 
     this.voronoiMesh = this.makeTriangleMesh();
-    scene.add(this.voronoiMesh);
+    // scene.add(this.voronoiMesh);
   }
 
   destroy() {

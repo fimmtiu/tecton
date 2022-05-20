@@ -27,8 +27,6 @@ class HeightCubeField extends CubeField<HeightCell> {
   protected centersMesh: THREE.Points;
   protected showCentersMesh: THREE.Points;
   protected closeToWaterDistance: number;
-  protected printShit = false;
-  protected fixmeVis = new VisualHelper();
 
   constructor(cellsPerEdge: number, plateSphere: PlateSphere) {
     super(cellsPerEdge, () => { return new HeightCell() });
@@ -63,7 +61,6 @@ class HeightCubeField extends CubeField<HeightCell> {
     for (let i = 0; i < this.cells.length; i++) {
       this.get(i).nearnessToWater = this.nearnessToWater(i);
     }
-    this.printShit = true;
   }
 
   static points: Array<THREE.Vector3> = [];
@@ -80,22 +77,11 @@ class HeightCubeField extends CubeField<HeightCell> {
       }
     }
 
-    if (this.printShit) {
-      console.log(`points ${HeightCubeField.points}, ${waterCells} water cells, ${Object.keys(cellContainsWater).length} total, distance ${this.closeToWaterDistance}, km per cell ${PLANET_RADIUS / this.cellsPerEdge}, height ${this.get(cell).height}`);
-      this.fixmeVis.setPoints(HeightCubeField.points);
-      this.fixmeVis.update();
-    }
     return waterCells / Object.keys(cellContainsWater).length;
   }
 
   protected recursivelyCheckAdjacentCells(cellContainsWater: { [cell: number]: boolean }, cell: number, remainingDistance: number) {
     cellContainsWater[cell] = (this.get(cell).height <= 0);
-    if (this.printShit) {
-      const positions = this.showCentersMesh.geometry.getAttribute("position");
-      const center = new THREE.Vector3(positions.getX(cell), positions.getY(cell), positions.getZ(cell));
-      console.log(`${cell} (${Math.floor(cell / this.cellsPerFace)}x${cell % this.cellsPerFace}): rendered point ${v2s(center)}`);
-      HeightCubeField.points.push(center);
-    }
 
     for (let dir of CARDINAL_DIRECTIONS) {
       const adjacentCell = this.neighbour(cell, dir);
