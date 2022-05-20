@@ -1,8 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "target": "es2017",
     "module": "commonjs",
-    "moduleResolution": "node",
     "declaration": true,
     "strict": true,
     "noImplicitAny": true /* Raise error on expressions and declarations with an implied 'any' type. */,
@@ -25,7 +24,7 @@
       "jest"
     ],
     "lib": [
-      "ES6",
+      "ES2017",
       "DOM"
     ]
   },

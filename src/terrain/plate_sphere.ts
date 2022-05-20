@@ -46,10 +46,10 @@ class PlateSphere {
     this.constructPlateBoundaries();
 
     this.voronoiEdges = this.makeEdges();
-    // scene.add(this.voronoiEdges);
+    scene.add(this.voronoiEdges);
 
     this.voronoiMesh = this.makeTriangleMesh();
-    scene.add(this.voronoiMesh);
+    // scene.add(this.voronoiMesh);
   }
 
   destroy() {
@@ -72,12 +72,12 @@ class PlateSphere {
     scene.remove(this.voronoiEdges);
     this.voronoiEdges.geometry.dispose();
     this.voronoiEdges = this.makeEdges();
-    scene.add(this.voronoiEdges);
+    // scene.add(this.voronoiEdges);
 
     scene.remove(this.voronoiMesh);
     this.voronoiMesh.geometry.dispose();
     this.voronoiMesh = this.makeTriangleMesh();
-    scene.add(this.voronoiMesh);
+    // scene.add(this.voronoiMesh);
   }
 
   dataAtPoint(point: THREE.Vector3) {
@@ -200,6 +200,7 @@ class PlateSphere {
       }
       geometry.addGroup(i * 2, 2, color);
     }
+    geometry.scale(1.08, 1.08, 1.08);
     return new THREE.LineSegments(geometry, PlateSphere.LINE_MATERIALS);
   }
 

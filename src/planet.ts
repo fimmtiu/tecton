@@ -9,14 +9,13 @@ import { scene } from "./scene_data";
 import { TextureManager } from "./texture_manager";
 import { TextureCopier } from "./texture_copier";
 import { PlanetMesh } from "./planet_mesh";
-import { Tectonics } from "./tectonics";
 import { Climate } from "./climate";
 
 export { Planet, PLANET_RADIUS };
 
 const PIXELS_BETWEEN_VERTICES = 10;
 const PLANET_RADIUS = 6370; // each unit is 1 kilometer
-const TEXTURE_SIZE = 1024;
+const TEXTURE_SIZE = 1600;
 const ATLAS_INDEX: { [biomeName: string]: number[] } = {
   "snow": [0, 2048, 16, 2064],
   "jungle": [4096, 6144, 4112, 6160],
@@ -51,15 +50,13 @@ class Planet {
   protected copier: TextureCopier;
   protected width: number;
   protected height: number;
-  protected tectonics: Tectonics;
 
   constructor(viewportWidth: number, viewportHeight: number) {
     this.sphere = new THREE.Sphere(ORIGIN, Planet.radius);
     this.width = viewportWidth;
     this.height = viewportHeight;
-    this.visualHelper = new VisualHelper(true, true);
+    this.visualHelper = new VisualHelper(true, false);
     this.terrain = new Terrain();
-    this.tectonics = new Tectonics();
     this.climate = new Climate();
     this.textureData = new Uint8ClampedArray(TEXTURE_SIZE ** 2 * 4);
 
@@ -91,28 +88,20 @@ class Planet {
   }
 
   destroy() {
-    this.tectonics.destroy();
     this.mesh.destroy();
     this.texture.dispose();
   }
 
-  dataAtPoint(worldPos: THREE.Vector3) {
-    const plateData = this.tectonics.plateSphere.dataAtPoint(worldPos);
-    return {
-      "elevation": Math.round(this.terrain.scaleHeight(this.terrain.normalizedHeightAt(worldPos)) * 1000),
-      "voronoiCell": plateData.cell.id,
-      "plate": plateData.plate.id,
-    }
+  dataAtPoint(pointOnSphere: THREE.Vector3) {
+    return this.terrain.dataAtPoint(pointOnSphere);
   }
 
   // FIXME: This method is too long. Needs extraction.
   update(camera: PlanetCamera) {
     // Make the planet mesh and all of its child meshes turn to look at the new camera position.
     this.mesh.lookAt(camera.position);
-    this.mesh.visible = false;
 
-    // Change the curvature of the planet mesh and update the colors to reflect the terrain.
-    // FIXME: Later, try doing this with a vertex and fragment shader, respectively.
+    // Change the curvature of the planet mesh. (FIXME: Try doing this with a vertex shader later.)
     const topLeftPoint = new THREE.Vector3(), bottomRightPoint = new THREE.Vector3();
     let horizRadiansPerUnit = 0, vertRadiansPerUnit = 0;
     let sphereCoords = new THREE.Spherical(Planet.radius, 0, 0);
@@ -156,10 +145,6 @@ class Planet {
     this.texture.needsUpdate = true;
     console.log(`min: ${this.terrain.min}. max: ${this.terrain.max}.`);
 
-    if (this.mesh.edges) {
-      this.mesh.hideEdges();
-      this.mesh.showEdges();
-    }
     this.visualHelper.update();
   }
 
@@ -180,14 +165,5 @@ class Planet {
     const atlasStart = ATLAS_INDEX[biome][Math.floor(swatch) % 4] * 4;
 
     this.copier.copy(atlasStart, u, v);
-  }
-
-  // Optional white lines outlining each face of the mesh.
-  toggleEdgesVisible() {
-    if (this.mesh.edges === null) {
-      this.mesh.showEdges();
-    } else {
-      this.mesh.hideEdges();
-    }
   }
 };

@@ -1,8 +1,8 @@
 import * as THREE from "three";
 
 import { PLANET_RADIUS } from "./planet";
-import { wrapMeshAroundSphere } from "./util/geometry";
-import { TangentCubeGeometry } from "./util/tangent_cube_geometry";
+import { disposeMesh } from "./util/geometry";
+import { TangentSphere } from "./util/tangent_sphere";
 
 export { CubeField };
 
@@ -22,6 +22,7 @@ abstract class CubeField<CellType> {
   public readonly verticesPerFace: number;
   public readonly cellCount: number;
   protected cells: CellType[];
+  protected box: TangentSphere;
 
   constructor(cellsPerEdge: number, initialValue: () => CellType) {
     this.cellsPerEdge = cellsPerEdge;
@@ -32,6 +33,12 @@ abstract class CubeField<CellType> {
     for (let i = 0; i < this.cellCount; i++) {
       this.cells.push(initialValue());
     }
+
+    this.box = new TangentSphere(this.cellsPerEdge);
+  }
+
+  destroy() {
+    disposeMesh(this.box);
   }
 
   get(cell: number) {
@@ -40,6 +47,24 @@ abstract class CubeField<CellType> {
 
   set(cell: number, newValue: CellType) {
     this.cells[cell] = newValue;
+  }
+
+  cellAtPoint(pointOnSphere: THREE.Vector3) {
+    const face = this.box.faceContainingPoint(pointOnSphere);
+    const cell = this.box.cellIndexAtPoint(face, pointOnSphere);
+    const cellId = face * this.cellsPerFace + cell;
+
+    return this.cells[cellId];
+  }
+
+  // FIXME: Just for debugging.
+  cellIndexAtPoint(pointOnSphere: THREE.Vector3) {
+    const face = this.box.faceContainingPoint(pointOnSphere);
+    return this.box.cellIndexAtPoint(face, pointOnSphere);
+  }
+
+  faceAtPoint(pointOnSphere: THREE.Vector3) {
+    return this.box.faceContainingPoint(pointOnSphere);
   }
 
   update() {
@@ -55,7 +80,7 @@ abstract class CubeField<CellType> {
   //     3 * 5
   //     6 7 8
   neighbour(cell: number, dir: number) {
-    const face = Math.floor(this.cellCount / cell);
+    const face = Math.floor(cell / this.cellsPerFace);
     const x = cell % this.cellsPerEdge;
     const y = Math.floor((cell % this.cellsPerFace) / this.cellsPerEdge);
 
@@ -133,24 +158,16 @@ abstract class CubeField<CellType> {
   southwestNeighbour(cell: number) { return this.neighbour(cell, 7); }
   westNeighbour(cell: number)      { return this.neighbour(cell, 8); }
 
-  protected box() {
-    const box = new TangentCubeGeometry(2 * PLANET_RADIUS, this.cellsPerEdge);
-    wrapMeshAroundSphere(box, PLANET_RADIUS);
-    return box;
-  }
-
   // Return a wire mesh showing the edges of each field cell.
   public edges(color = 0xffffff, scaleFactor = 1.0) {
-    const box = this.box();
-    const edgeGeometry = new THREE.EdgesGeometry(box, 0);
+    const edgeGeometry = new THREE.EdgesGeometry(this.box.geometry, 0);
     edgeGeometry.scale(scaleFactor, scaleFactor, scaleFactor);
-    box.dispose();
     return new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({ color: color }));
   }
 
   // Find the center of every rectangular face of the grid and collect them into a Points geometry.
   public centers(materials: THREE.PointsMaterial[], scaleFactor = 1.0) {
-    const box = this.box(), positions = box.getAttribute("position");
+    const positions = this.box.geometry.getAttribute("position");
     const pointPositions = new THREE.BufferAttribute(new Float32Array(this.cellCount * 3), 3);
 
     for (let face = 0; face < 6; face++) {
@@ -164,8 +181,7 @@ abstract class CubeField<CellType> {
       }
     }
 
-    box.dispose();
-    const pointsGeometry = new THREE.BufferGeometry().setAttribute('position', pointPositions);
+    const pointsGeometry = new THREE.BufferGeometry().setAttribute("position", pointPositions);
     return new THREE.Points(pointsGeometry, materials);
   }
 }
