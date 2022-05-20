@@ -1,10 +1,8 @@
 import * as THREE from "three";
 
 import { PLANET_RADIUS } from "../planet"
-import { scene } from "../scene_data";
-import { v2s, s2s, ORIGIN, sphericalFromCoords } from "../util";
+import { v2s, sphericalFromCoords } from "../util";
 import { wrapMeshAroundSphere } from "../util/geometry";
-import { COLORS, VisualHelper } from "../visual_helper";
 
 export { TangentSphere };
 

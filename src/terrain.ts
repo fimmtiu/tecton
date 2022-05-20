@@ -31,7 +31,7 @@ class Terrain {
 
   constructor() {
     this.plateSphere = new PlateSphere();
-    this.heightMap = new HeightCubeField(10, this.plateSphere);
+    this.heightMap = new HeightCubeField(100, this.plateSphere);
   }
 
   destroy() {
@@ -41,12 +41,17 @@ class Terrain {
 
   dataAtPoint(pointOnSphere: THREE.Vector3) {
     const plateData = this.plateSphere.dataAtPoint(pointOnSphere);
+    const heightMapCell = this.heightMap.cellIndexAtPoint(pointOnSphere);
+    const face = this.heightMap.faceAtPoint(pointOnSphere);
     return {
       "elevation": Math.round(this.scaleHeight(this.normalizedHeightAt(pointOnSphere)) * 1000),
       "voronoiCell": plateData.cell.id,
       "plate": plateData.plate.id,
-      "face": this.heightMap.faceAtPoint(pointOnSphere),
-      "gridCell": this.heightMap.cellIndexAtPoint(pointOnSphere),
+      "face": face,
+      "gridCell": heightMapCell,
+      // FIXME: Temporary approach for visualizing waterness, uses a protected method.
+      // Change to this.heightMap.get(heightMapCell).nearnessToWater once we're no longer visualizing it.
+      "nearnessToWater": this.heightMap.nearnessToWater(heightMapCell + face * this.heightMap.cellsPerFace),
     }
   }
 

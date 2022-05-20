@@ -1,14 +1,12 @@
 import * as THREE from "three";
 import { Planet } from "./planet";
-import { ORIGIN } from "./util";
+import { ORIGIN, v2s } from "./util";
 import { disposeMesh } from "./util/geometry";
 import { scene } from "./scene_data";
 
 export { VisualHelper, COLORS };
 
 const COLORS = [0xffae00, 0x00ffff, 0xff1e00, 0xc800ff, 0x0000ff, 0x00ff00]; // orange, aqua, red, purple, blue, green
-// const BLUE = new THREE.Color(0, 0, 1);
-// const RED = new THREE.Color(1, 0, 0);
 
 class VisualHelper {
   protected pointVectors: Array<THREE.Vector3>;
@@ -36,8 +34,7 @@ class VisualHelper {
     this.arrows = [];
 
     if (this.axes) {
-      scene.remove(this.axes);
-      this.axes.dispose();
+      disposeMesh(this.axes);
       this.axes = null;
     }
 
@@ -76,9 +73,10 @@ class VisualHelper {
 
       const points_geometry = new THREE.BufferGeometry();
       const point_location = new THREE.Float32BufferAttribute([points[i].x, points[i].y, points[i].z], 3);
-      points_geometry.setAttribute('position', point_location);
+      points_geometry.setAttribute("position", point_location);
       const points_material = new THREE.PointsMaterial({ color: color, size: 250 });
       const point = new THREE.Points(points_geometry, points_material);
+      point.renderOrder = 99999999999;
       scene.add(point);
       this.points.push(point);
 
@@ -108,10 +106,12 @@ class VisualHelper {
         // Some code to change the color based on whether the normal is pointing towards or away from the camera:
         // (red = away, blue = towards). Requires us to pass in the camera position somehow.
         //
+        // const BLUE = new THREE.Color(0, 0, 1);
+        // const RED = new THREE.Color(1, 0, 0);
         // let arrowColor = new THREE.Color();
         // const normalizedCameraVector = cameraPosition.clone().normalize();
         // let distance = normalizedCameraVector.distanceTo(faceNormal);
-        // arrowColor.lerpColors(blue, red, distance / 2);
+        // arrowColor.lerpColors(BLUE, RED, distance / 2);
         // // use it with arrowColor.getHex()
 
         this.addArrow(faceNormal, midpoint, 10000, COLORS[i % COLORS.length]);

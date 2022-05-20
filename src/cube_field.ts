@@ -54,13 +54,6 @@ abstract class CubeField<CellType> {
     const cell = this.box.cellIndexAtPoint(face, pointOnSphere);
     const cellId = face * this.cellsPerFace + cell;
 
-    // const cpf = this.cellsPerFace;
-    // function cellToStr(cellId: number) {
-    //   return `${cellId} (${Math.floor(cellId / cpf)}, ${cellId % cpf})`;
-    // }
-    // console.log(`Neighbours of ${cellId} (${face} x ${cell}): N ${cellToStr(this.neighbour(cellId, 1))}, E ${cellToStr(this.neighbour(cellId, 5))}, S ${cellToStr(this.neighbour(cellId, 7))}, W ${cellToStr(this.neighbour(cellId, 3))}`);
-
-    // return this.cells[0];
     return this.cells[cellId];
   }
 

@@ -25,6 +25,7 @@ function getSpan(name: string) {
 const elevationSpan = getSpan("elevation");
 const cellSpan = getSpan("voronoi-cell");
 const plateSpan = getSpan("plate");
+const waternessSpan = getSpan("waterness");
 
 const renderer = new THREE.WebGLRenderer();
 
@@ -110,6 +111,7 @@ TextureManager.loadAll(() => {
       elevationSpan.innerHTML = `${data.elevation} m`;
       cellSpan.innerHTML = `${data.voronoiCell} (grid ${data.face}x${data.gridCell})`;
       plateSpan.innerHTML = `${data.plate}`;
+      waternessSpan.innerHTML = `${data.nearnessToWater.toFixed(2)}`;
     }
   }
 

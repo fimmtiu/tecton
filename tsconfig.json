@@ -2,7 +2,6 @@
   "compilerOptions": {
     "target": "es2017",
     "module": "commonjs",
-    "moduleResolution": "node",
     "declaration": true,
     "strict": true,
     "noImplicitAny": true /* Raise error on expressions and declarations with an implied 'any' type. */,

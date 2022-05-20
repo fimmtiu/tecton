@@ -3,13 +3,16 @@ import * as THREE from "three";
 import { CubeField } from "../cube_field";
 import { scene } from "../scene_data";
 import { PlateSphere } from "./plate_sphere";
-import { PLANET_RADIUS } from "../planet"
+import { PLANET_RADIUS } from "../planet";
+import { VisualHelper } from "../visual_helper";
+import { v2s } from "../util";
 
 export { HeightCubeField };
 
 class HeightCell {
   public height = 0;
   public ruggedness = 0;
+  public nearnessToWater = 0; // 0 is landlocked, 0.5 is near a coastline, 1.0 is at sea.
 }
 
 const MATERIALS = [
@@ -24,11 +27,11 @@ class HeightCubeField extends CubeField<HeightCell> {
   protected centersMesh: THREE.Points;
   protected showCentersMesh: THREE.Points;
   protected closeToWaterDistance: number;
+  protected printShit = false;
+  protected fixmeVis = new VisualHelper();
 
   constructor(cellsPerEdge: number, plateSphere: PlateSphere) {
     super(cellsPerEdge, () => { return new HeightCell() });
-
-    scene.add(this.edges(0xea00ff, 1.01));
 
     this.centersMesh = this.centers(MATERIALS);
     this.showCentersMesh = this.centers(MATERIALS, 1.01);
@@ -42,7 +45,9 @@ class HeightCubeField extends CubeField<HeightCell> {
       this.showCentersMesh.geometry.addGroup(i, 1, data["plate"].isLand ? 0 : 1);
     }
 
-    scene.add(this.showCentersMesh);
+    this.update();
+    // scene.add(this.edges(0xea00ff, 1.01)); // show cell boundaries
+    // scene.add(this.showCentersMesh);       // show a dot at the center of each cell
   }
 
   drawLine(start: THREE.Vector3, end: THREE.Vector3, height: number, ruggedness: number) {
@@ -54,27 +59,48 @@ class HeightCubeField extends CubeField<HeightCell> {
     this.cells[cell].ruggedness = ruggedness;
   }
 
-  // FIXME: Is this guaranteed to be constant? If so, generate this in the constructor and store it in the HeightCell.
-  nearnessToWater(cell: number) {
-    const cellsContainWater: { [cell: number]: boolean } = {};
-    this.recursivelyCheckAdjacentCells(cellsContainWater, cell, this.closeToWaterDistance);
+  update() {
+    for (let i = 0; i < this.cells.length; i++) {
+      this.get(i).nearnessToWater = this.nearnessToWater(i);
+    }
+    this.printShit = true;
+  }
+
+  static points: Array<THREE.Vector3> = [];
+
+  protected nearnessToWater(cell: number) {
+    HeightCubeField.points = [];
+    const cellContainsWater: { [cell: number]: boolean } = {};
+    this.recursivelyCheckAdjacentCells(cellContainsWater, cell, this.closeToWaterDistance);
 
     let waterCells = 0;
-    for (let value of Object.values(cellsContainWater)) {
+    for (let value of Object.values(cellContainsWater)) {
       if (value) {
         waterCells++;
       }
     }
-    return waterCells / Object.keys(cellsContainWater).length;
+
+    if (this.printShit) {
+      console.log(`points ${HeightCubeField.points}, ${waterCells} water cells, ${Object.keys(cellContainsWater).length} total, distance ${this.closeToWaterDistance}, km per cell ${PLANET_RADIUS / this.cellsPerEdge}, height ${this.get(cell).height}`);
+      this.fixmeVis.setPoints(HeightCubeField.points);
+      this.fixmeVis.update();
+    }
+    return waterCells / Object.keys(cellContainsWater).length;
   }
 
-  protected recursivelyCheckAdjacentCells(cellsContainWater: { [cell: number]: boolean }, cell: number, remainingDistance: number) {
-    cellsContainWater[cell] = this.get(cell).height <= 0;
+  protected recursivelyCheckAdjacentCells(cellContainsWater: { [cell: number]: boolean }, cell: number, remainingDistance: number) {
+    cellContainsWater[cell] = (this.get(cell).height <= 0);
+    if (this.printShit) {
+      const positions = this.showCentersMesh.geometry.getAttribute("position");
+      const center = new THREE.Vector3(positions.getX(cell), positions.getY(cell), positions.getZ(cell));
+      console.log(`${cell} (${Math.floor(cell / this.cellsPerFace)}x${cell % this.cellsPerFace}): rendered point ${v2s(center)}`);
+      HeightCubeField.points.push(center);
+    }
 
     for (let dir of CARDINAL_DIRECTIONS) {
       const adjacentCell = this.neighbour(cell, dir);
-      if (remainingDistance > 0 && !(adjacentCell in cellsContainWater)) {
-        this.recursivelyCheckAdjacentCells(cellsContainWater, adjacentCell, remainingDistance - 1);
+      if (remainingDistance > 0 && !(adjacentCell in cellContainsWater)) {
+        this.recursivelyCheckAdjacentCells(cellContainsWater, adjacentCell, remainingDistance - 1);
       }
     }
   }
