@@ -12,7 +12,7 @@ abstract class CubeField<CellType> {
     { north: 2, south: 3, east: 5, west: 4 }, // right face
     { north: 2, south: 3, east: 4, west: 5 }, // left face
     { north: 5, south: 4, east: 0, west: 1 }, // top face
-    { north: 3, south: 5, east: 0, west: 1 }, // bottom face
+    { north: 4, south: 5, east: 0, west: 1 }, // bottom face
     { north: 2, south: 3, east: 0, west: 1 }, // front face
     { north: 3, south: 2, east: 0, west: 1 }, // back face
   ];

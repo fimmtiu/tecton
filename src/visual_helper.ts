@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Planet } from "./planet";
-import { ORIGIN, v2s } from "./util";
+import { ORIGIN } from "./util";
 import { disposeMesh } from "./util/geometry";
 import { scene } from "./scene_data";
 
@@ -74,7 +74,7 @@ class VisualHelper {
       const points_geometry = new THREE.BufferGeometry();
       const point_location = new THREE.Float32BufferAttribute([points[i].x, points[i].y, points[i].z], 3);
       points_geometry.setAttribute("position", point_location);
-      const points_material = new THREE.PointsMaterial({ color: color, size: 250 });
+      const points_material = new THREE.PointsMaterial({ color: color, size: 250, depthTest: false });
       const point = new THREE.Points(points_geometry, points_material);
       point.renderOrder = 99999999999;
       scene.add(point);

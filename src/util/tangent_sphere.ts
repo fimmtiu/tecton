@@ -12,7 +12,7 @@ const ROTATIONS_TO_TOP_FACE = [
   new THREE.Quaternion().setFromEuler(new THREE.Euler(-PI_2, -PI_2, 0)), // right side
   new THREE.Quaternion().setFromEuler(new THREE.Euler(-PI_2, PI_2, 0)),  // left side
   new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0)),         // top side
-  new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI, 0, 0)),   // bottom side -- not 100% sure on this one!
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI, 0, 0)),   // bottom side
   new THREE.Quaternion().setFromEuler(new THREE.Euler(-PI_2, 0, 0)),     // front side
   new THREE.Quaternion().setFromEuler(new THREE.Euler(PI_2, 0, 0)),      // back side
 ];
@@ -36,10 +36,6 @@ class TangentSphere extends THREE.Mesh {
     this.visible = false;
     this.radius = radius;
     this.cornerPlanes = this.makeCornerPlanes();
-    // for (let i = 0; i < 6; i++) {
-    //   const helper = new THREE.PlaneHelper(this.cornerPlanes[i], this.radius * 1.16, COLORS[i]);
-    //   scene.add(helper);
-    // }
 
     const indices: number[] = [];
     const vertices: number[] = [];
@@ -60,6 +56,7 @@ class TangentSphere extends THREE.Mesh {
   }
 
   cellIndexAtPoint(face: number, pointOnSphere: THREE.Vector3) {
+    // Rotate the point to the top face of the cube so that we can do easy spherical math.
     let topEquivalent = pointOnSphere.clone().applyQuaternion(ROTATIONS_TO_TOP_FACE[face]);
     let sphTop = sphericalFromCoords(topEquivalent);
 

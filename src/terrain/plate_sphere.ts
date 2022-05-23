@@ -180,7 +180,7 @@ class PlateSphere {
 
   static readonly LINE_MATERIALS = [
     new THREE.LineBasicMaterial({ color: 0xff0000 }), // away
-    new THREE.LineBasicMaterial({ color: 0xffffff }), // neutral
+    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 }), // neutral
     new THREE.LineBasicMaterial({ color: 0x0000ff }), // towards
   ];
 
@@ -200,7 +200,7 @@ class PlateSphere {
       }
       geometry.addGroup(i * 2, 2, color);
     }
-    geometry.scale(1.08, 1.08, 1.08);
+    geometry.scale(1.07, 1.07, 1.07);
     return new THREE.LineSegments(geometry, PlateSphere.LINE_MATERIALS);
   }
 

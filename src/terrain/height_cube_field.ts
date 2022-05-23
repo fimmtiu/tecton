@@ -4,8 +4,8 @@ import { CubeField } from "../cube_field";
 import { scene } from "../scene_data";
 import { PlateSphere } from "./plate_sphere";
 import { PLANET_RADIUS } from "../planet";
-import { VisualHelper } from "../visual_helper";
 import { v2s } from "../util";
+import { VisualHelper } from "../visual_helper";
 
 export { HeightCubeField };
 
@@ -28,6 +28,10 @@ class HeightCubeField extends CubeField<HeightCell> {
   protected centersMesh: THREE.Points;
   protected showCentersMesh: THREE.Points;
   protected closeToWaterDistance: number;
+
+  protected showNeighbors = false; // for debugging
+  protected visualHelper = new VisualHelper();
+  protected neighbourPoints: THREE.Vector3[] = [];
 
   constructor(cellsPerEdge: number, plateSphere: PlateSphere) {
     super(cellsPerEdge, () => { return new HeightCell() });
@@ -66,14 +70,18 @@ class HeightCubeField extends CubeField<HeightCell> {
     for (let i = 0; i < this.cells.length; i++) {
       this.get(i).nearnessToWater = this.nearnessToWater(i);
     }
+    this.showNeighbors = true;
   }
 
-  static points: Array<THREE.Vector3> = [];
-
   protected nearnessToWater(cell: number) {
-    HeightCubeField.points = [];
+    this.neighbourPoints = [];
     const cellContainsWater: { [cell: number]: boolean } = {};
     this.recursivelyCheckAdjacentCells(cellContainsWater, cell, this.closeToWaterDistance);
+
+    if (this.showNeighbors) {
+      this.visualHelper.setPoints(this.neighbourPoints);
+      this.visualHelper.update();
+    }
 
     let waterCells = 0;
     for (let value of Object.values(cellContainsWater)) {
@@ -87,6 +95,12 @@ class HeightCubeField extends CubeField<HeightCell> {
 
   protected recursivelyCheckAdjacentCells(cellContainsWater: { [cell: number]: boolean }, cell: number, remainingDistance: number) {
     cellContainsWater[cell] = (this.get(cell).height <= 0);
+
+    if (this.showNeighbors) {
+      const positions = this.centersMesh.geometry.getAttribute("position");
+      const center = new THREE.Vector3(positions.getX(cell), positions.getY(cell), positions.getZ(cell));
+      this.neighbourPoints.push(center);
+    }
 
     for (let dir of CARDINAL_DIRECTIONS) {
       const adjacentCell = this.neighbour(cell, dir);
