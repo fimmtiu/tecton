@@ -9,12 +9,12 @@ export { TangentSphere };
 const PI_2 = Math.PI / 2;
 const PI_4 = Math.PI / 4;
 const ROTATIONS_TO_TOP_FACE = [
-  new THREE.Quaternion().setFromEuler(new THREE.Euler(-PI_2, -PI_2, 0)), // right side
-  new THREE.Quaternion().setFromEuler(new THREE.Euler(-PI_2, PI_2, 0)),  // left side
-  new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0)),         // top side
-  new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI, 0, 0)),   // bottom side
-  new THREE.Quaternion().setFromEuler(new THREE.Euler(-PI_2, 0, 0)),     // front side
-  new THREE.Quaternion().setFromEuler(new THREE.Euler(PI_2, 0, 0)),      // back side
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(-PI_2, -PI_2, 0)),  // right side
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(-PI_2, PI_2, 0)),   // left side
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0)),          // top side
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI, 0, 0)),    // bottom side
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(-PI_2, 0, 0)),      // front side
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(PI_2, 0, Math.PI)), // back side
 ];
 
 // When you wrap a cube around a sphere, the grid cells get very distorted: huge and bulging in the center of faces, but
