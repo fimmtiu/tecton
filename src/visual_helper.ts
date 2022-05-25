@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Planet } from "./planet";
+import { PLANET_RADIUS } from "./planet";
 import { ORIGIN } from "./util";
 import { disposeMesh } from "./util/geometry";
 import { scene } from "./scene_data";
@@ -62,7 +62,7 @@ class VisualHelper {
     this.destroy();
 
     if (this.showAxes) {
-      this.axes = new THREE.AxesHelper(Planet.radius + 2000);
+      this.axes = new THREE.AxesHelper(PLANET_RADIUS + 2000);
       this.axes.renderOrder = 99999999999;
       (<THREE.Material>this.axes.material).depthTest = false;
       scene.add(this.axes);
@@ -81,7 +81,7 @@ class VisualHelper {
       this.points.push(point);
 
       if (this.showArrows) {
-        this.addArrow(points[i].clone().normalize(), ORIGIN, Planet.radius + 2000, color);
+        this.addArrow(points[i].clone().normalize(), ORIGIN, PLANET_RADIUS + 2000, color);
       }
     }
 

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import * as D3GeoVoronoi from "d3-geo-voronoi";
 
-import { Planet } from "../planet";
+import { PLANET_RADIUS } from "../planet";
 import { scene } from "../scene_data";
 import { v2s, sample, shuffle } from "../util";
 import { GeoCoord } from "../util/geo_coord";
@@ -255,10 +255,10 @@ class PlateSphere {
   }
 
   protected voronoiStartingPoints() {
-    const startingPoints = new THREE.IcosahedronBufferGeometry(Planet.radius, VORONOI_DENSITY);
+    const startingPoints = new THREE.IcosahedronBufferGeometry(PLANET_RADIUS, VORONOI_DENSITY);
     mergeDuplicateVertices(startingPoints);
-    randomlyJitterVertices(startingPoints, Planet.radius);
-    wrapMeshAroundSphere(startingPoints, Planet.radius);
+    randomlyJitterVertices(startingPoints, PLANET_RADIUS);
+    wrapMeshAroundSphere(startingPoints, PLANET_RADIUS);
 
     const coords = [];
     const positions = startingPoints.getAttribute("position");
