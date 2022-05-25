@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 import { PlanetCamera } from "./planet_camera";
-import { ORIGIN, sphericalFromCoords } from "./util";
+import { ORIGIN } from "./util";
 import { updateGeometry } from "./util/geometry";
 import { Terrain } from "./terrain";
 import { VisualHelper } from "./visual_helper";
@@ -97,38 +97,27 @@ class Planet {
     return this.terrain.dataAtPoint(pointOnSphere);
   }
 
+  // When we're zoomed far out, the planet mesh is shaped like a hemisphere.
+  // When we're zoomed close in, the planet mesh is a rectangular patch of the sphere's surface that fills the camera.
   // FIXME: This method is too long. Needs extraction.
   update(camera: PlanetCamera) {
     // Make the planet mesh and all of its child meshes turn to look at the new camera position.
+    // FIXME: Is it a problem that we calculate visible radians before calling lookAt() to move the mesh?
     this.mesh.lookAt(camera.position);
 
-    // Change the curvature of the planet mesh. (FIXME: Try doing this with a vertex shader later.)
-    const topLeftPoint = new THREE.Vector3(), bottomRightPoint = new THREE.Vector3();
-    let horizRadiansPerUnit = 0, vertRadiansPerUnit = 0;
-    let sphereCoords = new THREE.Spherical(PLANET_RADIUS, 0, 0);
-    let newPosition = new THREE.Vector3();
-
-    // When we're zoomed far out, the planet mesh is shaped like a hemisphere.
-    // When we're zoomed close in, the planet mesh is a rectangular patch of the sphere's surface that fills the camera.
-    if (camera.copyPlanetIntersectionPoints(topLeftPoint, bottomRightPoint)) { // camera close to planet
-      this.rotateCornersToEquator(topLeftPoint, bottomRightPoint);
-      const topLeftSph = sphericalFromCoords(topLeftPoint);
-      const bottomRightSph = sphericalFromCoords(bottomRightPoint);
-      horizRadiansPerUnit = Math.abs(bottomRightSph.theta - topLeftSph.theta) / (this.mesh.horizontalVertices - 1);
-      vertRadiansPerUnit = Math.abs(bottomRightSph.phi - topLeftSph.phi) / (this.mesh.verticalVertices - 1);
-    } else {
-      horizRadiansPerUnit = Math.PI / this.mesh.horizontalVertices; // camera is far away
-      vertRadiansPerUnit = Math.PI / this.mesh.verticalVertices;
-    }
-
+    const horizRadiansPerCell = camera.horizontalRadiansInView / this.mesh.horizontalVertices;
+    const vertRadiansPerCell = camera.verticalRadiansInView / this.mesh.verticalVertices;
     const positions = this.mesh.geometry.getAttribute("position");
+    const sphereCoords = new THREE.Spherical();
+    const newPosition = new THREE.Vector3();
+
     for (let i = 0; i < positions.count; i++) {
       const u = i % this.mesh.horizontalVertices;
       const v = Math.floor(i / this.mesh.horizontalVertices);
 
       // Calculate where this vertex should go on the sea-level sphere.
-      sphereCoords.theta = horizRadiansPerUnit * (u - this.mesh.halfHorizLength);
-      sphereCoords.phi = vertRadiansPerUnit * (v - this.mesh.halfVertLength) + Math.PI / 2;
+      sphereCoords.theta = horizRadiansPerCell * (u - this.mesh.halfHorizLength);
+      sphereCoords.phi = vertRadiansPerCell * (v - this.mesh.halfVertLength) + Math.PI / 2;
       sphereCoords.radius = PLANET_RADIUS;
       newPosition.setFromSpherical(sphereCoords);
 
@@ -144,7 +133,7 @@ class Planet {
     }
     updateGeometry(this.mesh.geometry);
     this.texture.needsUpdate = true;
-    console.log(`min: ${this.terrain.min}. max: ${this.terrain.max}.`);
+    // console.log(`min: ${this.terrain.min}. max: ${this.terrain.max}.`);
 
     this.visualHelper.update();
   }
