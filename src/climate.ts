@@ -1,16 +1,14 @@
 import * as THREE from "three";
 
-import { ScalarCubeField } from "./scalar_cube_field";
-
 export { Climate };
 
 const CELLS_PER_EDGE = 16
 
 class Climate {
-  protected precipitation: ScalarCubeField;
+  // protected precipitation: ScalarCubeField;
 
-  constructor() {
-    this.precipitation = new ScalarCubeField(CELLS_PER_EDGE);
+  // constructor() {
+  //   this.precipitation = new ScalarCubeField(CELLS_PER_EDGE);
     // // Set up some bogus data for testing.
     // for (let face = 0; face < 6; face++) {
     //   for (let i = 0; i < this.precipitation.cellsPerFace; i++) {
@@ -22,5 +20,5 @@ class Climate {
     // this.precipitation.showEdges(true);
     // this.precipitation.showValues(true);
     // this.precipitation.showCenters(true);
-  }
+  // }
 }
