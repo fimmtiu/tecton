@@ -102,7 +102,7 @@ class Planet {
     // Change the curvature of the planet mesh. (FIXME: Try doing this with a vertex shader later.)
     const topLeftPoint = new THREE.Vector3(), bottomRightPoint = new THREE.Vector3();
     let horizRadiansPerUnit = 0, vertRadiansPerUnit = 0;
-    let sphereCoords = new THREE.Spherical(Planet.radius, 0, 0);
+    let sphereCoords = new THREE.Spherical(PLANET_RADIUS, 0, 0);
     let newPosition = new THREE.Vector3();
 
     // When we're zoomed far out, the planet mesh is shaped like a hemisphere.

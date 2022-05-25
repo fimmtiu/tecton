@@ -111,4 +111,3 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     return (ray.intersectSphere(this.planet.sphere, outputVector) !== null);
   }
 }
-
