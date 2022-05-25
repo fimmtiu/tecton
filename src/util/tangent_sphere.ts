@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import { PLANET_RADIUS } from "../planet"
+import { scene } from "../scene_data";
 import { v2s, sphericalFromCoords } from "../util";
 import { wrapMeshAroundSphere } from "../util/geometry";
 
@@ -53,6 +54,10 @@ class TangentSphere extends THREE.Mesh {
     this.geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
     this.geometry.addGroup(0, indices.length, 1);
     wrapMeshAroundSphere(this.geometry, this.radius);
+
+    // const segments = new THREE.LineSegments(this.geometry.clone(), new THREE.LineBasicMaterial({ color: 0xffff00 }));
+    // segments.geometry.scale(1.05, 1.05, 1.05);
+    // scene.add(segments);
   }
 
   cellIndexAtPoint(face: number, pointOnSphere: THREE.Vector3) {

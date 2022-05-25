@@ -99,7 +99,6 @@ class HeightCubeField extends CubeField<HeightCell> {
     if (this.showNeighbors) {
       const positions = this.centersMesh.geometry.getAttribute("position");
       const center = new THREE.Vector3(positions.getX(cell), positions.getY(cell), positions.getZ(cell));
-      console.log(`Added ${v2s(center)}`);
       this.neighbourPoints.push(center);
     }
 

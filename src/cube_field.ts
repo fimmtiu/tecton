@@ -6,17 +6,32 @@ import { TangentSphere } from "./util/tangent_sphere";
 
 export { CubeField };
 
+const NEIGHBOURS = [
+  { north: 2, south: 3, east: 5, west: 4 }, // right face
+  { north: 2, south: 3, east: 4, west: 5 }, // left face
+  { north: 5, south: 4, east: 0, west: 1 }, // top face
+  { north: 4, south: 5, east: 0, west: 1 }, // bottom face
+  { north: 2, south: 3, east: 0, west: 1 }, // front face
+  { north: 2, south: 3, east: 1, west: 0 }, // back face
+];
+
+enum Rotation {
+  LEFT = 1,
+  RIGHT,
+  UPSIDE_DOWN,
+};
+
+const ROTATIONS = [
+  [null, null, Rotation.RIGHT, Rotation.LEFT, null, null],                 // right face
+  [null, null, Rotation.LEFT, Rotation.RIGHT, null, null],                 // left face
+  [Rotation.LEFT, Rotation.RIGHT, null, null, null, Rotation.UPSIDE_DOWN], // top face
+  [Rotation.RIGHT, Rotation.LEFT, null, null, null, Rotation.UPSIDE_DOWN], // bottom face
+  [null, null, null, null, null, null],                                    // front face
+  [null, null, Rotation.UPSIDE_DOWN, Rotation.UPSIDE_DOWN, null, null],    // back face
+];
+
 
 abstract class CubeField<CellType> {
-  static readonly neighbours = [
-    { north: 2, south: 3, east: 5, west: 4 }, // right face
-    { north: 2, south: 3, east: 4, west: 5 }, // left face
-    { north: 5, south: 4, east: 0, west: 1 }, // top face
-    { north: 4, south: 5, east: 0, west: 1 }, // bottom face
-    { north: 2, south: 3, east: 0, west: 1 }, // front face
-    { north: 3, south: 2, east: 0, west: 1 }, // back face
-  ];
-
   public readonly cellsPerEdge: number;
   public readonly cellsPerFace: number;
   public readonly verticesPerFace: number;
@@ -71,6 +86,27 @@ abstract class CubeField<CellType> {
     // no-op by default, can be overridden in child classes
   }
 
+  protected moveToAdjacentFace(currentFace: number, targetFace: number, x: number, y: number) {
+    let x2 = x, y2 = y;
+
+    switch (ROTATIONS[currentFace][targetFace]) {
+    case Rotation.LEFT:
+      x2 = this.cellsPerEdge - y - 1;
+      y2 = x;
+      break;
+    case Rotation.RIGHT:
+      x2 = y;
+      y2 = this.cellsPerEdge - x - 1;
+      break;
+    case Rotation.UPSIDE_DOWN:
+      x2 = this.cellsPerEdge - x - 1;
+      y2 = this.cellsPerEdge - y - 1;
+      break;
+    }
+
+    return this.indexOfCell(targetFace, x2, y2);
+  }
+
   protected indexOfCell(face: number, x: number, y: number) {
     return face * this.cellsPerFace + y * this.cellsPerEdge + x;
   }
@@ -91,57 +127,57 @@ abstract class CubeField<CellType> {
     switch (dir) {
     case 0:
       if (y == top_side) {
-        return this.indexOfCell(CubeField.neighbours[face]["north"], x, bottom_side);
+        return this.moveToAdjacentFace(face, NEIGHBOURS[face]["north"], x, bottom_side);
       } else if (x == left_side) {
-        return this.indexOfCell(CubeField.neighbours[face]["west"], right_side, y);
+        return this.moveToAdjacentFace(face, NEIGHBOURS[face]["west"], right_side, y);
       } else {
         return this.indexOfCell(face, x - 1, y - 1);
       }
     case 1:
       if (y == top_side) {
-        return this.indexOfCell(CubeField.neighbours[face]["north"], x, bottom_side);
+        return this.moveToAdjacentFace(face, NEIGHBOURS[face]["north"], x, bottom_side);
       } else {
         return this.indexOfCell(face, x, y - 1);
       }
     case 2:
       if (x == right_side) {
-        return this.indexOfCell(CubeField.neighbours[face]["east"], 0, y);
+        return this.moveToAdjacentFace(face, NEIGHBOURS[face]["east"], 0, y);
       } else if (y == top_side) {
-        return this.indexOfCell(CubeField.neighbours[face]["north"], x, bottom_side);
+        return this.moveToAdjacentFace(face, NEIGHBOURS[face]["north"], x, bottom_side);
       } else {
         return this.indexOfCell(face, x + 1, y - 1);
       }
     case 3:
       if (x == left_side) {
-        return this.indexOfCell(CubeField.neighbours[face]["west"], right_side, y);
+        return this.moveToAdjacentFace(face, NEIGHBOURS[face]["west"], right_side, y);
       } else {
         return this.indexOfCell(face, x - 1, y);
       }
     case 5:
       if (x == right_side) {
-        return this.indexOfCell(CubeField.neighbours[face]["east"], 0, y);
+        return this.moveToAdjacentFace(face, NEIGHBOURS[face]["east"], 0, y);
       } else {
         return this.indexOfCell(face, x + 1, y);
       }
     case 6:
       if (x == left_side) {
-       return this.indexOfCell(CubeField.neighbours[face]["west"], right_side, y);
+       return this.moveToAdjacentFace(face, NEIGHBOURS[face]["west"], right_side, y);
       } else if (y == bottom_side) {
-        return this.indexOfCell(CubeField.neighbours[face]["south"], x, 0);
+        return this.moveToAdjacentFace(face, NEIGHBOURS[face]["south"], x, 0);
       } else {
         return this.indexOfCell(face, x - 1, y + 1);
       }
     case 7:
       if (y == bottom_side) {
-        return this.indexOfCell(CubeField.neighbours[face]["south"], x, 0);
+        return this.moveToAdjacentFace(face, NEIGHBOURS[face]["south"], x, 0);
       } else {
         return this.indexOfCell(face, x, y + 1);
       }
     case 8:
       if (y == bottom_side) {
-        return this.indexOfCell(CubeField.neighbours[face]["south"], x, 0);
+        return this.moveToAdjacentFace(face, NEIGHBOURS[face]["south"], x, 0);
       } else if (x == right_side) {
-        return this.indexOfCell(CubeField.neighbours[face]["east"], 0, y);
+        return this.moveToAdjacentFace(face, NEIGHBOURS[face]["east"], 0, y);
       } else {
         return this.indexOfCell(face, x + 1, y + 1);
       }
