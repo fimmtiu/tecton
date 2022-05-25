@@ -71,9 +71,12 @@ class Planet {
     const horizontalVertices = Math.ceil(viewportWidth / PIXELS_BETWEEN_VERTICES) + 2;
     const verticalVertices = Math.ceil(viewportHeight / PIXELS_BETWEEN_VERTICES) + 2;
 
-    const material = new THREE.MeshStandardMaterial({ map: this.texture, side: THREE.FrontSide });
-
-    this.mesh = new PlanetMesh(viewportWidth, viewportHeight, horizontalVertices, verticalVertices, material);
+    this.mesh = new PlanetMesh(
+      viewportWidth, viewportHeight,
+      Math.max(horizontalVertices, verticalVertices),
+      Math.max(horizontalVertices, verticalVertices),
+      new THREE.MeshStandardMaterial({ map: this.texture, side: THREE.FrontSide })
+    );
     scene.add(this.mesh);
   }
 
