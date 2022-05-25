@@ -24,7 +24,7 @@ class PlanetCamera extends THREE.PerspectiveCamera {
   public planet: Planet;
 
   constructor(planet: Planet, viewportWidth: number, viewportHeight: number) {
-    super(FIELD_OF_VIEW, viewportWidth / viewportHeight, 0.01, MAX_ZOOM + Planet.radius);
+    super(FIELD_OF_VIEW, viewportWidth / viewportHeight, 0.01, MAX_ZOOM + PLANET_RADIUS);
     this.width = viewportWidth;
     this.height = viewportHeight;
     this.sphereCoords = new THREE.Spherical(MAX_ZOOM, Math.PI / 2, 0)
@@ -84,7 +84,7 @@ class PlanetCamera extends THREE.PerspectiveCamera {
   }
 
   heightAboveSeaLevel() {
-    return this.distance() - Planet.radius;
+    return this.distance() - PLANET_RADIUS;
   }
 
   // We use this to calculate the planet mesh's curvature. This finds the points at which the edges of the screen

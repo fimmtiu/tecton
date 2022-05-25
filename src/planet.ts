@@ -37,8 +37,6 @@ const ATLAS_INDEX: { [biomeName: string]: number[] } = {
 const SWATCH_SIZE = 16;
 
 class Planet {
-  static readonly radius = PLANET_RADIUS;
-
   public sphere: THREE.Sphere;
   protected mesh!: PlanetMesh;
   protected visualHelper: VisualHelper;
@@ -52,7 +50,7 @@ class Planet {
   protected height: number;
 
   constructor(viewportWidth: number, viewportHeight: number) {
-    this.sphere = new THREE.Sphere(ORIGIN, Planet.radius);
+    this.sphere = new THREE.Sphere(ORIGIN, PLANET_RADIUS);
     this.width = viewportWidth;
     this.height = viewportHeight;
     this.visualHelper = new VisualHelper(true, false);
@@ -128,7 +126,7 @@ class Planet {
       // Calculate where this vertex should go on the sea-level sphere.
       sphereCoords.theta = horizRadiansPerUnit * (u - this.mesh.halfHorizLength);
       sphereCoords.phi = vertRadiansPerUnit * (v - this.mesh.halfVertLength) + Math.PI / 2;
-      sphereCoords.radius = Planet.radius;
+      sphereCoords.radius = PLANET_RADIUS;
       newPosition.setFromSpherical(sphereCoords);
 
       // Add terrain height to the vertex.
