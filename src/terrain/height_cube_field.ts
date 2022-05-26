@@ -4,7 +4,6 @@ import { CubeField } from "../cube_field";
 import { scene } from "../scene_data";
 import { PlateSphere } from "./plate_sphere";
 import { PLANET_RADIUS } from "../planet";
-import { v2s } from "../util";
 import { VisualHelper } from "../visual_helper";
 
 export { HeightCubeField };
@@ -55,10 +54,6 @@ class HeightCubeField extends CubeField<HeightCell> {
 
     // scene.add(this.edges(0xea00ff, 1.01)); // show cell boundaries
     // scene.add(this.showCentersMesh);       // show a dot at the center of each cell
-  }
-
-  drawLine(start: THREE.Vector3, end: THREE.Vector3, height: number, ruggedness: number) {
-
   }
 
   setCell(cell: number, height: number, ruggedness: number) {

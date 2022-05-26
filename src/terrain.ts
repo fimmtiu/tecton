@@ -65,11 +65,44 @@ class Terrain {
         }
       }
 
+      heightCell.height += this.tectonicHeightAdjustment(i);
+
       if (heightCell.height > this.max) {
         this.max = heightCell.height;
       } else if (heightCell.height < this.min) {
         this.min = heightCell.height;
       }
+    }
+  }
+
+  protected tectonicHeightAdjustment(cell: number) {
+    const cellCenter = this.heightMap.get(cell).center;
+    const plate = this.plateSphere.plateAtPoint(cellCenter);
+    let adjustment = 0;
+
+    for (const boundary of plate.boundaries) {
+      const distance = this.distanceToLine(boundary.startPoint, boundary.endPoint, cellCenter);
+
+        // console.log(`segment ${i} between ${boundary.plateCells[0].plate.id} and ${boundary.plateCells[1].plate.id}: ${}`);
+    }
+
+    return adjustment;
+  }
+
+  // FIXME: better variable names, for Christ's sake
+  // https://monkeyproofsolutions.nl/wordpress/how-to-calculate-the-shortest-distance-between-a-point-and-a-line/
+  protected distanceToLine(lineStart: THREE.Vector3, lineEnd: THREE.Vector3, point: THREE.Vector3) {
+    const m = new THREE.Vector3().subVectors(lineEnd, lineStart);
+    const pma = new THREE.Vector3().subVectors(point, lineStart);
+    const t = pma.dot(m) / m.dot(m);
+
+    if (t < 0) {
+      return point.distanceTo(lineStart);
+    } else if (t > 0) {
+      return point.distanceTo(lineEnd);
+    } else {
+      const t0m = m.clone().multiplyScalar(t);
+      return point.distanceTo(lineStart.add(t0m));
     }
   }
 

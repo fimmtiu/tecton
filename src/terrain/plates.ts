@@ -92,11 +92,13 @@ class Plate {
   public readonly direction: THREE.Vector2;
   public isLand: boolean;
   public interactsWithOthers = true;
+  public boundaries: Array<PlateBoundary>;
 
   constructor(id: number, isLand = false, direction: THREE.Vector2 | null = null) {
     this.id = id;
     this.isLand = isLand;
     this.direction = direction || new THREE.Vector2().random().setLength(1.0);
+    this.boundaries = [];
   }
 
   color() {
@@ -118,19 +120,18 @@ class PlateBoundary {
   public readonly convergence: number;
 
   constructor(cellA: PlateCell, cellB: PlateCell) {
-    this.plateCells = [cellA, cellB];
-    const sharedLineSegment = this.sharedLineSegment(); // FIXME: needs a consistent order
+    this.plateCells = [cellA, cellB].sort((a, b) => a.plate.id - b.plate.id);
+    const sharedLineSegment = this.sharedLineSegment();
     this.startPoint = sharedLineSegment[0];
     this.endPoint = sharedLineSegment[1];
     this.convergence = this.calculateConvergence();
   }
 
   protected sharedLineSegment() {
-    const sortedCells = this.plateCells.sort((a, b) => a.plate.id - b.plate.id);
-    for (let i = 0; i < sortedCells[0].lineSegments.length - 1; i++) {
-      for (let j = 0; j < sortedCells[1].lineSegments.length - 1; j++) {
-        const a = sortedCells[0].lineSegments[i], b = sortedCells[0].lineSegments[i + 1],
-              c = sortedCells[1].lineSegments[j], d = sortedCells[1].lineSegments[j + 1];
+    for (let i = 0; i < this.plateCells[0].lineSegments.length - 1; i++) {
+      for (let j = 0; j < this.plateCells[1].lineSegments.length - 1; j++) {
+        const a = this.plateCells[0].lineSegments[i], b = this.plateCells[0].lineSegments[i + 1],
+              c = this.plateCells[1].lineSegments[j], d = this.plateCells[1].lineSegments[j + 1];
         if (a.equals(c) && b.equals(d) || a.equals(d) && b.equals(c)) {
           return [a, b];
         }

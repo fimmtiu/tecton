@@ -14,8 +14,8 @@ export { PlateSphere };
 // that you can barely see. They cause some weird-looking effects.
 
 const VORONOI_DENSITY = 10;
-const STARTING_LAND_CELLS = 8;
-const STARTING_WATER_CELLS = 15; // TODO: Instead of this, could we make water spread faster than land?
+const STARTING_LAND_CELLS = 7;
+const STARTING_WATER_CELLS = 18; // TODO: Instead of this, could we make water spread faster than land?
 const SWITCH_CELLS = 10;
 const SWITCH_SPREAD_CHANCE = 0.4;
 
@@ -46,7 +46,7 @@ class PlateSphere {
     this.constructPlateBoundaries();
 
     this.voronoiEdges = this.makeEdges();
-    // scene.add(this.voronoiEdges);
+    scene.add(this.voronoiEdges);
 
     this.voronoiMesh = this.makeTriangleMesh();
     // scene.add(this.voronoiMesh);
@@ -87,6 +87,12 @@ class PlateSphere {
       "cell": this.plateCells[cell],
       "plate": this.plateCells[cell].plate,
     };
+  }
+
+  plateAtPoint(point: THREE.Vector3) {
+    const coord = GeoCoord.fromWorldVector(point);
+    const cell = this.voronoi.find(coord.lon, coord.lat);
+    return this.plateCells[cell].plate;
   }
 
   protected setUpPlates() {
@@ -156,9 +162,14 @@ class PlateSphere {
         const hash1 = `${v2s(pointA)},${v2s(pointB)}`;
         const hash2 = `${v2s(pointB)},${v2s(pointA)}`;
         if (!seen[hash1] && !seen[hash2]) {
-          const thisPlate = this.plateCells[i];
-          const adjacentPlate = this.plateCells[this.neighbour(i, pointA, pointB)];
-          this.plateBoundaries.push(new PlateBoundary(thisPlate, adjacentPlate));
+          const thisPlateCell = this.plateCells[i];
+          const adjacentPlateCell = this.plateCells[this.neighbour(i, pointA, pointB)];
+          if (thisPlateCell.plate.id != adjacentPlateCell.plate.id) {
+            const boundary = new PlateBoundary(thisPlateCell, adjacentPlateCell);
+            this.plateBoundaries.push(boundary);
+            thisPlateCell.plate.boundaries.push(boundary);
+            adjacentPlateCell.plate.boundaries.push(boundary);
+          }
           seen[hash1] = seen[hash2] = true;
         }
       }
@@ -180,7 +191,7 @@ class PlateSphere {
 
   static readonly LINE_MATERIALS = [
     new THREE.LineBasicMaterial({ color: 0xff0000 }), // away
-    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 }), // neutral
+    new THREE.LineBasicMaterial({ color: 0xffffff }), // neutral
     new THREE.LineBasicMaterial({ color: 0x0000ff }), // towards
   ];
 
@@ -200,7 +211,8 @@ class PlateSphere {
       }
       geometry.addGroup(i * 2, 2, color);
     }
-    geometry.scale(1.07, 1.07, 1.07);
+
+    geometry.scale(1.08, 1.08, 1.08);
     return new THREE.LineSegments(geometry, PlateSphere.LINE_MATERIALS);
   }
 
