@@ -158,9 +158,6 @@ class Terrain {
       "plate": plateData.plate.id,
       "face": face,
       "gridCell": heightMapCell,
-      // FIXME: Temporary approach for visualizing waterness, uses a protected method.
-      // Change to this.heightMap.get(heightMapCell).nearnessToWater once we're no longer visualizing it.
-      "nearnessToWater": this.heightMap.nearnessToWater(heightMapCell + face * this.heightMap.cellsPerFace),
     }
   }
 
