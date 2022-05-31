@@ -6,7 +6,7 @@ import { PlateSphere } from "./plate_sphere";
 import { PLANET_RADIUS } from "../planet";
 import { VisualHelper } from "../visual_helper";
 
-export { HeightCubeField };
+export { HeightCubeField, HeightCell };
 
 class HeightCell {
   public center = new THREE.Vector3();

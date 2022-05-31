@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 import { Plate, PlateBoundary } from "./terrain/plates";
 import { PlateSphere } from "./terrain/plate_sphere";
-import { HeightCubeField } from "./terrain/height_cube_field";
+import { HeightCubeField, HeightCell } from "./terrain/height_cube_field";
 import { noiseGenerator } from "./util";
 
 export { Terrain };
@@ -66,7 +66,7 @@ class Terrain {
         }
       }
 
-      heightCell.height += this.tectonicHeightAdjustment(i);
+      heightCell.height += this.tectonicHeightAdjustment(heightCell, i);
       // Uncomment this once the space elevators are fixed.
       // heightCell.height = THREE.MathUtils.clamp(heightCell.height, -1.0, 1.0);
 
@@ -78,13 +78,12 @@ class Terrain {
     }
   }
 
-  // FIXME: Pass the HeightCell instead of the cell index.
-  protected tectonicHeightAdjustment(cell: number) {
-    const cellCenter = this.heightMap.get(cell).center;
-    const plate = this.plateSphere.plateAtPoint(cellCenter);
+  // `cell` is just for debugging.
+  protected tectonicHeightAdjustment(heightCell: HeightCell, cell: number) {
+    const plate = this.plateSphere.plateAtPoint(heightCell.center);
     let adjustment = 0;
 
-    for (const [boundary, distance] of this.closestDistanceToAdjacentPlates(cellCenter, plate)) {
+    for (const [boundary, distance] of this.closestDistanceToAdjacentPlates(heightCell.center, plate)) {
       if (boundary.colliding()) {
         if (boundary.plateCells[0].plate.isLand && boundary.plateCells[1].plate.isLand) {
           // Land-land plate collision that generates a mountain range.
@@ -95,10 +94,11 @@ class Terrain {
 
         } else if (!boundary.plateCells[0].plate.isLand && !boundary.plateCells[1].plate.isLand) {
           // Ocean-ocean plate collision that generates an oceanic trench.
-          if (this.oceanTrenchHeight(distance, 300 * boundary.convergence, MIN_ELEVATION * boundary.convergence)) {
-            console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, ocean trench ${this.oceanTrenchHeight(distance, 300 * boundary.convergence, MIN_ELEVATION * boundary.convergence)}`);
+          const trenchHeight = this.oceanTrenchHeight(distance, 300 * boundary.convergence, boundary.convergence);
+          if (trenchHeight) {
+            console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, conv ${boundary.convergence}, ocean trench ${trenchHeight}, base ${heightCell.height}, adj ${adjustment + trenchHeight}`);
           }
-          adjustment += this.oceanTrenchHeight(distance, 300 * boundary.convergence, boundary.convergence);
+          adjustment += trenchHeight;
 
         } else {
           // Land-ocean plate collision that generates a mountain range on the land cell and a short shelf on the ocean.
@@ -135,11 +135,12 @@ class Terrain {
 
     if (t < 0) {
       return point.distanceTo(lineStart);
-    } else if (t > 0) {
+    } else if (t > 1) {
       return point.distanceTo(lineEnd);
     } else {
       const t0m = m.clone().multiplyScalar(t);
-      return point.distanceTo(lineStart.add(t0m));
+      const intersection = lineStart.clone().add(t0m);
+      return point.distanceTo(intersection);
     }
   }
 
@@ -287,7 +288,7 @@ class Terrain {
     if (dist > width) {
       return 0;
     }
-    console.log(`Trench x ${dist / width}, depth ${depth}, height: ${(Math.cos(dist / width / 2) ** 50) * depth}`);
+    console.log(`Trench x ${dist / width}, depth ${depth}, height: ${-(Math.cos(dist / width / 2) ** 50) * depth}`);
     return -(Math.cos(dist / width / 2) ** 50) * depth;
   }
 
