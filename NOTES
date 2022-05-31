@@ -48,24 +48,26 @@ To generate the HeightCubeField:
 
 Variations for coastlines are dependent on how much coastline is near the given cell.
 
- - For each line segment
-   - If it's a plate boundary
-     - If they're colliding
-       - If one cell is ocean and one is land
-         - The ocean cell gets very little continental shelf
-         - The land cell gets mountainous
-       - If both are ocean
-         - A trench forms along the boundary (counter-intuitive, I know!)
-       - If both are land
-         - An orogenous mountain range forms along the boundary
-     - If they're heading apart
-       - If one cell is ocean and one is land
-         - The ocean cell gets a long continental shelf
-         - The land cell gets flat
-       - If both are ocean
-         - Oceanic ridges form along the boundary, getting progressively smaller the further away they get
-       - If both are land
-         - Rift valleys form along the boundary
+  - For each plate boundary
+    - If they're colliding
+      - If one cell is ocean and one is land
+        - The ocean cell gets very little continental shelf
+        - The land cell gets mountainous
+      - If both are ocean
+        - A trench forms along the boundary (counter-intuitive, I know!)
+      - If both are land
+        - An orogenous mountain range forms along the boundary
+    - If they're heading apart
+      - If one cell is ocean and one is land
+        - The ocean cell gets a long continental shelf
+        - The land cell gets flat
+      - If both are ocean
+        - Oceanic ridges form along the boundary, getting progressively smaller the further away they get
+      - If both are land
+        - Rift valleys form along the boundary
+    - If they're neutral
+      - If both are ocean
+        - Small chance of creating a volcanic island chain (Hawai'i, Japan)
 
 The height of a mountain range is dependent on the magnitude of the collision between two plates.
 Low mountains may be high ruggedness (young) or low ruggedness (old). High mountains will be medium rugged.
@@ -73,6 +75,21 @@ Low mountains may be high ruggedness (young) or low ruggedness (old). High mount
 Consider adding extra low-ruggedness mountain stripes inside plates to represent really old mountains like the
 Appalachians whose plate collisions were too long ago to have happened at the current boundaries.
 
-Later we'll want determine the type of rock (igneous, metamorphic, sedimentary, etc.) in this step as well, which will
+Later we'll want to determine the type of rock (igneous, metamorphic, sedimentary, etc.) in this step as well, which will
 come into play later when we're calculating groundwater capacity, erosion, etc. (Maybe soil depth as well.) That can get
 a separate CubeField.
+
+
+Terrain types:
+* Mountain [x]
+* Ocean trench [x]
+* Very short continental shelf [x]
+* Long continental shelf [x]
+* Oceanic ridges [x]
+* Plains [x]
+* Ocean floor [x]
+* Rift valleys [x]
+* Volcanic island chain
+    - This one is more complicated because it has a random factor and depends on cell coordinates.
+      Not just a factor of distance + width. I'll tackle it later.
+

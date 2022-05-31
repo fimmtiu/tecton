@@ -33,6 +33,7 @@ const LAND_PLATE_COLORS = [
   new THREE.MeshBasicMaterial({ color: 0x006400 }),
 ];
 const PLATE_COLORS = WATER_PLATE_COLORS.concat(LAND_PLATE_COLORS);
+const CONVERGENCE_THRESHOLD = 0.3
 
 class PlateCell {
   public readonly id: number;
@@ -127,6 +128,18 @@ class PlateBoundary {
     this.convergence = this.calculateConvergence();
   }
 
+  colliding() {
+    return this.convergence > CONVERGENCE_THRESHOLD;
+  }
+
+  diverging() {
+    return this.convergence < -CONVERGENCE_THRESHOLD;
+  }
+
+  otherPlate(plate: Plate) {
+    return this.plateCells[0].plate == plate ? this.plateCells[1].plate : this.plateCells[0].plate;
+  }
+
   protected sharedLineSegment() {
     for (let i = 0; i < this.plateCells[0].lineSegments.length - 1; i++) {
       for (let j = 0; j < this.plateCells[1].lineSegments.length - 1; j++) {
@@ -164,11 +177,11 @@ class PlateBoundary {
 
     if (!PlateBoundary.relativePlateVelocities[key]) {
       if (plateA.id % 2 > plateB.id % 2) {
-        PlateBoundary.relativePlateVelocities[key] = THREE.MathUtils.randFloat(0.3, 1.0);
+        PlateBoundary.relativePlateVelocities[key] = THREE.MathUtils.randFloat(CONVERGENCE_THRESHOLD, 1.0);
       } else if (plateA.id % 2 < plateB.id % 2) {
-        PlateBoundary.relativePlateVelocities[key] = THREE.MathUtils.randFloat(-1.0, -0.3);
+        PlateBoundary.relativePlateVelocities[key] = THREE.MathUtils.randFloat(-1.0, -CONVERGENCE_THRESHOLD);
       } else {
-        PlateBoundary.relativePlateVelocities[key] = THREE.MathUtils.randFloat(-0.3, 0.3);
+        PlateBoundary.relativePlateVelocities[key] = THREE.MathUtils.randFloat(-CONVERGENCE_THRESHOLD, CONVERGENCE_THRESHOLD);
       }
     }
     return PlateBoundary.relativePlateVelocities[key];

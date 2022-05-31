@@ -154,6 +154,7 @@ class PlateSphere {
 
   protected constructPlateBoundaries() {
     const seen: { [edge: string]: boolean } = {};
+    const count: { [edge: string]: number } = {};
 
     for (let i = 0; i < this.plateCells.length; i++) {
       const cell = this.plateCells[i];
@@ -169,11 +170,23 @@ class PlateSphere {
             this.plateBoundaries.push(boundary);
             thisPlateCell.plate.boundaries.push(boundary);
             adjacentPlateCell.plate.boundaries.push(boundary);
+
+            if (boundary.convergence < -0.3) {
+              count["diverging"] ||= 0;
+              count["diverging"]++;
+            } else if (boundary.convergence > 0.3) {
+              count["colliding"] ||= 0;
+              count["colliding"]++;
+            } else {
+              count["neutral"] ||= 0;
+              count["neutral"]++;
+            }
           }
           seen[hash1] = seen[hash2] = true;
         }
       }
     }
+    console.log(`convergence ${JSON.stringify(count)}`);
   }
 
   // FIXME: Just for debugging; can remove this later.
@@ -190,9 +203,9 @@ class PlateSphere {
   }
 
   static readonly LINE_MATERIALS = [
-    new THREE.LineBasicMaterial({ color: 0xff0000 }), // away
+    new THREE.LineBasicMaterial({ color: 0xff0000 }), // towards
     new THREE.LineBasicMaterial({ color: 0xffffff }), // neutral
-    new THREE.LineBasicMaterial({ color: 0x0000ff }), // towards
+    new THREE.LineBasicMaterial({ color: 0x0000ff }), // away
   ];
 
   protected makeEdges() {
