@@ -88,9 +88,9 @@ class Terrain {
       if (boundary.colliding()) {
         if (boundary.plateCells[0].plate.isLand && boundary.plateCells[1].plate.isLand) {
           // Land-land plate collision that generates a mountain range.
-          if (this.landToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)) {
-            console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, land/land mountain ${this.landToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)}`);
-          }
+          // if (this.landToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)) {
+          //   console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, land/land mountain ${this.landToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)}`);
+          // }
           adjustment += this.landToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence);
 
         } else if (!boundary.plateCells[0].plate.isLand && !boundary.plateCells[1].plate.isLand) {
@@ -103,14 +103,14 @@ class Terrain {
         } else {
           // Land-ocean plate collision that generates a mountain range on the land cell and a short shelf on the ocean.
           if (plate.isLand) {
-            if (this.oceanToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)) {
-              console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, land/ocean mountain ${this.oceanToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)}`);
-            }
+            // if (this.oceanToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)) {
+            //   console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, land/ocean mountain ${this.oceanToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)}`);
+            // }
             adjustment += this.oceanToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence);
           } else {
-            if (this.continentalShelfHeight(distance, 80 * boundary.convergence)) {
-              console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, continental shelf ${this.continentalShelfHeight(distance, 80 * boundary.convergence)}`);
-            }
+            // if (this.continentalShelfHeight(distance, 80 * boundary.convergence)) {
+            //   console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, continental shelf ${this.continentalShelfHeight(distance, 80 * boundary.convergence)}`);
+            // }
             adjustment += this.continentalShelfHeight(distance, 80 * boundary.convergence);
           }
         }
@@ -122,7 +122,7 @@ class Terrain {
       }
     }
 
-    return this.scaleHeight(adjustment);
+    return adjustment;
   }
 
   // FIXME: better variable names, for Christ's sake
@@ -257,8 +257,8 @@ class Terrain {
       return 0;
     }
     const x = dist / width;
-    console.log(`LL mountain height: dist ${dist}, width ${width}, height ${height}, ${(Math.cos(Math.PI * x) + height) / 2}`);
-    return (Math.cos(Math.PI * x) + height) / 2;
+    // console.log(`LL mountain height: dist ${dist}, width ${width}, x ${dist / width} height ${height}, ${(Math.cos(Math.PI * x) + height) / 2}`);
+    return (Math.cos(Math.PI * x) * height + 1) / 2;
   }
 
   // dist: The distance in km between the given point and the plate boundary.
@@ -268,9 +268,8 @@ class Terrain {
     if (dist > width) {
       return 0;
     }
-    console.log(`OL mountain height: ${(Math.cos(2 * Math.PI * ((dist / width) ** 2)) + 1) / 2 * height}`);
+    // console.log(`OL mountain height: ${(Math.cos(2 * Math.PI * ((dist / width) ** 2)) + 1) / 2 * height}`);
     return (Math.cos(2 * Math.PI * ((dist / width) ** 2)) + 1) / 2 * height;
-    return -((dist - width * 1.2) ** 2) / (width ** 2) + height;
   }
 
   // dist: The distance in km between the given point and the plate boundary.
@@ -291,8 +290,8 @@ class Terrain {
     if (dist > width) {
       return 0;
     }
-    // console.log(`Trench height: ${(Math.cos(dist / width / 2) ** 50) * depth}`);
-    return (Math.cos(dist / width / 2) ** 50) * depth;
+    console.log(`Trench x ${dist / width}, depth ${depth}, height: ${(Math.cos(dist / width / 2) ** 50) * depth}`);
+    return -(Math.cos(dist / width / 2) ** 50) * depth;
   }
 
   // dist: The distance in km between the given point and the plate boundary.
