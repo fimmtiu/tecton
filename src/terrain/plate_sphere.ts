@@ -46,7 +46,7 @@ class PlateSphere {
     this.constructPlateBoundaries();
 
     this.voronoiEdges = this.makeEdges();
-    // scene.add(this.voronoiEdges);
+    scene.add(this.voronoiEdges);
 
     this.voronoiMesh = this.makeTriangleMesh();
     // scene.add(this.voronoiMesh);
@@ -72,7 +72,7 @@ class PlateSphere {
     scene.remove(this.voronoiEdges);
     this.voronoiEdges.geometry.dispose();
     this.voronoiEdges = this.makeEdges();
-    // scene.add(this.voronoiEdges);
+    scene.add(this.voronoiEdges);
 
     scene.remove(this.voronoiMesh);
     this.voronoiMesh.geometry.dispose();
@@ -120,7 +120,7 @@ class PlateSphere {
       const [cellId, plate] = <[number, Plate]> queue.shift();
       this.plateCells[cellId].plate = plate;
       this.plateCells[cellId].plate = plate;
-      for (let neighbour of shuffle(this.neighbours(cellId))) {
+      for (const neighbour of shuffle(this.neighbours(cellId))) {
         if (!seen[neighbour]) {
           queue.push([neighbour, plate]);
           seen[neighbour] = true;
@@ -168,7 +168,7 @@ class PlateSphere {
   // FIXME: Just for debugging; can remove this later.
   protected logLandWaterRatio() {
     let land = 0, water = 0;
-    for (let cell of this.plateCells) {
+    for (const cell of this.plateCells) {
       if (cell.plate.isLand) {
         land++;
       } else {
@@ -179,9 +179,9 @@ class PlateSphere {
   }
 
   static readonly LINE_MATERIALS = [
-    new THREE.LineBasicMaterial({ color: 0xff0000 }), // away
-    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 }), // neutral
-    new THREE.LineBasicMaterial({ color: 0x0000ff }), // towards
+    new THREE.LineBasicMaterial({ linewidth: 300.0, color: 0xff0000 }), // away
+    new THREE.LineBasicMaterial({ linewidth: 300.0, color: 0xffffff, transparent: true, opacity: 0.3 }), // neutral
+    new THREE.LineBasicMaterial({ linewidth: 300.0, color: 0x0000ff }), // towards
   ];
 
   protected makeEdges() {
@@ -206,7 +206,7 @@ class PlateSphere {
 
   // Find the neighbouring cell which shares the given line segment.
   protected neighbour(cell: number, pointA: THREE.Vector3, pointB: THREE.Vector3) {
-    for (let n of this.neighbours(cell)) {
+    for (const n of this.neighbours(cell)) {
       const cell = this.plateCells[n];
       for (let i = 0; i < cell.lineSegments.length - 1; i++) {
         if (cell.lineSegments[i].equals(pointB) && cell.lineSegments[i + 1].equals(pointA)) {

@@ -33,7 +33,7 @@ class HeightCubeField extends CubeField<HeightCell> {
   protected visualHelper = new VisualHelper();
   protected neighbourPoints: THREE.Vector3[] = [];
 
-  constructor(cellsPerEdge: number, plateSphere: PlateSphere) {
+  constructor(cellsPerEdge: number, plateSphere: PlateSphere, showCenters: boolean, showEdges: boolean) {
     super(cellsPerEdge, () => { return new HeightCell() });
 
     this.centersMesh = this.centers(MATERIALS);
@@ -53,8 +53,12 @@ class HeightCubeField extends CubeField<HeightCell> {
     // Calculate the nearnessToWater for all cells.
     this.update();
 
-    // scene.add(this.edges(0xea00ff, 1.01)); // show cell boundaries
-    // scene.add(this.showCentersMesh);       // show a dot at the center of each cell
+    if (showEdges) {
+      scene.add(this.edges(0xea00ff, 1.01)); // show cell boundaries
+    }
+    if (showCenters) {
+      scene.add(this.showCentersMesh);       // show a dot at the center of each cell
+    }
   }
 
   drawLine(start: THREE.Vector3, end: THREE.Vector3, height: number, ruggedness: number) {
@@ -73,7 +77,7 @@ class HeightCubeField extends CubeField<HeightCell> {
     this.showNeighbors = true;
   }
 
-  protected nearnessToWater(cell: number) {
+  nearnessToWater(cell: number) {
     this.neighbourPoints = [];
     const cellContainsWater: { [cell: number]: boolean } = {};
     this.recursivelyCheckAdjacentCells(cellContainsWater, cell, this.closeToWaterDistance);
@@ -84,7 +88,7 @@ class HeightCubeField extends CubeField<HeightCell> {
     }
 
     let waterCells = 0;
-    for (let value of Object.values(cellContainsWater)) {
+    for (const value of Object.values(cellContainsWater)) {
       if (value) {
         waterCells++;
       }
@@ -102,7 +106,7 @@ class HeightCubeField extends CubeField<HeightCell> {
       this.neighbourPoints.push(center);
     }
 
-    for (let dir of CARDINAL_DIRECTIONS) {
+    for (const dir of CARDINAL_DIRECTIONS) {
       const adjacentCell = this.neighbour(cell, dir);
       if (remainingDistance > 0 && !(adjacentCell in cellContainsWater)) {
         this.recursivelyCheckAdjacentCells(cellContainsWater, adjacentCell, remainingDistance - 1);

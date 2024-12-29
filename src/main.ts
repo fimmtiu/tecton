@@ -103,9 +103,9 @@ TextureManager.loadAll(() => {
   }
 
   function mouseMoveListener(event: MouseEvent) {
-    let x = (event.clientX / canvasContainer.offsetWidth) * 2 - 1;
-    let y = -(event.clientY / canvasContainer.offsetHeight) * 2 + 1;
-    let data = sceneData.dataAtPoint(x, y);
+    const x = (event.clientX / canvasContainer.offsetWidth) * 2 - 1;
+    const y = -(event.clientY / canvasContainer.offsetHeight) * 2 + 1;
+    const data = sceneData.dataAtPoint(x, y);
 
     if (data) {
       elevationSpan.innerHTML = `${data.elevation} m`;

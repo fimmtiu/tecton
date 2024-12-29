@@ -39,7 +39,7 @@ class Terrain {
 
   constructor() {
     this.plateSphere = new PlateSphere();
-    this.heightMap = new HeightCubeField(100, this.plateSphere);
+    this.heightMap = new HeightCubeField(100, this.plateSphere, false, false);
 
     // Set the initial heights for all heightmap cells.
     for (let i = 0; i < this.heightMap.cellCount; i++) {
@@ -151,7 +151,7 @@ class Terrain {
     const range = max - min;
     let height = 0;
 
-    for (let level of NOISE_LEVELS) {
+    for (const level of NOISE_LEVELS) {
       height += this.noise(pointOnSphere, level.offset, level.amplitude);
     }
 

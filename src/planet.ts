@@ -138,15 +138,6 @@ class Planet {
     this.visualHelper.update();
   }
 
-  // For the flat mesh, the math for working out the angles only works if we assume that all points lie near the
-  // equator, but freaks out around the poles. The simplest (though not necessarily best) solution is to just move
-  // the corners to near the equator before we calculate the mesh deformation.
-  protected rotateCornersToEquator(topLeft: THREE.Vector3, bottomRight: THREE.Vector3) {
-    const rotation = new THREE.Quaternion().setFromEuler(this.mesh.rotation).conjugate();
-    topLeft.applyQuaternion(rotation);
-    bottomRight.applyQuaternion(rotation);
-  }
-
   // FIXME: This should be done by a fragment shader eventually. This is a ludicrously bad way to blit pixels.
   protected paintTextureOnVertex(mesh: PlanetMesh, x: number, y: number, worldPosition: THREE.Vector3, height: number) {
     const u = x * mesh.horizontalTexelsPerVertex, v = y * mesh.verticalTexelsPerVertex;
