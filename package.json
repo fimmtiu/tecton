@@ -30,9 +30,9 @@
     "ts-node": "ts-node"
   },
   "dependencies": {
-    "@types/three": "^0.171.0",
+    "@types/three": "^0.181.0",
     "d3-geo-voronoi": "^2.0.1",
     "simplex-noise": "^3.0.1",
-    "three": "^0.171.0"
+    "three": "^0.181.0"
   }
 }
