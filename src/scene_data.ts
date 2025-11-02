@@ -28,7 +28,7 @@ class SceneData {
     this.camera.updateOnResize(width, height);
 
     // FIXME: Replace this with a more shadowy, realistic-looking light source at some point.
-    this.light = new THREE.PointLight(0xffffff);
+    this.light = new THREE.PointLight(0xffffff, 1000000000);
     this.light.position.copy(this.camera.position);
     this.camera.add(this.light);
     scene.add(this.camera);

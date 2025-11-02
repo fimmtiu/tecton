@@ -76,3 +76,12 @@ Appalachians whose plate collisions were too long ago to have happened at the cu
 Later we'll want determine the type of rock (igneous, metamorphic, sedimentary, etc.) in this step as well, which will
 come into play later when we're calculating groundwater capacity, erosion, etc. (Maybe soil depth as well.) That can get
 a separate CubeField.
+
+
+
+TO DO:
+
+- Replace the duplicate vertex removal stuff with the add-on BufferGeometryUtils.mergeVertices() function.
+- Replace the LineSegments plate boundaries with the LineSegments2 add-on, see if thicker lines will flicker less and
+  allow you to shrink EDGES_SCALE_FACTOR.
+- See if you can use WebGLRenderer.copyTextureToTexture() instead of the terrible manual-ass blitting you're doing now.

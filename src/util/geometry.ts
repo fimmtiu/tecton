@@ -61,8 +61,8 @@ function mergeDuplicateNonIndexedVertices(geometry: THREE.BufferGeometry) {
   }
 
   const newPositions = new THREE.BufferAttribute(new Float32Array(positionsAdded * 3), 3);
-  for (let id in vertexCache) {
-    let vec = vertexCache[id]["vec"];
+  for (const id in vertexCache) {
+    const vec = vertexCache[id]["vec"];
     newPositions.setXYZ(vertexCache[id]["index"], vec.x, vec.y, vec.z);
   }
 
@@ -95,8 +95,8 @@ function mergeDuplicateIndexedVertices(geometry: THREE.BufferGeometry) {
   }
 
   const newPositions = new THREE.BufferAttribute(new Float32Array(positionsAdded * 3), 3);
-  for (let id in vertexCache) {
-    let vec = vertexCache[id]["vec"];
+  for (const id in vertexCache) {
+    const vec = vertexCache[id]["vec"];
     newPositions.setXYZ(vertexCache[id]["index"], vec.x, vec.y, vec.z);
   }
 
@@ -143,7 +143,7 @@ function disposeMesh(mesh: THREE.Mesh | THREE.Points | THREE.LineSegments) {
   if (mesh.material instanceof THREE.Material) {
     mesh.material.dispose();
   } else {
-    for (let material of mesh.material) {
+    for (const material of mesh.material) {
       material.dispose();
     }
   }

@@ -18,6 +18,7 @@ const STARTING_LAND_CELLS = 8;
 const STARTING_WATER_CELLS = 15; // TODO: Instead of this, could we make water spread faster than land?
 const SWITCH_CELLS = 10;
 const SWITCH_SPREAD_CHANCE = 0.4;
+const EDGES_SCALE_FACTOR = 1.07; // I want to make this smaller, but it causes the edges to flicker weirdly.
 
 class PlateSphere {
   public readonly plateCells: PlateCell[] = [];
@@ -25,7 +26,7 @@ class PlateSphere {
   public readonly plateBoundaries: PlateBoundary[] = [];
 
   protected voronoi: any; // It comes from a 3rd-party library (d3-geo-voronoi) with no TypeScript support.
-  protected polygons: Array<any>;
+  protected polygons: Array<any>; // Ditto.
   protected voronoiEdges: THREE.LineSegments;
   protected voronoiMesh: THREE.Mesh;
   protected islandLandPlate!: Plate;
@@ -179,9 +180,9 @@ class PlateSphere {
   }
 
   static readonly LINE_MATERIALS = [
-    new THREE.LineBasicMaterial({ linewidth: 300.0, color: 0xff0000 }), // away
-    new THREE.LineBasicMaterial({ linewidth: 300.0, color: 0xffffff, transparent: true, opacity: 0.3 }), // neutral
-    new THREE.LineBasicMaterial({ linewidth: 300.0, color: 0x0000ff }), // towards
+    new THREE.LineBasicMaterial({ linewidth: 3.0, color: 0xff0000 }), // away
+    new THREE.LineBasicMaterial({ linewidth: 3.0, color: 0xffffff, transparent: true, opacity: 0.3 }), // neutral
+    new THREE.LineBasicMaterial({ linewidth: 3.0, color: 0x0000ff }), // towards
   ];
 
   protected makeEdges() {
@@ -200,7 +201,7 @@ class PlateSphere {
       }
       geometry.addGroup(i * 2, 2, color);
     }
-    geometry.scale(1.07, 1.07, 1.07);
+    geometry.scale(EDGES_SCALE_FACTOR, EDGES_SCALE_FACTOR, EDGES_SCALE_FACTOR);
     return new THREE.LineSegments(geometry, PlateSphere.LINE_MATERIALS);
   }
 
@@ -255,7 +256,7 @@ class PlateSphere {
   }
 
   protected voronoiStartingPoints() {
-    const startingPoints = new THREE.IcosahedronBufferGeometry(PLANET_RADIUS, VORONOI_DENSITY);
+    const startingPoints = new THREE.IcosahedronGeometry(PLANET_RADIUS, VORONOI_DENSITY);
     mergeDuplicateVertices(startingPoints);
     randomlyJitterVertices(startingPoints, PLANET_RADIUS);
     wrapMeshAroundSphere(startingPoints, PLANET_RADIUS);

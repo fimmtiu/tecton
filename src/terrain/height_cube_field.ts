@@ -61,9 +61,9 @@ class HeightCubeField extends CubeField<HeightCell> {
     }
   }
 
-  drawLine(start: THREE.Vector3, end: THREE.Vector3, height: number, ruggedness: number) {
+  // drawLine(start: THREE.Vector3, end: THREE.Vector3, height: number, ruggedness: number) {
 
-  }
+  // }
 
   setCell(cell: number, height: number, ruggedness: number) {
     this.cells[cell].height = height;
