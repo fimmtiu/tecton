@@ -54,8 +54,9 @@ Variations for coastlines are dependent on how much coastline is near the given 
        - If one cell is ocean and one is land
          - The ocean cell gets very little continental shelf
          - The land cell gets mountainous
-       - If both are ocean
-         - A trench forms along the boundary (counter-intuitive, I know!)
+       - If both are ocean, one of the following:
+         - A trench forms along the boundary (subduction)
+         - A chain of volcanic islands forms (collision)
        - If both are land
          - An orogenous mountain range forms along the boundary
      - If they're heading apart
@@ -81,7 +82,6 @@ a separate CubeField.
 
 TO DO:
 
-- Replace the duplicate vertex removal stuff with the add-on BufferGeometryUtils.mergeVertices() function.
 - Replace the LineSegments plate boundaries with the LineSegments2 add-on, see if thicker lines will flicker less and
   allow you to shrink EDGES_SCALE_FACTOR.
 - See if you can use WebGLRenderer.copyTextureToTexture() instead of the terrible manual-ass blitting you're doing now.
