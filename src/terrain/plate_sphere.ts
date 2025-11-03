@@ -1,11 +1,12 @@
 import * as THREE from "three";
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'
 import * as D3GeoVoronoi from "d3-geo-voronoi";
 
 import { PLANET_RADIUS } from "../planet";
 import { scene } from "../scene_data";
 import { v2s, sample, shuffle } from "../util";
 import { GeoCoord } from "../util/geo_coord";
-import { mergeDuplicateVertices, randomlyJitterVertices, wrapMeshAroundSphere } from "../util/geometry";
+import { randomlyJitterVertices, wrapMeshAroundSphere } from "../util/geometry";
 import { PlateCell, Plate, PlateBoundary, PLATE_COLORS } from "./plates";
 
 export { PlateSphere };
@@ -251,13 +252,16 @@ class PlateSphere {
       const color = this.plateCells[i].plate.color();
       geometry.addGroup(cellToMeshTriangle[i]["startVertex"], cellToMeshTriangle[i]["numVertices"], color);
     }
-    mergeDuplicateVertices(geometry);
-    return new THREE.Mesh(geometry, PLATE_COLORS);
+    const newGeometry = BufferGeometryUtils.mergeVertices(geometry);
+    geometry.dispose()
+    return new THREE.Mesh(newGeometry, PLATE_COLORS);
   }
 
   protected voronoiStartingPoints() {
-    const startingPoints = new THREE.IcosahedronGeometry(PLANET_RADIUS, VORONOI_DENSITY);
-    mergeDuplicateVertices(startingPoints);
+    const messyStartingPoints = new THREE.IcosahedronGeometry(PLANET_RADIUS, VORONOI_DENSITY);
+    const startingPoints = BufferGeometryUtils.mergeVertices(messyStartingPoints);
+    messyStartingPoints.dispose()
+
     randomlyJitterVertices(startingPoints, PLANET_RADIUS);
     wrapMeshAroundSphere(startingPoints, PLANET_RADIUS);
 

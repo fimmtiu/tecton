@@ -4,7 +4,6 @@ import { CubeField } from "../cube_field";
 import { scene } from "../scene_data";
 import { PlateSphere } from "./plate_sphere";
 import { PLANET_RADIUS } from "../planet";
-import { v2s } from "../util";
 import { VisualHelper } from "../visual_helper";
 
 export { HeightCubeField };

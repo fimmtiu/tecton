@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es2017",
-    "module": "commonjs",
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
     "declaration": true,
     "strict": true,
     "noImplicitAny": true /* Raise error on expressions and declarations with an implied 'any' type. */,
@@ -24,7 +25,7 @@
       "jest"
     ],
     "lib": [
-      "ES2017",
+      "ES2023",
       "DOM"
     ]
   },
