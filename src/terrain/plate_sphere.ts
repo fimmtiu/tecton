@@ -15,8 +15,8 @@ export { PlateSphere };
 // that you can barely see. They cause some weird-looking effects.
 
 const VORONOI_DENSITY = 10;
-const STARTING_LAND_CELLS = 8;
-const STARTING_WATER_CELLS = 15; // TODO: Instead of this, could we make water spread faster than land?
+const STARTING_LAND_CELLS = 7;
+const STARTING_WATER_CELLS = 18; // TODO: Instead of this, could we make water spread faster than land?
 const SWITCH_CELLS = 10;
 const SWITCH_SPREAD_CHANCE = 0.4;
 const EDGES_SCALE_FACTOR = 1.07; // I want to make this smaller, but it causes the edges to flicker weirdly.

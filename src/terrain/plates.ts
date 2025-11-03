@@ -1,7 +1,5 @@
 import * as THREE from "three";
 
-import { GeoCoord } from "../util/geo_coord";
-
 export { PlateCell, Plate, PlateBoundary, PLATE_COLORS };
 
 const WATER_PLATE_COLORS = [

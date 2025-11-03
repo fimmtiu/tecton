@@ -67,6 +67,9 @@ Variations for coastlines are dependent on how much coastline is near the given 
          - Oceanic ridges form along the boundary, getting progressively smaller the further away they get
        - If both are land
          - Rift valleys form along the boundary
+    - If they're neutral
+      - If both are ocean
+        - Small chance of creating a volcanic island chain (Hawai'i, Japan)
 
 The height of a mountain range is dependent on the magnitude of the collision between two plates.
 Low mountains may be high ruggedness (young) or low ruggedness (old). High mountains will be medium rugged.
@@ -74,7 +77,7 @@ Low mountains may be high ruggedness (young) or low ruggedness (old). High mount
 Consider adding extra low-ruggedness mountain stripes inside plates to represent really old mountains like the
 Appalachians whose plate collisions were too long ago to have happened at the current boundaries.
 
-Later we'll want determine the type of rock (igneous, metamorphic, sedimentary, etc.) in this step as well, which will
+Later we'll want to determine the type of rock (igneous, metamorphic, sedimentary, etc.) in this step as well, which will
 come into play later when we're calculating groundwater capacity, erosion, etc. (Maybe soil depth as well.) That can get
 a separate CubeField.
 
@@ -85,3 +88,6 @@ TO DO:
 - Replace the LineSegments plate boundaries with the LineSegments2 add-on, see if thicker lines will flicker less and
   allow you to shrink EDGES_SCALE_FACTOR.
 - See if you can use WebGLRenderer.copyTextureToTexture() instead of the terrible manual-ass blitting you're doing now.
+- Change Terrain and HeightCubeField heights from [-1.0, 1.0] to meters. Way less confusing.
+- Port over the code from the old `tectonic-heightmaps` branch on GitHub
+- Do Lloyd's relaxation on the Voronoi cells during plate generation to remove weird artifacting edges
