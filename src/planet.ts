@@ -23,11 +23,8 @@ function texStartsAt(x: number, y: number) : THREE.Box2[] {
   ];
   return startPoints.map(function (v: THREE.Vector2) {
     const endPoint = new THREE.Vector2();
-    const foo = new THREE.Box2(v, endPoint.copy(v).addScalar(SWATCH_SIZE));
-    console.log(`v = [${v.x}, ${v.y}]. v.add = [${endPoint.x}, ${endPoint.y}]`);
-    console.log(`texStartsAt: min [${foo.min.x}, ${foo.min.y}], max [${foo.max.x}, ${foo.max.y}]}`);
-
-    return new THREE.Box2(v, v.addScalar(SWATCH_SIZE));
+    endPoint.copy(v).addScalar(SWATCH_SIZE);
+    return new THREE.Box2(v, endPoint);
   });
 }
 
@@ -77,7 +74,12 @@ class Planet {
     this.texture = new THREE.DataTexture(this.textureData, TEXTURE_SIZE, TEXTURE_SIZE, THREE.RGBAFormat);
     this.texture.flipY = true;
     this.atlas = TextureManager.dataTextures["atlas.png"];
-    this.atlas.flipY = true;
+    // Don't flip atlas - copyTextureToTexture handles coordinate systems differently
+    // this.atlas.flipY = true;
+
+    // Force the renderer to upload both textures to GPU before we try to copy between them
+    renderer.initTexture(this.atlas);
+    renderer.initTexture(this.texture);
 
     this.createMesh(viewportWidth, viewportHeight);
   }
@@ -147,7 +149,10 @@ class Planet {
       positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
     }
     updateGeometry(this.mesh.geometry);
-    this.texture.needsUpdate = true;
+    // NOTE: Don't set this.texture.needsUpdate = true when using GPU-side copyTextureToTexture!
+    // Setting needsUpdate re-uploads the CPU-side data (which is still black) and overwrites the GPU texture.
+    // Instead, manually increment the version to notify the material that the texture changed.
+    this.texture.version++;
     // console.log(`min: ${this.terrain.min}. max: ${this.terrain.max}.`);
 
     this.visualHelper.update();
@@ -162,4 +167,4 @@ class Planet {
 
     renderer.copyTextureToTexture(this.atlas, this.texture, atlasStart, new THREE.Vector2(u, v));
   }
-};
+}

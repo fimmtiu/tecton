@@ -50,10 +50,12 @@ class TextureManager {
             }
 
             context.drawImage(image, 0, 0);
-            TextureManager.dataTextures[name] = new THREE.DataTexture(
+            const dataTexture = new THREE.DataTexture(
               context.getImageData(0, 0, image.width, image.height).data,
               image.width, image.height, THREE.RGBAFormat
             );
+            dataTexture.needsUpdate = true;
+            TextureManager.dataTextures[name] = dataTexture;
             resolve(name)
           },
           (_ev) => {},
