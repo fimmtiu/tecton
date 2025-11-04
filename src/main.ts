@@ -27,7 +27,7 @@ const cellSpan = getSpan("voronoi-cell");
 const plateSpan = getSpan("plate");
 const waternessSpan = getSpan("waterness");
 
-const renderer = new THREE.WebGLRenderer();
+export const renderer = new THREE.WebGLRenderer();
 
 TextureManager.loadAll(() => {
   function initBrowserWindow(container: HTMLElement) {

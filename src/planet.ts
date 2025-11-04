@@ -7,34 +7,51 @@ import { Terrain } from "./terrain";
 import { VisualHelper } from "./visual_helper";
 import { scene } from "./scene_data";
 import { TextureManager } from "./texture_manager";
-import { TextureCopier } from "./texture_copier";
 import { PlanetMesh } from "./planet_mesh";
 import { Climate } from "./climate";
+import { renderer } from "./main";
 
 export { Planet, PLANET_RADIUS };
+
+const SWATCH_SIZE = 16;
+function texStartsAt(x: number, y: number) : THREE.Box2[] {
+  const startPoints = [
+    new THREE.Vector2(SWATCH_SIZE * x, SWATCH_SIZE * y),
+    new THREE.Vector2(SWATCH_SIZE * (x + 1), SWATCH_SIZE * y),
+    new THREE.Vector2(SWATCH_SIZE * x, SWATCH_SIZE * (y + 1)),
+    new THREE.Vector2(SWATCH_SIZE * (x + 1), SWATCH_SIZE * (y + 1)),
+  ];
+  return startPoints.map(function (v: THREE.Vector2) {
+    const endPoint = new THREE.Vector2();
+    const foo = new THREE.Box2(v, endPoint.copy(v).addScalar(SWATCH_SIZE));
+    console.log(`v = [${v.x}, ${v.y}]. v.add = [${endPoint.x}, ${endPoint.y}]`);
+    console.log(`texStartsAt: min [${foo.min.x}, ${foo.min.y}], max [${foo.max.x}, ${foo.max.y}]}`);
+
+    return new THREE.Box2(v, v.addScalar(SWATCH_SIZE));
+  });
+}
 
 const PIXELS_BETWEEN_VERTICES = 10;
 const PLANET_RADIUS = 6370; // each unit is 1 kilometer
 const TEXTURE_SIZE = 1600;
-const ATLAS_INDEX: { [biomeName: string]: number[] } = {
-  "snow": [0, 2048, 16, 2064],
-  "jungle": [4096, 6144, 4112, 6160],
-  "forest": [8192, 10240, 8208, 10256],
-  "plain": [12288, 14336, 12304, 14352],
-  "mountain": [32, 2080, 48, 2096],
-  "desert": [4128, 6176, 4144, 6192],
-  "grassland": [8224, 10272, 8240, 10288],
-  "water1": [12320, 14368, 12336, 14384],
-  "water2": [64, 2112, 80, 2128],
-  "water3": [4160, 6208, 4176, 6224],
-  "water4": [8256, 10304, 8272, 10320],
-  "water5": [12352, 14400, 12368, 14416],
-  "water6": [96, 2144, 112, 2160],
-  "water7": [4192, 6240, 4208, 6256],
-  "water8": [8288, 10336, 8304, 10352],
-  "water9": [12384, 14432, 12400, 14448],
+const ATLAS_INDEX: { [biomeName: string]: THREE.Box2[] } = {
+  "snow": texStartsAt(0, 0),
+  "jungle": texStartsAt(0, 2),
+  "forest": texStartsAt(0, 4),
+  "plain": texStartsAt(0, 6),
+  "mountain": texStartsAt(2, 0),
+  "desert": texStartsAt(2, 2),
+  "grassland": texStartsAt(2, 4),
+  "water1": texStartsAt(2, 6),
+  "water2": texStartsAt(4, 0),
+  "water3": texStartsAt(4, 2),
+  "water4": texStartsAt(4, 4),
+  "water5": texStartsAt(4, 6),
+  "water6": texStartsAt(6, 0),
+  "water7": texStartsAt(6, 2),
+  "water8": texStartsAt(6, 4),
+  "water9": texStartsAt(6, 6),
 }
-const SWATCH_SIZE = 16;
 
 class Planet {
   public sphere: THREE.Sphere;
@@ -45,7 +62,6 @@ class Planet {
   protected textureData: Uint8ClampedArray;
   protected texture: THREE.DataTexture;
   protected atlas: THREE.DataTexture;
-  protected copier: TextureCopier;
   protected width: number;
   protected height: number;
 
@@ -62,7 +78,6 @@ class Planet {
     this.texture.flipY = true;
     this.atlas = TextureManager.dataTextures["atlas.png"];
     this.atlas.flipY = true;
-    this.copier = new TextureCopier(this.atlas, this.texture, SWATCH_SIZE);
 
     this.createMesh(viewportWidth, viewportHeight);
   }
@@ -143,8 +158,8 @@ class Planet {
     const u = x * mesh.horizontalTexelsPerVertex, v = y * mesh.verticalTexelsPerVertex;
     const biome = this.terrain.biomeAt(worldPosition, height);
     const swatch = Math.abs(worldPosition.x) ^ Math.abs(worldPosition.y) ^ Math.abs(worldPosition.z) ^ height;
-    const atlasStart = ATLAS_INDEX[biome][Math.floor(swatch) % 4] * 4;
+    const atlasStart = ATLAS_INDEX[biome][Math.floor(swatch) % 4];
 
-    this.copier.copy(atlasStart, u, v);
+    renderer.copyTextureToTexture(this.atlas, this.texture, atlasStart, new THREE.Vector2(u, v));
   }
 };
