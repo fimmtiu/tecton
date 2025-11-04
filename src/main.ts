@@ -75,7 +75,6 @@ TextureManager.loadAll(() => {
   }
 
   function keyUpListener(event: KeyboardEvent) {
-    console.log(`up: code ${event.code}, key ${event.key}`);
     if (document.activeElement == randomSeedInput) {
       if (event.key == "Enter") {
         restart();

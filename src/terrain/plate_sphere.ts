@@ -15,10 +15,10 @@ export { PlateSphere };
 // that you can barely see. They cause some weird-looking effects.
 
 const VORONOI_DENSITY = 10;
-const STARTING_LAND_CELLS = 7;
-const STARTING_WATER_CELLS = 18; // TODO: Instead of this, could we make water spread faster than land?
+const STARTING_LAND_CELLS = 6;
+const STARTING_WATER_CELLS = 17;
 const SWITCH_CELLS = 10;
-const SWITCH_SPREAD_CHANCE = 0.4;
+const SWITCH_SPREAD_CHANCE = 0.6;
 const EDGES_SCALE_FACTOR = 1.07; // I want to make this smaller, but it causes the edges to flicker weirdly.
 
 class PlateSphere {
@@ -120,7 +120,6 @@ class PlateSphere {
 
     while (queue.length > 0) {
       const [cellId, plate] = <[number, Plate]> queue.shift();
-      this.plateCells[cellId].plate = plate;
       this.plateCells[cellId].plate = plate;
       for (const neighbour of shuffle(this.neighbours(cellId))) {
         if (!seen[neighbour]) {
