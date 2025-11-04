@@ -1,5 +1,8 @@
 import * as THREE from "three";
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import * as D3GeoVoronoi from "d3-geo-voronoi";
 
 import { PLANET_RADIUS } from "../planet";
@@ -19,7 +22,7 @@ const STARTING_LAND_CELLS = 6;
 const STARTING_WATER_CELLS = 17;
 const SWITCH_CELLS = 10;
 const SWITCH_SPREAD_CHANCE = 0.6;
-const EDGES_SCALE_FACTOR = 1.07; // I want to make this smaller, but it causes the edges to flicker weirdly.
+const EDGES_SCALE_FACTOR = 1.01;
 
 class PlateSphere {
   public readonly plateCells: PlateCell[] = [];
@@ -28,7 +31,7 @@ class PlateSphere {
 
   protected voronoi: any; // It comes from a 3rd-party library (d3-geo-voronoi) with no TypeScript support.
   protected polygons: Array<any>; // Ditto.
-  protected voronoiEdges: THREE.LineSegments;
+  protected voronoiEdges: LineSegments2;
   protected voronoiMesh: THREE.Mesh;
   protected islandLandPlate!: Plate;
   protected lakeWaterPlate!: Plate;
@@ -57,7 +60,7 @@ class PlateSphere {
   destroy() {
     scene.remove(this.voronoiEdges);
     this.voronoiEdges.geometry.dispose();
-    (<THREE.Material> this.voronoiEdges.material).dispose();
+    (this.voronoiEdges.material as LineMaterial).dispose();
     scene.remove(this.voronoiMesh);
     this.voronoiMesh.geometry.dispose();
   }
@@ -73,6 +76,7 @@ class PlateSphere {
   update() {
     scene.remove(this.voronoiEdges);
     this.voronoiEdges.geometry.dispose();
+    (this.voronoiEdges.material as LineMaterial).dispose();
     this.voronoiEdges = this.makeEdges();
     scene.add(this.voronoiEdges);
 
@@ -179,30 +183,59 @@ class PlateSphere {
     console.log(`${land} land cells, ${water} water cells (${land / (land + water) * 100}% land)`);
   }
 
-  static readonly LINE_MATERIALS = [
-    new THREE.LineBasicMaterial({ linewidth: 3.0, color: 0xff0000 }), // away
-    new THREE.LineBasicMaterial({ linewidth: 3.0, color: 0xffffff, transparent: true, opacity: 0.3 }), // neutral
-    new THREE.LineBasicMaterial({ linewidth: 3.0, color: 0x0000ff }), // towards
-  ];
-
   protected makeEdges() {
-    const positions = new THREE.BufferAttribute(new Float32Array(this.plateBoundaries.length * 6), 3);
-    const geometry = new THREE.BufferGeometry().setAttribute("position", positions);
+    const positions: number[] = [];
+    const colors: number[] = [];
+
+    const redColor = new THREE.Color(0xff0000);      // divergent plates
+    const neutralColor = new THREE.Color(0xffffff);  // plate boundary with no motion
+    const innerColor = new THREE.Color(0x999999);    // between cells on the same plate
+    const blueColor = new THREE.Color(0x0000ff);     // convergent plates
+
     for (let i = 0; i < this.plateBoundaries.length; i++) {
       const boundary = this.plateBoundaries[i];
-      positions.setXYZ(i * 2, boundary.startPoint.x, boundary.startPoint.y, boundary.startPoint.z);
-      positions.setXYZ(i * 2 + 1, boundary.endPoint.x, boundary.endPoint.y, boundary.endPoint.z);
+      const start = boundary.startPoint.clone().multiplyScalar(EDGES_SCALE_FACTOR);
+      const end = boundary.endPoint.clone().multiplyScalar(EDGES_SCALE_FACTOR);
 
-      let color = 1;
-      if (boundary.convergence > 0.3) {
-        color = 0;
+      positions.push(start.x, start.y, start.z);
+      positions.push(end.x, end.y, end.z);
+
+      let color: THREE.Color;
+      if (boundary.plateCells[0].plate.id === boundary.plateCells[1].plate.id) {
+        color = innerColor;
+      } else if (boundary.convergence > 0.3) {
+        color = redColor;
       } else if (boundary.convergence < -0.3) {
-        color = 2;
+        color = blueColor;
+      } else {
+        color = neutralColor;
       }
-      geometry.addGroup(i * 2, 2, color);
+
+      colors.push(color.r, color.g, color.b);
+      colors.push(color.r, color.g, color.b);
     }
-    geometry.scale(EDGES_SCALE_FACTOR, EDGES_SCALE_FACTOR, EDGES_SCALE_FACTOR);
-    return new THREE.LineSegments(geometry, PlateSphere.LINE_MATERIALS);
+
+    const geometry = new LineSegmentsGeometry();
+    geometry.setPositions(positions);
+    geometry.setColors(colors);
+
+    const material = new LineMaterial({
+      color: 0xffffff,
+      linewidth: 2,  // in pixels
+      vertexColors: true,
+      alphaToCoverage: true,  // helps with aliasing
+      depthTest: true,
+      depthFunc: THREE.LessEqualDepth,  // Allow lines at equal depth to render
+      polygonOffset: true,
+      polygonOffsetFactor: -1.0,  // Push lines forward in depth buffer to avoid clipping
+      polygonOffsetUnits: -1.0,
+    });
+
+    const width = (typeof window !== 'undefined') ? window.innerWidth : 1920;
+    const height = (typeof window !== 'undefined') ? window.innerHeight : 1080;
+    material.resolution.set(width, height);
+
+    return new LineSegments2(geometry, material);
   }
 
   // Find the neighbouring cell which shares the given line segment.
