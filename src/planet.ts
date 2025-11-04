@@ -74,10 +74,7 @@ class Planet {
     this.texture = new THREE.DataTexture(this.textureData, TEXTURE_SIZE, TEXTURE_SIZE, THREE.RGBAFormat);
     this.texture.flipY = true;
     this.atlas = TextureManager.dataTextures["atlas.png"];
-    // Don't flip atlas - copyTextureToTexture handles coordinate systems differently
-    // this.atlas.flipY = true;
 
-    // Force the renderer to upload both textures to GPU before we try to copy between them
     renderer.initTexture(this.atlas);
     renderer.initTexture(this.texture);
 
@@ -149,18 +146,21 @@ class Planet {
       positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
     }
     updateGeometry(this.mesh.geometry);
-    // NOTE: Don't set this.texture.needsUpdate = true when using GPU-side copyTextureToTexture!
-    // Setting needsUpdate re-uploads the CPU-side data (which is still black) and overwrites the GPU texture.
-    // Instead, manually increment the version to notify the material that the texture changed.
     this.texture.version++;
-    // console.log(`min: ${this.terrain.min}. max: ${this.terrain.max}.`);
 
     this.visualHelper.update();
   }
 
   // FIXME: This should be done by a fragment shader eventually. This is a ludicrously bad way to blit pixels.
   protected paintTextureOnVertex(mesh: PlanetMesh, x: number, y: number, worldPosition: THREE.Vector3, height: number) {
-    const u = x * mesh.horizontalTexelsPerVertex, v = y * mesh.verticalTexelsPerVertex;
+    const u = x * mesh.horizontalTexelsPerVertex;
+    let v = y * mesh.verticalTexelsPerVertex;
+
+    // Since this.texture has flipY = true, we need to flip the V coordinate
+    // copyTextureToTexture uses pixel coordinates where Y=0 is at the top,
+    // but flipY makes UV coordinate 0 appear at the bottom
+    v = TEXTURE_SIZE - v - SWATCH_SIZE;
+
     const biome = this.terrain.biomeAt(worldPosition, height);
     const swatch = Math.abs(worldPosition.x) ^ Math.abs(worldPosition.y) ^ Math.abs(worldPosition.z) ^ height;
     const atlasStart = ATLAS_INDEX[biome][Math.floor(swatch) % 4];
