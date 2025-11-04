@@ -4,6 +4,7 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import * as D3GeoVoronoi from "d3-geo-voronoi";
+import * as d3 from "d3-geo";
 
 import { PLANET_RADIUS } from "../planet";
 import { scene } from "../scene_data";
@@ -40,6 +41,7 @@ class PlateSphere {
     this.voronoi = D3GeoVoronoi.geoVoronoi(this.voronoiStartingPoints());
     this.polygons = this.voronoi.polygons().features;
 
+    this.lloydsRelaxation();
     this.setUpPlates();
     for (let i = 0; i < this.polygons.length; i++) {
       this.plateCells.push(new PlateCell(i, this.plates[0], this.convertLineSegments(i)));
@@ -93,6 +95,19 @@ class PlateSphere {
       "cell": this.plateCells[cell],
       "plate": this.plateCells[cell].plate,
     };
+  }
+
+  // Distributes the Voronoi cells more evenly to prevent weird tiny edges.
+  protected lloydsRelaxation() {
+    const iterations = 1;   // One seems like enough? 3 or more makes it look like hex paper.
+
+    for (let iter = 0; iter < iterations; iter++) {
+      const centroids = this.polygons.map(polygon => d3.geoCentroid(polygon));
+
+      // Regenerate the Voronoi diagram with the centroid points
+      this.voronoi = D3GeoVoronoi.geoVoronoi(centroids);
+      this.polygons = this.voronoi.polygons().features;
+    }
   }
 
   protected setUpPlates() {
@@ -222,6 +237,8 @@ class PlateSphere {
     const material = new LineMaterial({
       color: 0xffffff,
       linewidth: 2,  // in pixels
+      transparent: true,
+      opacity: 0.3,
       vertexColors: true,
       alphaToCoverage: true,  // helps with aliasing
       depthTest: true,
