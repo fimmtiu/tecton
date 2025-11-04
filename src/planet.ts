@@ -147,4 +147,4 @@ class Planet {
 
     this.copier.copy(atlasStart, u, v);
   }
-};
+}
