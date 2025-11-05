@@ -123,10 +123,11 @@ class Planet {
 
       // Add terrain height to the vertex.
       const worldPosition = this.mesh.localToWorld(newPosition.clone());
-      const height = this.terrain.normalizedHeightAt(worldPosition);
+      const height = this.terrain.heightAt(worldPosition);
+      console.log(`height: ${height}`);
       this.paintTextureOnVertex(this.mesh, u, v, worldPosition, height);
       if (height > 0) {
-        sphereCoords.radius += this.terrain.scaleHeight(height);
+        sphereCoords.radius += height;
         newPosition.setFromSpherical(sphereCoords);
       }
       positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
@@ -142,9 +143,12 @@ class Planet {
   protected paintTextureOnVertex(mesh: PlanetMesh, x: number, y: number, worldPosition: THREE.Vector3, height: number) {
     const u = x * mesh.horizontalTexelsPerVertex, v = y * mesh.verticalTexelsPerVertex;
     const biome = this.terrain.biomeAt(worldPosition, height);
+    console.log(`biome for height ${height}: ${biome}`);
     const swatch = Math.abs(worldPosition.x) ^ Math.abs(worldPosition.y) ^ Math.abs(worldPosition.z) ^ height;
     const atlasStart = ATLAS_INDEX[biome][Math.floor(swatch) % 4] * 4;
-
+    if (atlasStart == undefined || atlasStart > 128*128) {
+      console.log(`bad atlasStart for biome ${biome}: ${atlasStart}`);
+    }
     this.copier.copy(atlasStart, u, v);
   }
 }

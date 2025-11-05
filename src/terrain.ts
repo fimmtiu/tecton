@@ -9,8 +9,6 @@ export { Terrain };
 type Biome = Array<[number, string]>;
 
 const NOISE_SCALE = 6000;
-const MIN_ELEVATION = -11;  // 11 km is the deepest point on the Earth's surface.
-const MAX_ELEVATION = 9;    // Mount Everest is nearly 9 km high.
 const NOISE_LEVELS = [
   { offset: 1,    amplitude: 1    },
   { offset: 5.1,  amplitude: 1/4  },
@@ -23,19 +21,21 @@ const NOISE_LEVELS = [
 ];
 const MAX_AMPLITUDE = NOISE_LEVELS.reduce((n, level) => { return n + level.amplitude }, 0);
 
-// Some commonly used heights expressed in the -1.0 - 1.0 range.
-const HEIGHT_1_M = 1 / (MAX_ELEVATION * 1000);
-const HEIGHT_90_M = 90 / (MAX_ELEVATION * 1000);
-const HEIGHT_600_M = 600 / (MAX_ELEVATION * 1000);
-const DEPTH_1_M = 1 / (MIN_ELEVATION * 1000);
-const DEPTH_100_M = 100 / (MIN_ELEVATION * 1000);
-const DEPTH_6000_M = 6000 / (MIN_ELEVATION * 1000);
+// Some commonly used heights expressed in kilometers.
+const HEIGHT_1_M = 0.001;     // 1 meter in km
+const HEIGHT_90_M = 0.090;    // 90 meters in km
+const HEIGHT_600_M = 0.600;   // 600 meters in km
+const HEIGHT_MAX = 9.000;     // Mount Everest is nearly 9 km high.
+const DEPTH_1_M = -0.001;     // -1 meter in km
+const DEPTH_100_M = -0.100;   // -100 meters in km
+const DEPTH_6000_M = -6.000;  // -6000 meters in km
+const DEPTH_MIN = -11.000;    // -11 km is the deepest point on the Earth's surface.
 
 class Terrain {
   protected plateSphere: PlateSphere;
   public heightMap: HeightCubeField;
-  public min = 10000;
-  public max = -10000;
+  public min = 100000;
+  public max = -100000;
 
   constructor() {
     this.plateSphere = new PlateSphere();
@@ -67,7 +67,8 @@ class Terrain {
 
       if (heightCell.height > this.max) {
         this.max = heightCell.height;
-      } else if (heightCell.height < this.min) {
+      }
+      if (heightCell.height < this.min) {
         this.min = heightCell.height;
       }
     }
@@ -83,7 +84,7 @@ class Terrain {
     const heightMapCell = this.heightMap.cellIndexAtPoint(pointOnSphere);
     const face = this.heightMap.faceAtPoint(pointOnSphere);
     return {
-      "elevation": Math.round(this.scaleHeight(this.normalizedHeightAt(pointOnSphere)) * 1000),
+      "elevation": Math.round(this.heightAt(pointOnSphere) * 1000),
       "voronoiCell": plateData.cell.id,
       "plate": plateData.plate.id,
       "face": face,
@@ -94,48 +95,39 @@ class Terrain {
     }
   }
 
-  // Return the height at the given point as a float between -1.0 and 1.0, inclusive. (0.0 is sea level.)
-  // To get the height in kilometers, pass this number to scaleHeight().
-  normalizedHeightAt(pointOnSphere: THREE.Vector3) {
+  // Return the height at the given point in kilometers. (0.0 is sea level.)
+  heightAt(pointOnSphere: THREE.Vector3) {
     return this.heightMap.cellAtPoint(pointOnSphere).height;
-  }
-
-  scaleHeight(height: number) {
-    if (height < 0) {
-      return height * -MIN_ELEVATION;
-    } else {
-      return height * MAX_ELEVATION;
-    }
   }
 
   // FIXME: Later, biome calculation will take into account details like latitude, moisture, ocean currents, etc.
   // For now, though, it's just a simple function of height so that I can get texture mapping working.
   static readonly biomes: Biome = [
-    [-1.00, "water9"],
-    [-0.80, "water8"],
-    [-0.70, "water7"],
-    [-0.60, "water6"],
-    [-0.50, "water5"],
-    [-0.40, "water4"],
-    [-0.30, "water3"],
-    [-0.20, "water2"],
-    [-0.10, "water1"],
-    [ 0.00, "desert"],
-    [ 0.10, "plain"],
-    [ 0.20, "grassland"],
-    [ 0.30, "jungle"],
-    [ 0.40, "forest"],
-    [ 0.55, "mountain"],
-    [ 0.68, "snow"],
-    [10.00, "spaaaaaaaaaaaace!"],
+    [-11.00, "water9"],
+    [ -8.80, "water8"],
+    [ -7.70, "water7"],
+    [ -6.60, "water6"],
+    [ -5.50, "water5"],
+    [ -4.40, "water4"],
+    [ -3.30, "water3"],
+    [ -2.20, "water2"],
+    [ -1.10, "water1"],
+    [  0.00, "desert"],
+    [  0.90, "plain"],
+    [  1.80, "grassland"],
+    [  2.70, "jungle"],
+    [  3.60, "forest"],
+    [  4.95, "mountain"],
+    [  6.12, "snow"],
+    [ 90.00, "spaaaaaaaaaaaace!"],
   ]
-  biomeAt(_worldPos: THREE.Vector3, normalizedHeight: number) {
+  biomeAt(_worldPos: THREE.Vector3, heightInKm: number) {
     for (let i = 0; i < Terrain.biomes.length; i++) {
-      if (Terrain.biomes[i + 1][0] > normalizedHeight) {
+      if (Terrain.biomes[i + 1][0] > heightInKm) {
         return Terrain.biomes[i][1];
       }
     }
-    throw `Couldn't find a biome for height ${normalizedHeight}!`;
+    throw `Couldn't find a biome for height ${heightInKm}!`;
   }
 
   // Returns a predictable but random value in the range -1..1.
