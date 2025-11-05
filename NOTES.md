@@ -85,9 +85,5 @@ a separate CubeField.
 
 TO DO:
 
-- Replace the LineSegments plate boundaries with the LineSegments2 add-on, see if thicker lines will flicker less and
-  allow you to shrink EDGES_SCALE_FACTOR.
-- See if you can use WebGLRenderer.copyTextureToTexture() instead of the terrible manual-ass blitting you're doing now.
 - Change Terrain and HeightCubeField heights from [-1.0, 1.0] to meters. Way less confusing.
 - Port over the code from the old `tectonic-heightmaps` branch on GitHub
-- Do Lloyd's relaxation on the Voronoi cells during plate generation to remove weird artifacting edges
