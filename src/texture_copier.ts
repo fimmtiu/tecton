@@ -20,8 +20,8 @@ class TextureCopier {
     this.swatchCache = {};
   }
 
-  copy(srcStartAt: number, destX: number, destY: number) {
-    const swatch = this.getSwatch(srcStartAt);
+  copy(srcUpperLeft: THREE.Vector2, destX: number, destY: number) {
+    const swatch = this.getSwatch(srcUpperLeft);
     let rowCount: number, rowOffset: number, columnCount: number, xOffset: number;
     destX = Math.floor(destX);
     destY = Math.floor(destY);
@@ -58,7 +58,8 @@ class TextureCopier {
     }
   }
 
-  protected getSwatch(srcStartAt: number) {
+  protected getSwatch(srcUpperLeft: THREE.Vector2) {
+    const srcStartAt = (srcUpperLeft.y * this.atlas.image.width + srcUpperLeft.x) * 4;
     if (this.swatchCache[srcStartAt]) {
       return this.swatchCache[srcStartAt];
     }
