@@ -28,7 +28,7 @@ class VisualHelper {
   }
 
   destroy() {
-    for (let arrow of this.arrows) {
+    for (const arrow of this.arrows) {
       scene.remove(arrow);
     }
     this.arrows = [];
@@ -38,7 +38,7 @@ class VisualHelper {
       this.axes = null;
     }
 
-    for (let point of this.points) {
+    for (const point of this.points) {
       disposeMesh(point);
     }
     this.points = [];
@@ -86,14 +86,14 @@ class VisualHelper {
     }
 
     for (let i = 0; i < this.normalMeshes.length; i++) {
-      let positions = this.normalMeshes[i].geometry.attributes.position;
-      let index = this.normalMeshes[i].geometry.index;
+      const positions = this.normalMeshes[i].geometry.attributes.position;
+      const index = this.normalMeshes[i].geometry.index;
       if (index === null) {
         throw "not indexed, wtf?";
       }
-      let a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
-      let faceNormal = new THREE.Vector3(), midpoint = new THREE.Vector3();
-      let triangle = new THREE.Triangle();
+      const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+      const faceNormal = new THREE.Vector3(), midpoint = new THREE.Vector3();
+      const triangle = new THREE.Triangle();
 
       for (let j = 0; j < index.count; j++) {
         a.fromBufferAttribute(positions, index.getX((j * 3) + 0));
