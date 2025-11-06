@@ -1,9 +1,5 @@
 /node_modules/
-/build/
-/lib/
-/dist/
-/docs/
-.idea/*
+/worktrees/
 
 .DS_Store
 coverage
