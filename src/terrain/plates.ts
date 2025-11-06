@@ -31,6 +31,7 @@ const LAND_PLATE_COLORS = [
   new THREE.MeshBasicMaterial({ color: 0x006400 }),
 ];
 const PLATE_COLORS = WATER_PLATE_COLORS.concat(LAND_PLATE_COLORS);
+const CONVERGENCE_THRESHOLD = 0.3
 
 class PlateCell {
   public readonly id: number;
@@ -90,11 +91,13 @@ class Plate {
   public readonly direction: THREE.Vector2;
   public isLand: boolean;
   public interactsWithOthers = true;
+  public boundaries: Array<PlateBoundary>;
 
   constructor(id: number, isLand = false, direction: THREE.Vector2 | null = null) {
     this.id = id;
     this.isLand = isLand;
     this.direction = direction || new THREE.Vector2().random().setLength(1.0);
+    this.boundaries = [];
   }
 
   color() {
@@ -116,19 +119,30 @@ class PlateBoundary {
   public readonly convergence: number;
 
   constructor(cellA: PlateCell, cellB: PlateCell) {
-    this.plateCells = [cellA, cellB];
-    const sharedLineSegment = this.sharedLineSegment(); // FIXME: needs a consistent order
+    this.plateCells = [cellA, cellB].sort((a, b) => a.plate.id - b.plate.id);
+    const sharedLineSegment = this.sharedLineSegment();
     this.startPoint = sharedLineSegment[0];
     this.endPoint = sharedLineSegment[1];
     this.convergence = this.calculateConvergence();
   }
 
+  colliding() {
+    return this.convergence > CONVERGENCE_THRESHOLD;
+  }
+
+  diverging() {
+    return this.convergence < -CONVERGENCE_THRESHOLD;
+  }
+
+  otherPlate(plate: Plate) {
+    return this.plateCells[0].plate == plate ? this.plateCells[1].plate : this.plateCells[0].plate;
+  }
+
   protected sharedLineSegment() {
-    const sortedCells = this.plateCells.sort((a, b) => a.plate.id - b.plate.id);
-    for (let i = 0; i < sortedCells[0].lineSegments.length - 1; i++) {
-      for (let j = 0; j < sortedCells[1].lineSegments.length - 1; j++) {
-        const a = sortedCells[0].lineSegments[i], b = sortedCells[0].lineSegments[i + 1],
-              c = sortedCells[1].lineSegments[j], d = sortedCells[1].lineSegments[j + 1];
+    for (let i = 0; i < this.plateCells[0].lineSegments.length - 1; i++) {
+      for (let j = 0; j < this.plateCells[1].lineSegments.length - 1; j++) {
+        const a = this.plateCells[0].lineSegments[i], b = this.plateCells[0].lineSegments[i + 1],
+          c = this.plateCells[1].lineSegments[j], d = this.plateCells[1].lineSegments[j + 1];
         if (a.equals(c) && b.equals(d) || a.equals(d) && b.equals(c)) {
           return [a, b];
         }
@@ -161,11 +175,11 @@ class PlateBoundary {
 
     if (!PlateBoundary.relativePlateVelocities[key]) {
       if (plateA.id % 2 > plateB.id % 2) {
-        PlateBoundary.relativePlateVelocities[key] = THREE.MathUtils.randFloat(0.3, 1.0);
+        PlateBoundary.relativePlateVelocities[key] = THREE.MathUtils.randFloat(CONVERGENCE_THRESHOLD, 1.0);
       } else if (plateA.id % 2 < plateB.id % 2) {
-        PlateBoundary.relativePlateVelocities[key] = THREE.MathUtils.randFloat(-1.0, -0.3);
+        PlateBoundary.relativePlateVelocities[key] = THREE.MathUtils.randFloat(-1.0, -CONVERGENCE_THRESHOLD);
       } else {
-        PlateBoundary.relativePlateVelocities[key] = THREE.MathUtils.randFloat(-0.3, 0.3);
+        PlateBoundary.relativePlateVelocities[key] = THREE.MathUtils.randFloat(-CONVERGENCE_THRESHOLD, CONVERGENCE_THRESHOLD);
       }
     }
     return PlateBoundary.relativePlateVelocities[key];

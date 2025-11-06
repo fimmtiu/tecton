@@ -89,7 +89,8 @@ class Planet {
       viewportWidth, viewportHeight,
       Math.max(horizontalVertices, verticalVertices),
       Math.max(horizontalVertices, verticalVertices),
-      new THREE.MeshStandardMaterial({ map: this.texture, side: THREE.FrontSide })
+      new THREE.MeshStandardMaterial({ map: this.texture, side: THREE.FrontSide }),
+      true
     );
     scene.add(this.mesh);
   }
@@ -143,7 +144,7 @@ class Planet {
         sphereCoords.radius += height;
         newPosition.setFromSpherical(sphereCoords);
       }
-      positions.setXYZ(i, newPosition.x, newPosition.y, newPosition.z);
+      this.mesh.updatePoint(i, newPosition);
     }
     updateGeometry(this.mesh.geometry);
     this.texture.needsUpdate = true;

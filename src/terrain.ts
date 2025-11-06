@@ -1,8 +1,9 @@
 import * as THREE from "three";
 
 import { PlateSphere } from "./terrain/plate_sphere";
-import { HeightCubeField } from "./terrain/height_cube_field";
+import { HeightCubeField, HeightCell } from "./terrain/height_cube_field";
 import { noiseGenerator } from "./util";
+import { Plate, PlateBoundary } from "./terrain/plates";
 
 export { Terrain };
 
@@ -29,7 +30,7 @@ const HEIGHT_MAX = 9.000;     // Mount Everest is nearly 9 km high.
 const DEPTH_1_M = -0.001;     // -1 meter in km
 const DEPTH_100_M = -0.100;   // -100 meters in km
 const DEPTH_6000_M = -6.000;  // -6000 meters in km
-const DEPTH_MIN = -11.000;    // -11 km is the deepest point on the Earth's surface.
+const DEPTH_MAX = -11.000;    // -11 km is the deepest point on the Earth's surface.
 
 class Terrain {
   protected plateSphere: PlateSphere;
@@ -65,6 +66,7 @@ class Terrain {
         }
       }
 
+      heightCell.height += this.tectonicHeightAdjustment(heightCell, i);
       if (heightCell.height > this.max) {
         this.max = heightCell.height;
       }
@@ -130,6 +132,70 @@ class Terrain {
     throw `Couldn't find a biome for height ${heightInKm}!`;
   }
 
+  // `cell` is just for debugging.
+  protected tectonicHeightAdjustment(heightCell: HeightCell, cell: number) {
+    const plate = this.plateSphere.plateAtPoint(heightCell.center);
+    let adjustment = 0;
+
+    for (const [boundary, distance] of this.closestDistanceToAdjacentPlates(heightCell.center, plate)) {
+      if (boundary.colliding()) {
+        if (boundary.plateCells[0].plate.isLand && boundary.plateCells[1].plate.isLand) {
+          // Land-land plate collision that generates a mountain range.
+          // if (this.landToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)) {
+          //   console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, land/land mountain ${this.landToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)}`);
+          // }
+          adjustment += this.landToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence);
+
+        } else if (!boundary.plateCells[0].plate.isLand && !boundary.plateCells[1].plate.isLand) {
+          // Ocean-ocean plate collision that generates an oceanic trench.
+          const trenchHeight = this.oceanTrenchHeight(distance, 300 * boundary.convergence, boundary.convergence);
+          // if (trenchHeight) {
+          //   console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, conv ${boundary.convergence}, ocean trench ${trenchHeight}, base ${heightCell.height}, adj ${adjustment + trenchHeight}`);
+          // }
+          adjustment += trenchHeight;
+
+        } else {
+          // Land-ocean plate collision that generates a mountain range on the land cell and a short shelf on the ocean.
+          if (plate.isLand) {
+            // if (this.oceanToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)) {
+            //   console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, land/ocean mountain ${this.oceanToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)}`);
+            // }
+            adjustment += this.oceanToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)
+
+          } else {
+            // if (this.continentalShelfHeight(distance, 80 * boundary.convergence)) {
+            //   console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, continental shelf ${this.continentalShelfHeight(distance, 80 * boundary.convergence)}`);
+            // }
+            adjustment += this.continentalShelfHeight(distance, 80 * boundary.convergence);
+          }
+        }
+      } else if (boundary.diverging()) {
+        // do divergent stuff FIXME
+      }
+    }
+
+    return adjustment;
+  }
+
+  // FIXME: better variable names, for Christ's sake
+  // https://monkeyproofsolutions.nl/wordpress/how-to-calculate-the-shortest-distance-between-a-point-and-a-line/
+  // These line segments are short enough that we don't need to take the globe's curvature into account.
+  protected distanceToLine(lineStart: THREE.Vector3, lineEnd: THREE.Vector3, point: THREE.Vector3) {
+    const m = new THREE.Vector3().subVectors(lineEnd, lineStart);
+    const pma = new THREE.Vector3().subVectors(point, lineStart);
+    const t = pma.dot(m) / m.dot(m);
+
+    if (t < 0) {
+      return point.distanceTo(lineStart);
+    } else if (t > 1) {
+      return point.distanceTo(lineEnd);
+    } else {
+      const t0m = m.clone().multiplyScalar(t);
+      const intersection = lineStart.clone().add(t0m);
+      return point.distanceTo(intersection);
+    }
+  }
+
   // Returns a predictable but random value in the range -1..1.
   protected noise(point: THREE.Vector3, offset: number, amplitude: number) {
     return noiseGenerator().noise3D(
@@ -153,5 +219,87 @@ class Terrain {
     height = height * range + min;    // Convert it to the range min..max.
 
     return height;
+  }
+
+  protected closestDistanceToAdjacentPlates(cellCenter: THREE.Vector3, plate: Plate) {
+    const closestDistances: { [plateId: number]: [PlateBoundary, number] } = {};
+
+    for (const boundary of plate.boundaries) {
+      const distance = this.distanceToLine(boundary.startPoint, boundary.endPoint, cellCenter);
+      const otherPlate = boundary.otherPlate(plate);
+
+      if (!(otherPlate.id in closestDistances) || closestDistances[otherPlate.id][1] > distance) {
+        closestDistances[otherPlate.id] = [boundary, distance];
+      }
+    }
+    return Object.values(closestDistances);
+  }
+
+  // dist: The distance in km between the given point and the plate boundary.
+  // height: [0.0 - 1.0] The maximum height of the range at its center.
+  // width: The "radius" of the range, the distance from the summits to the plains in km.
+  protected landToLandMountainHeight(dist: number, width: number, height: number) {
+    // FIXME: Should we vary it up with a random factor here, or rely purely on noise for that?
+    if (dist > width) {
+      return 0;
+    }
+    const x = dist / width;
+    // console.log(`LL mountain height: dist ${dist}, width ${width}, x ${dist / width} height ${height}, ${(Math.cos(Math.PI * x) + height) / 2}`);
+    return (Math.cos(Math.PI * x) * (height * HEIGHT_MAX) + 1) / 2;
+  }
+
+  // dist: The distance in km between the given point and the plate boundary.
+  // height: [0.0 - 1.0] The maximum height of the range at its center.
+  // width: The "radius" of the range, the distance from the summits to the plains in km.
+  protected oceanToLandMountainHeight(dist: number, width: number, height: number) {
+    if (dist > width) {
+      return 0;
+    }
+    // console.log(`OL mountain height: ${(Math.cos(2 * Math.PI * ((dist / width) ** 2)) + 1) / 2 * height}`);
+    return (Math.cos(2 * Math.PI * ((dist / width) ** 2)) + 1) / 2 * (height * HEIGHT_MAX);
+  }
+
+  // dist: The distance in km between the given point and the plate boundary.
+  // width: The distance the shelf should extend into the ocean.
+  protected continentalShelfHeight(dist: number, width: number) {
+    if (dist > width) {
+      return 0;
+    }
+    // FIXME: This gets added to the continental shelves from initial heightmap generation, rather than
+    // replacing them. We need to destroy existing continental shelves when we do this.
+    return THREE.MathUtils.lerp(DEPTH_1_M, DEPTH_100_M, dist / width);
+  }
+
+  // dist: The distance in km between the given point and the plate boundary.
+  // depth: [0.0 - 1.0] The maximum depth of the trench at its center.
+  // width: Radius of the trench area in km.
+  protected oceanTrenchHeight(dist: number, width: number, depth: number) {
+    if (dist > width) {
+      return 0;
+    }
+    // console.log(`Trench x ${dist / width}, depth ${depth}, height: ${-(Math.cos(dist / width / 2) ** 50) * depth}`);
+    return -(Math.cos(dist / width / 2) ** 50) * (depth * DEPTH_MAX);
+  }
+
+  // dist: The distance in km between the given point and the plate boundary.
+  // width: Width of the trench area in km.
+  // The height of real-world ocean ridges is generally around 2,000 km.
+  protected oceanicRidgeHeight(dist: number, width: number) {
+    if (dist > width) {
+      return 0;
+    }
+    const x = dist / width;
+    return Math.abs(Math.cos(x / 10)) * (x ** 1.2 + 1);
+  }
+
+  // dist: The distance in km between the given point and the plate boundary.
+  // depth: [0.0 - 1.0] The maximum depth of the valley at its center.
+  // width: Radius of the valley area in km.
+  // (For now it's the same as the ocean trench code. Might adjust them separately later.)
+  protected riftValleyHeight(dist: number, width: number, depth: number) {
+    if (dist > width) {
+      return 0;
+    }
+    return (Math.cos(dist / width / 2) ** 50) * (depth * DEPTH_MAX);
   }
 }

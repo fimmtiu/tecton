@@ -97,6 +97,12 @@ class PlateSphere {
     };
   }
 
+  plateAtPoint(point: THREE.Vector3) {
+    const coord = GeoCoord.fromWorldVector(point);
+    const cell = this.voronoi.find(coord.lon, coord.lat);
+    return this.plateCells[cell].plate;
+  }
+
   // Distributes the Voronoi cells more evenly to prevent weird tiny edges.
   protected lloydsRelaxation() {
     const iterations = 1;   // One seems like enough? 3 or more makes it look like hex paper.
@@ -176,9 +182,14 @@ class PlateSphere {
         const hash1 = `${v2s(pointA)},${v2s(pointB)}`;
         const hash2 = `${v2s(pointB)},${v2s(pointA)}`;
         if (!seen[hash1] && !seen[hash2]) {
-          const thisPlate = this.plateCells[i];
-          const adjacentPlate = this.plateCells[this.neighbour(i, pointA, pointB)];
-          this.plateBoundaries.push(new PlateBoundary(thisPlate, adjacentPlate));
+          const thisPlateCell = this.plateCells[i];
+          const adjacentPlateCell = this.plateCells[this.neighbour(i, pointA, pointB)];
+          if (thisPlateCell.plate.id != adjacentPlateCell.plate.id) {
+            const boundary = new PlateBoundary(thisPlateCell, adjacentPlateCell);
+            this.plateBoundaries.push(boundary);
+            thisPlateCell.plate.boundaries.push(boundary);
+            adjacentPlateCell.plate.boundaries.push(boundary);
+          }
           seen[hash1] = seen[hash2] = true;
         }
       }
@@ -204,7 +215,6 @@ class PlateSphere {
 
     const redColor = new THREE.Color(0xff0000);      // divergent plates
     const neutralColor = new THREE.Color(0xffffff);  // plate boundary with no motion
-    const innerColor = new THREE.Color(0x999999);    // between cells on the same plate
     const blueColor = new THREE.Color(0x0000ff);     // convergent plates
 
     for (let i = 0; i < this.plateBoundaries.length; i++) {
@@ -216,11 +226,9 @@ class PlateSphere {
       positions.push(end.x, end.y, end.z);
 
       let color: THREE.Color;
-      if (boundary.plateCells[0].plate.id === boundary.plateCells[1].plate.id) {
-        color = innerColor;
-      } else if (boundary.convergence > 0.3) {
+      if (boundary.diverging()) {
         color = redColor;
-      } else if (boundary.convergence < -0.3) {
+      } else if (boundary.colliding()) {
         color = blueColor;
       } else {
         color = neutralColor;
