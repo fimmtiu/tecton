@@ -117,7 +117,6 @@ class Planet {
   // FIXME: This method is too long. Needs extraction.
   update(camera: PlanetCamera) {
     // Make the planet mesh and all of its child meshes turn to look at the new camera position.
-    // FIXME: Is it a problem that we calculate visible radians before calling lookAt() to move the mesh?
     this.mesh.lookAt(camera.position);
 
     const horizRadiansPerCell = camera.horizontalRadiansInView / this.mesh.horizontalVertices;
@@ -126,27 +125,27 @@ class Planet {
     const sphereCoords = new THREE.Spherical();
     const newPosition = new THREE.Vector3();
 
-    for (let i = 0; i < positions.count; i++) {
-      const u = i % this.mesh.horizontalVertices;
-      const v = Math.floor(i / this.mesh.horizontalVertices);
+    this.mesh.update(camera);
+    // for (let i = 0; i < positions.count; i++) {
+    //   const u = i % this.mesh.horizontalVertices;
+    //   const v = Math.floor(i / this.mesh.horizontalVertices);
 
-      // Calculate where this vertex should go on the sea-level sphere.
-      sphereCoords.theta = horizRadiansPerCell * (u - this.mesh.halfHorizLength);
-      sphereCoords.phi = vertRadiansPerCell * (v - this.mesh.halfVertLength) + Math.PI / 2;
-      sphereCoords.radius = PLANET_RADIUS;
-      newPosition.setFromSpherical(sphereCoords);
+    //   // Calculate where this vertex should go on the sea-level sphere.
+    //   sphereCoords.theta = horizRadiansPerCell * (u - this.mesh.halfHorizLength);
+    //   sphereCoords.phi = vertRadiansPerCell * (v - this.mesh.halfVertLength) + Math.PI / 2;
+    //   sphereCoords.radius = PLANET_RADIUS;
+    //   newPosition.setFromSpherical(sphereCoords);
 
-      // Add terrain height to the vertex.
-      const worldPosition = this.mesh.localToWorld(newPosition.clone());
-      const height = this.terrain.heightAt(worldPosition);
-      this.paintTextureOnVertex(this.mesh, u, v, worldPosition, height);
-      if (height > 0) {
-        sphereCoords.radius += height;
-        newPosition.setFromSpherical(sphereCoords);
-      }
-      this.mesh.updatePoint(i, newPosition);
-    }
-    updateGeometry(this.mesh.geometry);
+    //   // Add terrain height to the vertex.
+    //   const worldPosition = this.mesh.localToWorld(newPosition.clone());
+    //   const height = this.terrain.heightAt(worldPosition);
+    //   this.paintTextureOnVertex(this.mesh, u, v, worldPosition, height);
+    //   if (height > 0) {
+    //     sphereCoords.radius += height;
+    //     newPosition.setFromSpherical(sphereCoords);
+    //   }
+    //   this.mesh.updatePoint(i, newPosition);
+    // }
     this.texture.needsUpdate = true;
 
     this.visualHelper.update();

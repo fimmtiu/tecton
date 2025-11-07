@@ -4,19 +4,15 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import * as D3GeoVoronoi from "d3-geo-voronoi";
-import * as d3 from "d3-geo";
 
 import { PLANET_RADIUS } from "../planet";
 import { scene } from "../scene_data";
 import { v2s, sample, shuffle } from "../util";
 import { GeoCoord } from "../util/geo_coord";
-import { randomlyJitterVertices, wrapMeshAroundSphere } from "../util/geometry";
-import { PlateCell, Plate, PlateBoundary, PLATE_COLORS } from "./plates";
+import { randomlyJitterVertices, wrapMeshAroundSphere, sphericalLloydsRelaxation } from "../util/geometry";
+import { PlateCell, Plate, PlateBoundary } from "./plates";
 
 export { PlateSphere };
-
-// TODO: I'd like to do some Lloyd's relaxation on the Voronoi cells to reduce the number of little tiny edges
-// that you can barely see. They cause some weird-looking effects.
 
 const VORONOI_DENSITY = 10;
 const STARTING_LAND_CELLS = 6;
@@ -33,15 +29,14 @@ class PlateSphere {
   protected voronoi: any; // It comes from a 3rd-party library (d3-geo-voronoi) with no TypeScript support.
   protected polygons: Array<any>; // Ditto.
   protected voronoiEdges: LineSegments2;
-  protected voronoiMesh: THREE.Mesh;
   protected islandLandPlate!: Plate;
   protected lakeWaterPlate!: Plate;
 
   constructor() {
     this.voronoi = D3GeoVoronoi.geoVoronoi(this.voronoiStartingPoints());
+    this.voronoi = sphericalLloydsRelaxation(this.voronoi, 1);   // Distributes the Voronoi cells more evenly to prevent weird tiny edges.
     this.polygons = this.voronoi.polygons().features;
 
-    this.lloydsRelaxation();
     this.setUpPlates();
     for (let i = 0; i < this.polygons.length; i++) {
       this.plateCells.push(new PlateCell(i, this.plates[0], this.convertLineSegments(i)));
@@ -54,17 +49,12 @@ class PlateSphere {
 
     this.voronoiEdges = this.makeEdges();
     scene.add(this.voronoiEdges);
-
-    this.voronoiMesh = this.makeTriangleMesh();
-    // scene.add(this.voronoiMesh);
   }
 
   destroy() {
     scene.remove(this.voronoiEdges);
     this.voronoiEdges.geometry.dispose();
     (this.voronoiEdges.material as LineMaterial).dispose();
-    scene.remove(this.voronoiMesh);
-    this.voronoiMesh.geometry.dispose();
   }
 
   cellCount() {
@@ -81,11 +71,6 @@ class PlateSphere {
     (this.voronoiEdges.material as LineMaterial).dispose();
     this.voronoiEdges = this.makeEdges();
     scene.add(this.voronoiEdges);
-
-    scene.remove(this.voronoiMesh);
-    this.voronoiMesh.geometry.dispose();
-    this.voronoiMesh = this.makeTriangleMesh();
-    // scene.add(this.voronoiMesh);
   }
 
   dataAtPoint(point: THREE.Vector3) {
@@ -101,19 +86,6 @@ class PlateSphere {
     const coord = GeoCoord.fromWorldVector(point);
     const cell = this.voronoi.find(coord.lon, coord.lat);
     return this.plateCells[cell].plate;
-  }
-
-  // Distributes the Voronoi cells more evenly to prevent weird tiny edges.
-  protected lloydsRelaxation() {
-    const iterations = 1;   // One seems like enough? 3 or more makes it look like hex paper.
-
-    for (let iter = 0; iter < iterations; iter++) {
-      const centroids = this.polygons.map(polygon => d3.geoCentroid(polygon));
-
-      // Regenerate the Voronoi diagram with the centroid points
-      this.voronoi = D3GeoVoronoi.geoVoronoi(centroids);
-      this.polygons = this.voronoi.polygons().features;
-    }
   }
 
   protected setUpPlates() {
@@ -274,44 +246,6 @@ class PlateSphere {
       }
     }
     throw `Can't find a neighbour for cell ${cell}!`;
-  }
-
-  protected makeTriangleMesh() {
-    const cellToMeshTriangle = [];
-    let triangleCount = 0;
-    for (let i = 0; i < this.polygons.length; i++) {
-      triangleCount += this.polygons[i].geometry.coordinates[0].length + 1;
-    }
-
-    const positions = new THREE.BufferAttribute(new Float32Array(triangleCount * 9), 3);
-    triangleCount = 0;
-    let vertexCount = 0;
-    for (let i = 0; i < this.polygons.length; i++) {
-      const polygon = this.polygons[i].geometry.coordinates[0];
-      const firstVertex = new GeoCoord(polygon[0][1], polygon[0][0]).toWorldVector();
-      cellToMeshTriangle[i] = { plateCell: this.plateCells[i], startVertex: vertexCount, numVertices: 0 };
-
-      for (let j = 1; j < polygon.length - 2; j++) {
-        const secondVertex = new GeoCoord(polygon[j][1], polygon[j][0]).toWorldVector();
-        const thirdVertex = new GeoCoord(polygon[j + 1][1], polygon[j + 1][0]).toWorldVector();
-
-        cellToMeshTriangle[i]["numVertices"]++;
-        positions.setXYZ(vertexCount++, firstVertex.x, firstVertex.y, firstVertex.z);
-        cellToMeshTriangle[i]["numVertices"]++;
-        positions.setXYZ(vertexCount++, thirdVertex.x, thirdVertex.y, thirdVertex.z); // reverse the vertex order
-        cellToMeshTriangle[i]["numVertices"]++;
-        positions.setXYZ(vertexCount++, secondVertex.x, secondVertex.y, secondVertex.z);
-      }
-    }
-
-    const geometry = new THREE.BufferGeometry().setAttribute("position", positions);
-    for (let i = 0; i < cellToMeshTriangle.length; i++) {
-      const color = this.plateCells[i].plate.color();
-      geometry.addGroup(cellToMeshTriangle[i]["startVertex"], cellToMeshTriangle[i]["numVertices"], color);
-    }
-    const newGeometry = BufferGeometryUtils.mergeVertices(geometry);
-    geometry.dispose()
-    return new THREE.Mesh(newGeometry, PLATE_COLORS);
   }
 
   protected voronoiStartingPoints() {

@@ -1,7 +1,11 @@
 import * as THREE from "three";
-import { sphericalFromCoords } from "./util";
-import { disposeMesh } from "./util/geometry";
+import { disposeMesh, updateGeometry } from "./util/geometry";
 import { scene } from "./scene_data";
+import { PLANET_RADIUS } from "./planet";
+import { PlanetCamera } from "./planet_camera";
+import { Delaunay } from "d3-delaunay";
+import * as d3Polygon from "d3-polygon";
+
 
 export { PlanetMesh };
 
@@ -62,6 +66,50 @@ class PlanetMesh extends THREE.Mesh {
     disposeMesh(this);
   }
 
+  update(camera: PlanetCamera) {
+    const positions = this.geometry.getAttribute("position");
+    const screenSpacePositions = new Array<Array<number>>(positions.count); // FIXME: Too much allocation. Cache this.
+
+    for (let i = 0; i < positions.count; i++) {
+      const position = new THREE.Vector3(positions.getX(i), positions.getY(i), positions.getZ(i));
+      screenSpacePositions[i] = camera.worldCoordsToScreenCoords(position).toArray();
+    }
+
+    const delaunay = Delaunay.from(screenSpacePositions);
+    delaunay.voronoi().cellPolygons().forEach((polygon: any, index: number) => {
+      screenSpacePositions[index] = d3Polygon.polygonCentroid(polygon);   // Lloyd's relaxation, to move points away from each other.
+    });
+
+    for (let i = 0; i < screenSpacePositions.length; i++) {
+      const worldPosition = camera.screenCoordsToWorldCoords(screenSpacePositions[i][0], screenSpacePositions[i][1]);
+      positions.setXYZ(i, worldPosition.x, worldPosition.y, worldPosition.z);
+    }
+
+    // Project the points back onto the sphere.
+    let fuckedPoints = 0;
+    for (let i = 0; i < positions.count; i++) {
+      const position = new THREE.Vector3(positions.getX(i), positions.getY(i), positions.getZ(i));
+      const ray = new THREE.Ray(position, camera.getWorldDirection(new THREE.Vector3()));
+      console.log(`Position was ${position.x}, ${position.y}, ${position.z}`);
+      if (camera.intersect(ray, position)) {
+        console.log(`Position is now ${position.x}, ${position.y}, ${position.z}`);
+        positions.setXYZ(i, position.x, position.y, position.z);
+        if (this.showVertices && this.meshVertices) {
+          const offsetPosition = position.clone().addScalar(0.005);
+          this.meshVertices.geometry.getAttribute("position").setXYZ(i, offsetPosition.x, offsetPosition.y, offsetPosition.z);
+        }
+      } else {
+        fuckedPoints++;
+      }
+    }
+    console.log(`Fucked points: ${fuckedPoints}`);
+
+    updateGeometry(this.geometry)
+    if (this.meshVertices) {
+      updateGeometry(this.meshVertices.geometry)
+    }
+  }
+
   updatePoint(index: number, newPosition: THREE.Vector3) {
     const positions = this.geometry.getAttribute("position");
     positions.setXYZ(index, newPosition.x, newPosition.y, newPosition.z);
@@ -70,24 +118,5 @@ class PlanetMesh extends THREE.Mesh {
       const offsetPosition = newPosition.clone().addScalar(0.005);
       this.meshVertices.geometry.getAttribute("position").setXYZ(index, offsetPosition.x, offsetPosition.y, offsetPosition.z);
     }
-  }
-
-  updateCurvature(topLeftCorner: THREE.Vector3, bottomRightCorner: THREE.Vector3) {
-    if (topLeftCorner && bottomRightCorner) {
-      this.rotateCornersToEquator(topLeftCorner, bottomRightCorner);
-      const topLeftSph = sphericalFromCoords(topLeftCorner);
-      const bottomRightSph = sphericalFromCoords(bottomRightCorner);
-      this.horizontalRadiansPerCell = Math.abs(bottomRightSph.theta - topLeftSph.theta) / (this.horizontalVertices - 1);
-      this.verticalRadiansPerCell = Math.abs(bottomRightSph.phi - topLeftSph.phi) / (this.verticalVertices - 1);
-    }
-  }
-
-  // For the flat mesh, the math for working out the angles only works if we assume that all points lie near the
-  // equator, but freaks out around the poles. The simplest (though not necessarily best) solution is to just move
-  // the corners to near the equator before we calculate the mesh deformation.
-  protected rotateCornersToEquator(topLeftCorner: THREE.Vector3, bottomRightCorner: THREE.Vector3) {
-    const rotation = new THREE.Quaternion().setFromEuler(this.rotation).conjugate();
-    topLeftCorner.applyQuaternion(rotation);
-    bottomRightCorner.applyQuaternion(rotation);
   }
 }
