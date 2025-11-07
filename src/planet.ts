@@ -125,27 +125,27 @@ class Planet {
     const sphereCoords = new THREE.Spherical();
     const newPosition = new THREE.Vector3();
 
-    this.mesh.update(camera);
-    // for (let i = 0; i < positions.count; i++) {
-    //   const u = i % this.mesh.horizontalVertices;
-    //   const v = Math.floor(i / this.mesh.horizontalVertices);
+    for (let i = 0; i < positions.count; i++) {
+      const u = i % this.mesh.horizontalVertices;
+      const v = Math.floor(i / this.mesh.horizontalVertices);
 
-    //   // Calculate where this vertex should go on the sea-level sphere.
-    //   sphereCoords.theta = horizRadiansPerCell * (u - this.mesh.halfHorizLength);
-    //   sphereCoords.phi = vertRadiansPerCell * (v - this.mesh.halfVertLength) + Math.PI / 2;
-    //   sphereCoords.radius = PLANET_RADIUS;
-    //   newPosition.setFromSpherical(sphereCoords);
+      // Calculate where this vertex should go on the sea-level sphere.
+      sphereCoords.theta = horizRadiansPerCell * (u - this.mesh.halfHorizLength);
+      sphereCoords.phi = vertRadiansPerCell * (v - this.mesh.halfVertLength) + Math.PI / 2;
+      sphereCoords.radius = PLANET_RADIUS;
+      newPosition.setFromSpherical(sphereCoords);
 
-    //   // Add terrain height to the vertex.
-    //   const worldPosition = this.mesh.localToWorld(newPosition.clone());
-    //   const height = this.terrain.heightAt(worldPosition);
-    //   this.paintTextureOnVertex(this.mesh, u, v, worldPosition, height);
-    //   if (height > 0) {
-    //     sphereCoords.radius += height;
-    //     newPosition.setFromSpherical(sphereCoords);
-    //   }
-    //   this.mesh.updatePoint(i, newPosition);
-    // }
+      // Add terrain height to the vertex.
+      const worldPosition = this.mesh.localToWorld(newPosition.clone());
+      const height = this.terrain.heightAt(worldPosition);
+      this.paintTextureOnVertex(this.mesh, u, v, worldPosition, height);
+      if (height > 0) {
+        sphereCoords.radius += height;
+        newPosition.setFromSpherical(sphereCoords);
+      }
+      this.mesh.updatePoint(i, newPosition);
+    }
+    updateGeometry(this.mesh.geometry);
     this.texture.needsUpdate = true;
 
     this.visualHelper.update();

@@ -24,10 +24,6 @@ class PlanetCamera extends THREE.PerspectiveCamera {
   public height!: number;
   public horizontalRadiansInView!: number;
   public verticalRadiansInView!: number;
-  public nearPlaneHeight!: number;
-  public nearPlaneWidth!: number;
-  public nearPlaneHalfWidth!: number;
-  public nearPlaneHalfHeight!: number;
 
   constructor(planet: Planet, viewportWidth: number, viewportHeight: number) {
     super(FIELD_OF_VIEW, viewportWidth / viewportHeight, 0.01, MAX_ZOOM + PLANET_RADIUS);
@@ -36,18 +32,10 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     this.updateOnResize(viewportWidth, viewportHeight);
   }
 
-  nearPlane() {
-    return new THREE.Plane(this.getWorldDirection(new THREE.Vector3()), this.near);
-  }
-
   updateOnResize(newWidth: number, newHeight: number) {
     this.width = newWidth;
     this.height = newHeight;
     this.aspect = newWidth / newHeight;
-    this.nearPlaneHeight = 2 * Math.tan((this.fov / 2) * Math.PI / 180) * this.near;
-    this.nearPlaneWidth = this.nearPlaneHeight * this.aspect;
-    this.nearPlaneHalfWidth = this.nearPlaneWidth / 2;
-    this.nearPlaneHalfHeight = this.nearPlaneHeight / 2;
     this.planet.resize(newWidth, newHeight);
     this.updateOnMove();
     this.updateOnZoom();
@@ -145,26 +133,6 @@ class PlanetCamera extends THREE.PerspectiveCamera {
 
   intersect(ray: THREE.Ray, outputVector: THREE.Vector3) {
     return (ray.intersectSphere(this.planet.sphere, outputVector) !== null);
-  }
-
-  // Returns the coordinates of the given point in screen space. Clamps the point to the edges of the near plane if
-  // it's outside the camera's frustum.
-  worldCoordsToScreenCoords(position: THREE.Vector3) : THREE.Vector2 {
-    const planarPosition = position.clone().projectOnPlane(this.nearPlane().normal);
-    planarPosition.applyMatrix4(this.matrixWorldInverse);
-
-    // Check if the position is outside the frustum and clamp to nearest edge
-    const clampedX = THREE.MathUtils.clamp(planarPosition.x, -this.nearPlaneHalfWidth, this.nearPlaneHalfWidth);
-    const clampedY = THREE.MathUtils.clamp(planarPosition.y, -this.nearPlaneHalfHeight, this.nearPlaneHalfHeight);
-    if (clampedX !== planarPosition.x) { planarPosition.x = clampedX; }
-    if (clampedY !== planarPosition.y) { planarPosition.y = clampedY; }
-
-    return new THREE.Vector2(planarPosition.x, planarPosition.y);
-  }
-
-  // Returns the world coordinates on the camera's near plane that correspond to the given screen coordinates.
-  screenCoordsToWorldCoords(x: number, y: number): THREE.Vector3 {
-    return new THREE.Vector3(x, y, 0).applyMatrix4(this.matrixWorld);
   }
 
   protected greatCircleDistance(pointA: THREE.Vector3, pointB: THREE.Vector3) {
