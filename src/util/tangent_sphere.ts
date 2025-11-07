@@ -62,18 +62,18 @@ class TangentSphere extends THREE.Mesh {
 
   cellIndexAtPoint(face: number, pointOnSphere: THREE.Vector3) {
     // Rotate the point to the top face of the cube so that we can do easy spherical math.
-    let topEquivalent = pointOnSphere.clone().applyQuaternion(ROTATIONS_TO_TOP_FACE[face]);
-    let sphTop = sphericalFromCoords(topEquivalent);
+    const topEquivalent = pointOnSphere.clone().applyQuaternion(ROTATIONS_TO_TOP_FACE[face]);
+    const sphTop = sphericalFromCoords(topEquivalent);
 
     // Extend the radius of the spherical coordinate out to where it meets the cube face.
     sphTop.radius /= Math.cos(sphTop.phi);
 
     // Find the (x, y) coordinates of that point on the cube face.
     const pointOnFace = new THREE.Vector3().setFromSpherical(sphTop);
-    let faceCoordsUv = new THREE.Vector2(-pointOnFace.x / PLANET_RADIUS, pointOnFace.z / PLANET_RADIUS);
+    const faceCoordsUv = new THREE.Vector2(-pointOnFace.x / PLANET_RADIUS, pointOnFace.z / PLANET_RADIUS);
 
     // Invert the tangent adjustment on it.
-    let faceCoords = new THREE.Vector2(
+    const faceCoords = new THREE.Vector2(
       this.stToCoord(this.uvToSt(faceCoordsUv.x)),
       this.stToCoord(this.uvToSt(faceCoordsUv.y)),
     );

@@ -1,10 +1,11 @@
 import * as THREE from "three";
-
+import * as d3 from "d3-geo";
+import * as D3GeoVoronoi from "d3-geo-voronoi";
 import { scene } from "../scene_data";
 
 export {
   updateGeometry, getWorldVertexFromMesh, randomlyJitterVertices, wrapMeshAroundSphere,
-  disposeMesh,
+  disposeMesh, sphericalLloydsRelaxation,
  };
 
 // Tell three.js that this geometry has changed.
@@ -14,9 +15,8 @@ function updateGeometry(geometry: THREE.BufferGeometry) {
     geometry.attributes.color.needsUpdate = true;
   }
   geometry.computeVertexNormals();
-  // We don't care about collision, so these seem unnecessary.
-  // geometry.computeBoundingBox();
-  // geometry.computeBoundingSphere();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
 }
 
 function getWorldVertexFromMesh(mesh: THREE.Mesh, index: number) {
@@ -57,4 +57,16 @@ function disposeMesh(mesh: THREE.Mesh | THREE.Points | THREE.LineSegments) {
       material.dispose();
     }
   }
+}
+
+// Relaxes the Voronoi cells so that they're more evenly distributed. Returns the new Voronoi diagram.
+function sphericalLloydsRelaxation(voronoi: any, iterations = 1): any {
+  for (let iter = 0; iter < iterations; iter++) {
+    console.log(`Lloyd's relaxation: voronoi ${typeof voronoi}: ${voronoi}`);
+    const centroids = voronoi.polygons().features.map((polygon: any) => d3.geoCentroid(polygon));
+
+    // Regenerate the Voronoi diagram with the centroid points as the new centres.
+    voronoi = D3GeoVoronoi.geoVoronoi(centroids);
+  }
+  return voronoi;
 }
