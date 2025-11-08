@@ -147,6 +147,24 @@ class Planet {
     }
 
     this.mesh.update();
+    // FIXME debugging
+    let pointsInCameraView = 0;
+    const showPoints = [];
+
+    for (let i = 0; i < positions.count; i++) {
+      const worldPosition = this.mesh.localToWorld(newPosition.clone());
+
+      if (i == 0 || i == positions.count - 1 || i == this.mesh.horizontalVertices - 1 || i == this.mesh.verticalVertices - 1) {
+        showPoints.push(worldPosition);
+      }
+      if (camera.frustum.containsPoint(worldPosition)) {
+        pointsInCameraView++;
+      }
+    }
+    this.visualHelper.setPoints(showPoints);
+    console.log(`Points in camera view: ${pointsInCameraView} of ${positions.count} (${pointsInCameraView / positions.count * 100}%)`);
+    // FIXME end debugging
+
     this.texture.needsUpdate = true;
     this.visualHelper.update();
   }

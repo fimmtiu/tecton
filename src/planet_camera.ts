@@ -24,6 +24,7 @@ class PlanetCamera extends THREE.PerspectiveCamera {
   public height!: number;
   public horizontalRadiansInView!: number;
   public verticalRadiansInView!: number;
+  public frustum!: THREE.Frustum;
 
   constructor(planet: Planet, viewportWidth: number, viewportHeight: number) {
     super(FIELD_OF_VIEW, viewportWidth / viewportHeight, 0.01, MAX_ZOOM + PLANET_RADIUS);
@@ -37,8 +38,13 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     this.height = newHeight;
     this.aspect = newWidth / newHeight;
     this.planet.resize(newWidth, newHeight);
+
     this.updateOnMove();
     this.updateOnZoom();
+
+    // This has to happen after we call updateProjectionMatrix().
+    this.frustum = new THREE.Frustum();
+    this.frustum.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(this.projectionMatrix, this.matrixWorldInverse));
   }
 
   protected updateOnMove() {
@@ -103,17 +109,20 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     const topCameraSpace = new THREE.Vector3(0, farPlaneHeight / 2, -this.far);
     const topLeftCameraSpace = new THREE.Vector3(-farPlaneWidth / 2, farPlaneHeight / 2, -this.far);
     const rotateLeftNinety = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0).applyQuaternion(this.quaternion), -Math.PI / 2);
+    const rotateUpNinety = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0).applyQuaternion(this.quaternion), -Math.PI / 2);
 
     // These aren't cacheable because their values change whenever the camera moves.
     const leftWorldSpace = leftCameraSpace.applyMatrix4(this.matrixWorld);
     const topWorldSpace = topCameraSpace.applyMatrix4(this.matrixWorld);
     const topLeftWorldSpace = topLeftCameraSpace.applyMatrix4(this.matrixWorld);
+    const topLeftDirection = topLeftWorldSpace.clone().sub(this.position).normalize();
 
     const leftRay = new THREE.Ray(this.position, leftWorldSpace.sub(this.position).normalize());
     const topRay = new THREE.Ray(this.position, topWorldSpace.sub(this.position).normalize());
 
     const leftIntersection = new THREE.Vector3();
     const topIntersection = new THREE.Vector3();
+
 
     // FIXME: There's a certain amount of pop-in happening as soon as the edge of the sphere passes the screen edge
     // because the number of vertices around the sphere's edge is so high and lots of radians get cut off at once.
@@ -126,33 +135,39 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     // the ass because the frustum intersects the sphere at an angle.
     if (this.intersect(leftRay, leftIntersection)) {
       // Find the point where the left side of the sphere intersects the left plane of the camera's view frustum.
+      const leftPlaneNormal = topLeftDirection.clone().cross(leftRay.direction).normalize();
+      const leftPlaneAngle = leftPlaneNormal.angleTo(new THREE.Vector3(-1, 0, 0).applyQuaternion(this.quaternion));
 
-      // FIXME: Copy this from the vertical code once it works.
+      console.log(`Left plane normal: ${leftPlaneNormal.x}, ${leftPlaneNormal.y}, ${leftPlaneNormal.z}`);
+      console.log(`Left plane angle: ${leftPlaneAngle}`);
 
+      const intersection = leftIntersection.clone().applyQuaternion(rotateUpNinety);
+      // Angle the intersection point to the oblique angle that the left plane makes with the left side of the sphere.
+      // FIXME: No, I think I got this bit wrong. It produces close-to-correct results, though?
+      const leanBackwards = new THREE.Quaternion().setFromAxisAngle(leftPlaneNormal, leftPlaneAngle);
+      intersection.applyQuaternion(leanBackwards);
+
+      const polarPoint = this.position.clone().normalize().multiplyScalar(PLANET_RADIUS).applyQuaternion(rotateUpNinety);
+      this.horizontalRadiansInView = this.greatCircleDistance(intersection, polarPoint) * 2;
     } else {
       this.horizontalRadiansInView = Math.PI;
     }
+
     if (this.intersect(topRay, topIntersection)) {
       // Find the point where the top side of the sphere intersects the top plane of the camera's view frustum.
-      const topLeftDirection = topLeftWorldSpace.clone().sub(this.position).normalize();
-      const topPlaneNormal = topLeftDirection.cross(topRay.direction).normalize();
+      const topPlaneNormal = topLeftDirection.clone().cross(topRay.direction).normalize();
       const topPlaneAngle = topPlaneNormal.angleTo(new THREE.Vector3(0, -1, 0).applyQuaternion(this.quaternion));
 
       console.log(`Top plane normal: ${topPlaneNormal.x}, ${topPlaneNormal.y}, ${topPlaneNormal.z}`);
-
       console.log(`Top plane angle: ${topPlaneAngle}`);
 
       const intersection = topIntersection.clone().applyQuaternion(rotateLeftNinety);
       // Angle the intersection point to the oblique angle that the top plane makes with the top of the sphere.
-      // const leanBackwards = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -topPlaneAngle, 0));
       const leanBackwards = new THREE.Quaternion().setFromAxisAngle(topPlaneNormal, topPlaneAngle);
       intersection.applyQuaternion(leanBackwards);
 
       const leftEquatorPoint = this.position.clone().normalize().multiplyScalar(PLANET_RADIUS).applyQuaternion(rotateLeftNinety);
       this.verticalRadiansInView = this.greatCircleDistance(intersection, leftEquatorPoint) * 2;
-
-      // orange, aqua, red, purple
-      this.planet.visualHelper.setPoints([topIntersection, intersection, leftEquatorPoint]);
     } else {
       this.verticalRadiansInView = Math.PI;
     }
