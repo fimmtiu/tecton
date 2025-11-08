@@ -53,7 +53,7 @@ const ATLAS_INDEX: { [biomeName: string]: THREE.Box2[] } = {
 class Planet {
   public sphere: THREE.Sphere;
   protected mesh!: PlanetMesh;
-  protected visualHelper: VisualHelper;
+  public visualHelper: VisualHelper;   // FIXME: Change back to protected when we're done debugging.
   protected terrain: Terrain;
   protected climate: Climate;
   protected textureData: Uint8ClampedArray;
@@ -145,9 +145,9 @@ class Planet {
       }
       this.mesh.updatePoint(i, newPosition);
     }
-    updateGeometry(this.mesh.geometry);
-    this.texture.needsUpdate = true;
 
+    this.mesh.update();
+    this.texture.needsUpdate = true;
     this.visualHelper.update();
   }
 

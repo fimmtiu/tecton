@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { sphericalFromCoords } from "./util";
-import { disposeMesh } from "./util/geometry";
+import { disposeMesh, updateGeometry } from "./util/geometry";
 import { scene } from "./scene_data";
 
 export { PlanetMesh };
@@ -69,6 +69,13 @@ class PlanetMesh extends THREE.Mesh {
     if (this.showVertices && this.meshVertices) {
       const offsetPosition = newPosition.clone().addScalar(0.005);
       this.meshVertices.geometry.getAttribute("position").setXYZ(index, offsetPosition.x, offsetPosition.y, offsetPosition.z);
+    }
+  }
+
+  update() {
+    updateGeometry(this.geometry);
+    if (this.showVertices && this.meshVertices) {
+      updateGeometry(this.meshVertices.geometry);
     }
   }
 }

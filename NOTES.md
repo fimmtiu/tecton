@@ -85,5 +85,6 @@ a separate CubeField.
 
 TO DO:
 
-- Change Terrain and HeightCubeField heights from [-1.0, 1.0] to meters. Way less confusing.
-- Port over the code from the old `tectonic-heightmaps` branch on GitHub
+- Measure "radians in view" from the left edge of the sphere instead of the front.
+- Adjust vertexes on mesh to be denser near the center and sparser at the edges.
+- Fix the mountain and trench code in terrain.ts. It's creating weird garbage mountains.

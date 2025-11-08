@@ -62,7 +62,6 @@ function disposeMesh(mesh: THREE.Mesh | THREE.Points | THREE.LineSegments) {
 // Relaxes the Voronoi cells so that they're more evenly distributed. Returns the new Voronoi diagram.
 function sphericalLloydsRelaxation(voronoi: any, iterations = 1): any {
   for (let iter = 0; iter < iterations; iter++) {
-    console.log(`Lloyd's relaxation: voronoi ${typeof voronoi}: ${voronoi}`);
     const centroids = voronoi.polygons().features.map((polygon: any) => d3.geoCentroid(polygon));
 
     // Regenerate the Voronoi diagram with the centroid points as the new centres.

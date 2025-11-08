@@ -95,36 +95,69 @@ class PlanetCamera extends THREE.PerspectiveCamera {
   // We use this to calculate the planet mesh's curvature in Planet.update.
   // This must be called after updateOnMove() because it depends on the new camera position having been saved.
   updateOnZoom() {
+    // Optimization: Cache these variables instead of recalculating them every time we call this method.
+    // They'll only ever change when the viewport is resized.
     const farPlaneHeight = 2 * Math.tan((this.fov / 2) / (180 / Math.PI)) * this.far;
     const farPlaneWidth = farPlaneHeight * this.aspect;
-    // Optimization: Cache these three vectors instead of recalculating them every time we call this method.
-    // They'll only ever change when the viewport is resized.
-    const topLeftCameraSpace = new THREE.Vector3(-farPlaneWidth / 2, -farPlaneHeight / 2, -this.far);
     const leftCameraSpace = new THREE.Vector3(-farPlaneWidth / 2, 0, -this.far);
-    const topCameraSpace = new THREE.Vector3(0, -farPlaneHeight / 2, -this.far);
+    const topCameraSpace = new THREE.Vector3(0, farPlaneHeight / 2, -this.far);
+    const topLeftCameraSpace = new THREE.Vector3(-farPlaneWidth / 2, farPlaneHeight / 2, -this.far);
+    const rotateLeftNinety = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0).applyQuaternion(this.quaternion), -Math.PI / 2);
 
     // These aren't cacheable because their values change whenever the camera moves.
-    const topLeftWorldSpace = topLeftCameraSpace.applyMatrix4(this.matrixWorld);
     const leftWorldSpace = leftCameraSpace.applyMatrix4(this.matrixWorld);
     const topWorldSpace = topCameraSpace.applyMatrix4(this.matrixWorld);
+    const topLeftWorldSpace = topLeftCameraSpace.applyMatrix4(this.matrixWorld);
 
-    const topLeftRay = new THREE.Ray(this.position, topLeftWorldSpace.sub(this.position).normalize());
     const leftRay = new THREE.Ray(this.position, leftWorldSpace.sub(this.position).normalize());
     const topRay = new THREE.Ray(this.position, topWorldSpace.sub(this.position).normalize());
 
-    const topLeftIntersection = new THREE.Vector3();
     const leftIntersection = new THREE.Vector3();
     const topIntersection = new THREE.Vector3();
 
-    if (this.intersect(topLeftRay, topLeftIntersection) &&
-        this.intersect(leftRay, leftIntersection) &&
-        this.intersect(topRay, topIntersection)) {
-      this.horizontalRadiansInView = this.greatCircleDistance(topIntersection, topLeftIntersection) * 2;
-      this.verticalRadiansInView = this.greatCircleDistance(leftIntersection, topLeftIntersection) * 2;
+    // FIXME: There's a certain amount of pop-in happening as soon as the edge of the sphere passes the screen edge
+    // because the number of vertices around the sphere's edge is so high and lots of radians get cut off at once.
+    // Not sure how to fix this — the math is correct. Stupid spheres and their stupid curvature.
+    // Hopefully distributing the vertices more densely in the center of the mesh will make it less noticeable.
+
+    // This is a bit obtuse, but the radians in view are calculated from the side of the sphere, not the front, since
+    // the edge has a much longer visible distance than the point closer to the camera where we encountered the
+    // intersection. Finding the intersection between the edge of the sphere and the camera's view frustum is a pain in
+    // the ass because the frustum intersects the sphere at an angle.
+    if (this.intersect(leftRay, leftIntersection)) {
+      // Find the point where the left side of the sphere intersects the left plane of the camera's view frustum.
+
+      // FIXME: Copy this from the vertical code once it works.
+
     } else {
       this.horizontalRadiansInView = Math.PI;
+    }
+    if (this.intersect(topRay, topIntersection)) {
+      // Find the point where the top side of the sphere intersects the top plane of the camera's view frustum.
+      const topLeftDirection = topLeftWorldSpace.clone().sub(this.position).normalize();
+      const topPlaneNormal = topLeftDirection.cross(topRay.direction).normalize();
+      const topPlaneAngle = topPlaneNormal.angleTo(new THREE.Vector3(0, -1, 0).applyQuaternion(this.quaternion));
+
+      console.log(`Top plane normal: ${topPlaneNormal.x}, ${topPlaneNormal.y}, ${topPlaneNormal.z}`);
+
+      console.log(`Top plane angle: ${topPlaneAngle}`);
+
+      const intersection = topIntersection.clone().applyQuaternion(rotateLeftNinety);
+      // Angle the intersection point to the oblique angle that the top plane makes with the top of the sphere.
+      // const leanBackwards = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -topPlaneAngle, 0));
+      const leanBackwards = new THREE.Quaternion().setFromAxisAngle(topPlaneNormal, topPlaneAngle);
+      intersection.applyQuaternion(leanBackwards);
+
+      const leftEquatorPoint = this.position.clone().normalize().multiplyScalar(PLANET_RADIUS).applyQuaternion(rotateLeftNinety);
+      this.verticalRadiansInView = this.greatCircleDistance(intersection, leftEquatorPoint) * 2;
+
+      // orange, aqua, red, purple
+      this.planet.visualHelper.setPoints([topIntersection, intersection, leftEquatorPoint]);
+    } else {
       this.verticalRadiansInView = Math.PI;
     }
+
+    console.log(`Horizontal radians in view: ${this.horizontalRadiansInView}, vertical radians in view: ${this.verticalRadiansInView}`);
   }
 
   filledByPlanet() {
