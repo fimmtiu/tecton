@@ -15,6 +15,7 @@ class VisualHelper {
   protected normalArrows: Array<THREE.ArrowHelper>;
   protected points: { [name: string]: Array<THREE.Points> };
   protected pointArrows: { [name: string]: Array<THREE.ArrowHelper> };
+  protected otherArrows: { [name: string]: THREE.ArrowHelper };
   protected cameraMesh: THREE.LineSegments | null;
   protected cameraArrow: THREE.ArrowHelper | null;
   protected axes: THREE.AxesHelper | null;
@@ -25,6 +26,7 @@ class VisualHelper {
     this.normalArrows = [];
     this.points = {};
     this.pointArrows = {};
+    this.otherArrows = {};
     this.cameraMesh = null;
     this.cameraArrow = null;
     this.axes = null;
@@ -37,6 +39,9 @@ class VisualHelper {
 
     for (const name of Object.keys(this.points)) {
       this.setPoints(name, []);
+    }
+    for (const name of Object.keys(this.otherArrows)) {
+      this.removeArrow(name);
     }
   }
 
@@ -97,6 +102,24 @@ class VisualHelper {
           const color = COLORS[i % COLORS.length];
           this.drawPoint(name, points[i], color, showArrows);
         }
+      }
+    }
+  }
+
+  addArrow(name: string, start: THREE.Vector3, end: THREE.Vector3, color: number) {
+    if (this.allowUpdates) {
+      this.removeArrow(name);
+
+      const dir = end.clone().sub(start.clone()).normalize()
+      this.otherArrows[name] = this.makeArrow(dir, start, start.distanceTo(end), color);
+    }
+  }
+
+  removeArrow(name: string) {
+    if (this.allowUpdates) {
+      if (this.otherArrows[name]) {
+        scene.remove(this.otherArrows[name]);
+        delete this.otherArrows[name];
       }
     }
   }

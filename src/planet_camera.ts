@@ -126,17 +126,12 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     // because the number of vertices around the sphere's edge is so high and lots of radians get cut off at once.
     // Not sure how to fix this — the math is correct. Stupid spheres and their stupid curvature.
     // Hopefully distributing the vertices more densely in the center of the mesh will make it less noticeable.
-
-    // This is a bit obtuse, but the radians in view are calculated from the side of the sphere, not the front, since
-    // the edge has a much longer visible distance than the point closer to the camera where we encountered the
-    // intersection. Finding the intersection between the edge of the sphere and the camera's view frustum is a pain in
-    // the ass because the frustum intersects the sphere at an angle.
     if (this.intersect(leftRay, leftIntersection)) {
       // Find the topmost point where the left side of the sphere intersects the left plane of the camera's view frustum.
       const leftPlaneNormal = topLeftDirection.clone().cross(leftRay.direction).normalize();
       const rotatedIntersection = this.sideOfIntersectionCircle(leftIntersection, leftPlaneNormal);
 
-      const polarPoint = this.position.clone().normalize().multiplyScalar(PLANET_RADIUS).applyQuaternion(rotateUpNinety);
+      const polarPoint = this.furthestVisiblePoint(new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 0));
       this.horizontalRadiansInView = this.greatCircleDistance(rotatedIntersection, polarPoint) * 2;
     } else {
       this.horizontalRadiansInView = Math.PI;
@@ -147,10 +142,17 @@ class PlanetCamera extends THREE.PerspectiveCamera {
       const topPlaneNormal = topLeftDirection.clone().cross(topRay.direction).normalize();
       const rotatedIntersection = this.sideOfIntersectionCircle(topIntersection, topPlaneNormal);
 
-      const leftEquatorPoint = this.position.clone().normalize().multiplyScalar(PLANET_RADIUS).applyQuaternion(rotateLeftNinety);
+      const leftEquatorPoint = this.furthestVisiblePoint(new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0));
       this.verticalRadiansInView = this.greatCircleDistance(rotatedIntersection, leftEquatorPoint) * 2;
 
-      // visualHelper.setPoints("sphere intersections", [topIntersection, leftEquatorPoint, rotatedIntersection], true);
+      // FIXME for debugging
+      visualHelper.setPoints("sphere intersections", [topIntersection, leftEquatorPoint, rotatedIntersection], true);
+      const fovAngle = (this.fov / 2) * (Math.PI / 180);
+      const distanceToIntersection = topIntersection.distanceTo(this.position);
+      visualHelper.showCamera(distanceToIntersection * Math.cos(fovAngle));
+      visualHelper.addArrow("camera to left", this.position, leftEquatorPoint, 0xffff00);
+      // FIXME end debugging
+
     } else {
       this.verticalRadiansInView = Math.PI;
       visualHelper.setPoints("sphere intersections", []);
@@ -164,6 +166,11 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     return (ray.intersectSphere(this.planet.sphere, outputVector) !== null);
   }
 
+  // This is a bit obtuse, but the radians in view are calculated from the side of the sphere, not the front, since the
+  // edge has a much longer visible distance than the point closer to the camera where we encountered the intersection.
+  // Finding the intersection between the edge of the sphere and the camera's view frustum is a pain in the ass because
+  // the frustum intersects the sphere at an angle. (Don't worry, I don't fully understand this math either.)
+
   protected sideOfIntersectionCircle(intersection: THREE.Vector3, planeNormal: THREE.Vector3) {
     const centerToIntersection = intersection.clone().sub(ORIGIN);
     const distanceFromOriginToPlane = centerToIntersection.dot(planeNormal);
@@ -172,7 +179,30 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     const radialDirection = intersection.clone().sub(circleCenter).normalize();
     const perpendicularDirection = planeNormal.clone().cross(radialDirection).normalize();
     return circleCenter.clone().add(perpendicularDirection.multiplyScalar(circleRadius));
-}
+  }
+
+  // vert:
+  // furthestVisiblePoint(new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0))
+
+  // horiz:
+  // furthestVisiblePoint(new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 0))
+  protected furthestVisiblePoint(side: THREE.Vector3, axis: THREE.Vector3) {
+    const cameraSide = side.clone().applyQuaternion(this.quaternion).normalize();
+    const cameraSideRay = new THREE.Ray(this.position, cameraSide);
+    const intersection = new THREE.Vector3();
+    if (this.intersect(cameraSideRay, intersection)) {
+      return intersection;
+    }
+
+    const rotateNinetyDegrees = new THREE.Quaternion().setFromAxisAngle(axis.clone().applyQuaternion(this.quaternion), -Math.PI / 2);
+    const equatorPoint = this.position.clone().normalize().multiplyScalar(PLANET_RADIUS).applyQuaternion(rotateNinetyDegrees);
+    cameraSideRay.lookAt(equatorPoint);
+    if (this.intersect(cameraSideRay, intersection)) {
+      return intersection;
+    }
+
+    throw new Error("WTF? No intersection found");
+  }
 
   protected greatCircleDistance(pointA: THREE.Vector3, pointB: THREE.Vector3) {
     return Math.abs(Math.acos(pointA.dot(pointB) / (PLANET_RADIUS ** 2)));
