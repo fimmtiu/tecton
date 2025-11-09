@@ -4,6 +4,8 @@ import { SceneData, scene } from "./scene_data";
 import { setRandomSeed } from "./util";
 import { TextureManager } from "./texture_manager";
 
+export let updateVisualHelper = true;
+
 // FIXME: Can we do any metaprogramming to reduce this boilerplate?
 const canvasContainer = document.getElementById("canvas-container") as HTMLCanvasElement;
 if (canvasContainer === null) {
@@ -71,6 +73,9 @@ TextureManager.loadAll(() => {
     case '.':
       sceneData.zoom(1);
       break;
+    case 'v':
+      updateVisualHelper = !updateVisualHelper;
+      break;
     }
   }
 
@@ -96,6 +101,7 @@ TextureManager.loadAll(() => {
       sceneData.zoom(0);
       break;
     case 'd':
+      // eslint-disable-next-line no-debugger
       debugger;
       break;
     }

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Planet, PLANET_RADIUS } from "./planet";
 import { ORIGIN } from "./util";
+import { updateVisualHelper } from "./main";
 
 export { PlanetCamera };
 

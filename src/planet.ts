@@ -9,6 +9,7 @@ import { TextureManager } from "./texture_manager";
 import { TextureCopier } from "./texture_copier";
 import { PlanetMesh } from "./planet_mesh";
 import { Climate } from "./climate";
+import { updateVisualHelper } from "./main";
 
 export { Planet, PLANET_RADIUS };
 
@@ -157,9 +158,11 @@ class Planet {
     }
 
     // this.visualHelper.setPoints(points);
-    this.mesh.update(camera);
+    this.mesh.update();
     this.texture.needsUpdate = true;
-    this.visualHelper.update();
+    if (updateVisualHelper) {
+      this.visualHelper.update();
+    }
   }
 
   // FIXME: This should be done by a fragment shader eventually. This is a ludicrously bad way to blit pixels.

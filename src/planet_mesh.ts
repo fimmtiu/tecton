@@ -68,15 +68,10 @@ class PlanetMesh extends THREE.Mesh {
     }
   }
 
-  update(camera: PlanetCamera) {
+  update() {
     updateGeometry(this.geometry);
     if (this.showVertices && this.meshVertices) {
       updateGeometry(this.meshVertices.geometry);
-    }
-
-    logVisibleVertices(camera, this, "Planet");
-    if (this.showVertices && this.meshVertices) {
-      logVisibleVertices(camera, this.meshVertices, "Points");
     }
   }
 }
