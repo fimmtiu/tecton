@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Planet, PLANET_RADIUS } from "./planet";
 import { ORIGIN } from "./util";
-import { updateVisualHelper } from "./main";
+import { visualHelper } from "./scene_data";
 
 export { PlanetCamera };
 
@@ -32,6 +32,7 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     this.planet = planet;
     this.sphereCoords = new THREE.Spherical(MAX_ZOOM, Math.PI / 2, 0);
     this.frustum = new THREE.Frustum();
+    visualHelper.camera = this;
     this.updateOnResize(viewportWidth, viewportHeight);
   }
 
@@ -134,7 +135,6 @@ class PlanetCamera extends THREE.PerspectiveCamera {
       // Find the topmost point where the left side of the sphere intersects the left plane of the camera's view frustum.
       const leftPlaneNormal = topLeftDirection.clone().cross(leftRay.direction).normalize();
       const rotatedIntersection = this.sideOfIntersectionCircle(leftIntersection, leftPlaneNormal);
-      const leftmostVisiblePointOfSphere
 
       const polarPoint = this.position.clone().normalize().multiplyScalar(PLANET_RADIUS).applyQuaternion(rotateUpNinety);
       this.horizontalRadiansInView = this.greatCircleDistance(rotatedIntersection, polarPoint) * 2;
@@ -150,9 +150,10 @@ class PlanetCamera extends THREE.PerspectiveCamera {
       const leftEquatorPoint = this.position.clone().normalize().multiplyScalar(PLANET_RADIUS).applyQuaternion(rotateLeftNinety);
       this.verticalRadiansInView = this.greatCircleDistance(rotatedIntersection, leftEquatorPoint) * 2;
 
-      this.planet.visualHelper.setPoints([topIntersection, leftEquatorPoint, rotatedIntersection]);
+      // visualHelper.setPoints("sphere intersections", [topIntersection, leftEquatorPoint, rotatedIntersection], true);
     } else {
       this.verticalRadiansInView = Math.PI;
+      visualHelper.setPoints("sphere intersections", []);
     }
     console.log(`Horizontal radians in view: ${this.horizontalRadiansInView}, vertical radians in view: ${this.verticalRadiansInView}`);
 

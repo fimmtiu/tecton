@@ -2,11 +2,13 @@ import * as THREE from "three";
 import { Planet } from "./planet";
 import { PlanetCamera } from "./planet_camera";
 import { TextureManager } from "./texture_manager";
+import { VisualHelper } from "./visual_helper";
 
 // This is used so often in so many files that passing it around everywhere became ridiculous.
 const scene = new THREE.Scene();
+let visualHelper!: VisualHelper;
 
-export { SceneData, scene };
+export { SceneData, scene, visualHelper };
 
 class SceneData {
   public light: THREE.PointLight;
@@ -19,7 +21,9 @@ class SceneData {
 
   constructor(width: number, height: number) {
     this.planet = new Planet(width, height);
+    visualHelper = new VisualHelper();
     this.camera = new PlanetCamera(this.planet, width, height);
+    visualHelper.showAxes();
     this.horizDirection = this.vertDirection = this.zoomDirection = 0;
 
     // For now, just a flat background that doesn't move. In the future, maybe it can be a sky-sphere.

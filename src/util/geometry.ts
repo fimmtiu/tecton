@@ -6,7 +6,7 @@ import { PlanetCamera } from "../planet_camera";
 
 export {
   updateGeometry, getWorldVertexFromMesh, randomlyJitterVertices, wrapMeshAroundSphere,
-  disposeMesh, sphericalLloydsRelaxation, logVisibleVertices,
+  disposeMesh, sphericalLloydsRelaxation, logVisibleVertices, vectorsToFloatBuffer,
  };
 
 // Tell three.js that this geometry has changed.
@@ -83,4 +83,14 @@ function logVisibleVertices(camera: PlanetCamera, mesh: THREE.Mesh | THREE.Point
     }
   }
   console.log(`${label} vertices in camera view: ${pointsInCameraView} of ${positions.count} (${pointsInCameraView / positions.count * 100}%)`);
+}
+
+function vectorsToFloatBuffer(vectors: Array<THREE.Vector3>) {
+  const floatBuffer = new Float32Array(vectors.length * 3);
+  for (let i = 0; i < vectors.length; i++) {
+    floatBuffer[i * 3] = vectors[i].x;
+    floatBuffer[i * 3 + 1] = vectors[i].y;
+    floatBuffer[i * 3 + 2] = vectors[i].z;
+  }
+  return new THREE.Float32BufferAttribute(floatBuffer, 3)
 }

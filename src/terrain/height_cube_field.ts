@@ -1,10 +1,9 @@
 import * as THREE from "three";
 
 import { CubeField } from "../cube_field";
-import { scene } from "../scene_data";
+import { scene, visualHelper } from "../scene_data";
 import { PlateSphere } from "./plate_sphere";
 import { PLANET_RADIUS } from "../planet";
-import { VisualHelper } from "../visual_helper";
 
 export { HeightCubeField, HeightCell };
 
@@ -29,7 +28,6 @@ class HeightCubeField extends CubeField<HeightCell> {
   protected closeToWaterDistance: number;
 
   protected showNeighbors = false; // for debugging
-  protected visualHelper = new VisualHelper();
   protected neighbourPoints: THREE.Vector3[] = [];
 
   constructor(cellsPerEdge: number, plateSphere: PlateSphere, showCenters: boolean, showEdges: boolean) {
@@ -78,8 +76,7 @@ class HeightCubeField extends CubeField<HeightCell> {
     this.recursivelyCheckAdjacentCells(cellContainsWater, cell, this.closeToWaterDistance);
 
     if (this.showNeighbors) {
-      this.visualHelper.setPoints(this.neighbourPoints);
-      this.visualHelper.update();
+      visualHelper.setPoints("neighbor cells", this.neighbourPoints);
     }
 
     let waterCells = 0;

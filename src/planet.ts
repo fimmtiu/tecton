@@ -3,13 +3,11 @@ import * as THREE from "three";
 import { PlanetCamera } from "./planet_camera";
 import { ORIGIN } from "./util";
 import { Terrain } from "./terrain";
-import { VisualHelper } from "./visual_helper";
 import { scene } from "./scene_data";
 import { TextureManager } from "./texture_manager";
 import { TextureCopier } from "./texture_copier";
 import { PlanetMesh } from "./planet_mesh";
 import { Climate } from "./climate";
-import { updateVisualHelper } from "./main";
 
 export { Planet, PLANET_RADIUS };
 
@@ -53,7 +51,6 @@ const ATLAS_INDEX: { [biomeName: string]: THREE.Box2[] } = {
 class Planet {
   public sphere: THREE.Sphere;
   protected mesh!: PlanetMesh;
-  public visualHelper: VisualHelper;   // FIXME: Change back to protected when we're done debugging.
   protected terrain: Terrain;
   protected climate: Climate;
   protected textureData: Uint8ClampedArray;
@@ -67,7 +64,6 @@ class Planet {
     this.sphere = new THREE.Sphere(ORIGIN, PLANET_RADIUS);
     this.width = viewportWidth;
     this.height = viewportHeight;
-    this.visualHelper = new VisualHelper(true, true);
     this.terrain = new Terrain();
     this.climate = new Climate();
     this.textureData = new Uint8ClampedArray(TEXTURE_SIZE ** 2 * 4);
@@ -157,12 +153,8 @@ class Planet {
       this.mesh.updatePoint(i, newPosition);
     }
 
-    // this.visualHelper.setPoints(points);
     this.mesh.update();
     this.texture.needsUpdate = true;
-    if (updateVisualHelper) {
-      this.visualHelper.update();
-    }
   }
 
   // FIXME: This should be done by a fragment shader eventually. This is a ludicrously bad way to blit pixels.

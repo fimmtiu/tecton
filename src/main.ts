@@ -1,10 +1,8 @@
 import * as THREE from "three";
 
-import { SceneData, scene } from "./scene_data";
+import { SceneData, scene, visualHelper } from "./scene_data";
 import { setRandomSeed } from "./util";
 import { TextureManager } from "./texture_manager";
-
-export let updateVisualHelper = true;
 
 // FIXME: Can we do any metaprogramming to reduce this boilerplate?
 const canvasContainer = document.getElementById("canvas-container") as HTMLCanvasElement;
@@ -74,7 +72,11 @@ TextureManager.loadAll(() => {
       sceneData.zoom(1);
       break;
     case 'v':
-      updateVisualHelper = !updateVisualHelper;
+      visualHelper.allowUpdates = !visualHelper.allowUpdates;
+      console.log(`Visual helper updates are ${visualHelper.allowUpdates ? "enabled" : "disabled"}`);
+      break;
+    case 'c':
+      visualHelper.showCamera();
       break;
     }
   }
