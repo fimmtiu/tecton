@@ -34,7 +34,9 @@ class PlateSphere {
 
   constructor() {
     this.voronoi = D3GeoVoronoi.geoVoronoi(this.voronoiStartingPoints());
-    this.voronoi = sphericalLloydsRelaxation(this.voronoi, 1);   // Distributes the Voronoi cells more evenly to prevent weird tiny edges.
+    // Distributes the Voronoi cells more evenly to prevent weird tiny edges. One iteration is enough; more than that
+    // makes it look like a regular hex map.
+    this.voronoi = sphericalLloydsRelaxation(this.voronoi, 1);
     this.polygons = this.voronoi.polygons().features;
 
     this.setUpPlates();

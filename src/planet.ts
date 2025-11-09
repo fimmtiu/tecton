@@ -2,7 +2,6 @@ import * as THREE from "three";
 
 import { PlanetCamera } from "./planet_camera";
 import { ORIGIN } from "./util";
-import { updateGeometry } from "./util/geometry";
 import { Terrain } from "./terrain";
 import { VisualHelper } from "./visual_helper";
 import { scene } from "./scene_data";
@@ -67,7 +66,7 @@ class Planet {
     this.sphere = new THREE.Sphere(ORIGIN, PLANET_RADIUS);
     this.width = viewportWidth;
     this.height = viewportHeight;
-    this.visualHelper = new VisualHelper(true, false);
+    this.visualHelper = new VisualHelper(true, true);
     this.terrain = new Terrain();
     this.climate = new Climate();
     this.textureData = new Uint8ClampedArray(TEXTURE_SIZE ** 2 * 4);
@@ -121,10 +120,13 @@ class Planet {
 
     const horizRadiansPerCell = camera.horizontalRadiansInView / this.mesh.horizontalVertices;
     const vertRadiansPerCell = camera.verticalRadiansInView / this.mesh.verticalVertices;
+    console.log(`Horiz radians per cell: ${horizRadiansPerCell}, vert radians per cell: ${vertRadiansPerCell}`);
+
     const positions = this.mesh.geometry.getAttribute("position");
     const sphereCoords = new THREE.Spherical();
     const newPosition = new THREE.Vector3();
 
+    // const points = [];
     for (let i = 0; i < positions.count; i++) {
       const u = i % this.mesh.horizontalVertices;
       const v = Math.floor(i / this.mesh.horizontalVertices);
@@ -143,28 +145,19 @@ class Planet {
         sphereCoords.radius += height;
         newPosition.setFromSpherical(sphereCoords);
       }
+
+      // if ((u == 122 || u == 0) && (v == 0 || v == 122)) {
+      //   console.log(`Vertex at ${u}, ${v} is at [${newPosition.x}, ${newPosition.y}, ${newPosition.z}]`);
+      //   console.log(`    Theta: hrpc ${horizRadiansPerCell} * (u ${u} - hhl ${this.mesh.halfHorizLength}) = ${sphereCoords.theta}`);
+      //   console.log(`    Phi: vrpc ${vertRadiansPerCell} * (v ${v} - hvl ${this.mesh.halfVertLength}) + ${Math.PI / 2} = ${sphereCoords.phi}`);
+      //   points.push(newPosition.clone());
+      // }
+
       this.mesh.updatePoint(i, newPosition);
     }
 
-    this.mesh.update();
-    // FIXME debugging
-    let pointsInCameraView = 0;
-    const showPoints = [];
-
-    for (let i = 0; i < positions.count; i++) {
-      const worldPosition = this.mesh.localToWorld(newPosition.clone());
-
-      if (i == 0 || i == positions.count - 1 || i == this.mesh.horizontalVertices - 1 || i == this.mesh.verticalVertices - 1) {
-        showPoints.push(worldPosition);
-      }
-      if (camera.frustum.containsPoint(worldPosition)) {
-        pointsInCameraView++;
-      }
-    }
-    this.visualHelper.setPoints(showPoints);
-    console.log(`Points in camera view: ${pointsInCameraView} of ${positions.count} (${pointsInCameraView / positions.count * 100}%)`);
-    // FIXME end debugging
-
+    // this.visualHelper.setPoints(points);
+    this.mesh.update(camera);
     this.texture.needsUpdate = true;
     this.visualHelper.update();
   }

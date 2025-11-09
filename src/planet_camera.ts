@@ -24,12 +24,13 @@ class PlanetCamera extends THREE.PerspectiveCamera {
   public height!: number;
   public horizontalRadiansInView!: number;
   public verticalRadiansInView!: number;
-  public frustum!: THREE.Frustum;
+  public frustum: THREE.Frustum;
 
   constructor(planet: Planet, viewportWidth: number, viewportHeight: number) {
     super(FIELD_OF_VIEW, viewportWidth / viewportHeight, 0.01, MAX_ZOOM + PLANET_RADIUS);
     this.planet = planet;
     this.sphereCoords = new THREE.Spherical(MAX_ZOOM, Math.PI / 2, 0);
+    this.frustum = new THREE.Frustum();
     this.updateOnResize(viewportWidth, viewportHeight);
   }
 
@@ -41,10 +42,6 @@ class PlanetCamera extends THREE.PerspectiveCamera {
 
     this.updateOnMove();
     this.updateOnZoom();
-
-    // This has to happen after we call updateProjectionMatrix().
-    this.frustum = new THREE.Frustum();
-    this.frustum.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(this.projectionMatrix, this.matrixWorldInverse));
   }
 
   protected updateOnMove() {
@@ -123,7 +120,6 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     const leftIntersection = new THREE.Vector3();
     const topIntersection = new THREE.Vector3();
 
-
     // FIXME: There's a certain amount of pop-in happening as soon as the edge of the sphere passes the screen edge
     // because the number of vertices around the sphere's edge is so high and lots of radians get cut off at once.
     // Not sure how to fix this — the math is correct. Stupid spheres and their stupid curvature.
@@ -134,54 +130,47 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     // intersection. Finding the intersection between the edge of the sphere and the camera's view frustum is a pain in
     // the ass because the frustum intersects the sphere at an angle.
     if (this.intersect(leftRay, leftIntersection)) {
-      // Find the point where the left side of the sphere intersects the left plane of the camera's view frustum.
+      // Find the topmost point where the left side of the sphere intersects the left plane of the camera's view frustum.
       const leftPlaneNormal = topLeftDirection.clone().cross(leftRay.direction).normalize();
-      const leftPlaneAngle = leftPlaneNormal.angleTo(new THREE.Vector3(-1, 0, 0).applyQuaternion(this.quaternion));
-
-      console.log(`Left plane normal: ${leftPlaneNormal.x}, ${leftPlaneNormal.y}, ${leftPlaneNormal.z}`);
-      console.log(`Left plane angle: ${leftPlaneAngle}`);
-
-      const intersection = leftIntersection.clone().applyQuaternion(rotateUpNinety);
-      // Angle the intersection point to the oblique angle that the left plane makes with the left side of the sphere.
-      // FIXME: No, I think I got this bit wrong. It produces close-to-correct results, though?
-      const leanBackwards = new THREE.Quaternion().setFromAxisAngle(leftPlaneNormal, leftPlaneAngle);
-      intersection.applyQuaternion(leanBackwards);
+      const rotatedIntersection = this.sideOfIntersectionCircle(leftIntersection, leftPlaneNormal);
+      const leftmostVisiblePointOfSphere
 
       const polarPoint = this.position.clone().normalize().multiplyScalar(PLANET_RADIUS).applyQuaternion(rotateUpNinety);
-      this.horizontalRadiansInView = this.greatCircleDistance(intersection, polarPoint) * 2;
+      this.horizontalRadiansInView = this.greatCircleDistance(rotatedIntersection, polarPoint) * 2;
     } else {
       this.horizontalRadiansInView = Math.PI;
     }
 
     if (this.intersect(topRay, topIntersection)) {
-      // Find the point where the top side of the sphere intersects the top plane of the camera's view frustum.
+      // Find the leftmost point where the top side of the sphere intersects the top plane of the camera's view frustum.
       const topPlaneNormal = topLeftDirection.clone().cross(topRay.direction).normalize();
-      const topPlaneAngle = topPlaneNormal.angleTo(new THREE.Vector3(0, -1, 0).applyQuaternion(this.quaternion));
-
-      console.log(`Top plane normal: ${topPlaneNormal.x}, ${topPlaneNormal.y}, ${topPlaneNormal.z}`);
-      console.log(`Top plane angle: ${topPlaneAngle}`);
-
-      const intersection = topIntersection.clone().applyQuaternion(rotateLeftNinety);
-      // Angle the intersection point to the oblique angle that the top plane makes with the top of the sphere.
-      const leanBackwards = new THREE.Quaternion().setFromAxisAngle(topPlaneNormal, topPlaneAngle);
-      intersection.applyQuaternion(leanBackwards);
+      const rotatedIntersection = this.sideOfIntersectionCircle(topIntersection, topPlaneNormal);
 
       const leftEquatorPoint = this.position.clone().normalize().multiplyScalar(PLANET_RADIUS).applyQuaternion(rotateLeftNinety);
-      this.verticalRadiansInView = this.greatCircleDistance(intersection, leftEquatorPoint) * 2;
+      this.verticalRadiansInView = this.greatCircleDistance(rotatedIntersection, leftEquatorPoint) * 2;
+
+      this.planet.visualHelper.setPoints([topIntersection, leftEquatorPoint, rotatedIntersection]);
     } else {
       this.verticalRadiansInView = Math.PI;
     }
-
     console.log(`Horizontal radians in view: ${this.horizontalRadiansInView}, vertical radians in view: ${this.verticalRadiansInView}`);
-  }
 
-  filledByPlanet() {
-    return this.horizontalRadiansInView == Math.PI;
+    this.frustum.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(this.projectionMatrix, this.matrixWorldInverse));
   }
 
   intersect(ray: THREE.Ray, outputVector: THREE.Vector3) {
     return (ray.intersectSphere(this.planet.sphere, outputVector) !== null);
   }
+
+  protected sideOfIntersectionCircle(intersection: THREE.Vector3, planeNormal: THREE.Vector3) {
+    const centerToIntersection = intersection.clone().sub(ORIGIN);
+    const distanceFromOriginToPlane = centerToIntersection.dot(planeNormal);
+    const circleCenter = planeNormal.clone().multiplyScalar(distanceFromOriginToPlane);
+    const circleRadius = Math.sqrt(PLANET_RADIUS ** 2 - distanceFromOriginToPlane ** 2);
+    const radialDirection = intersection.clone().sub(circleCenter).normalize();
+    const perpendicularDirection = planeNormal.clone().cross(radialDirection).normalize();
+    return circleCenter.clone().add(perpendicularDirection.multiplyScalar(circleRadius));
+}
 
   protected greatCircleDistance(pointA: THREE.Vector3, pointB: THREE.Vector3) {
     return Math.abs(Math.acos(pointA.dot(pointB) / (PLANET_RADIUS ** 2)));

@@ -1,7 +1,6 @@
 import * as THREE from "three";
-import { sphericalFromCoords } from "./util";
-import { disposeMesh, updateGeometry } from "./util/geometry";
-import { scene } from "./scene_data";
+import { disposeMesh, updateGeometry, logVisibleVertices } from "./util/geometry";
+import { PlanetCamera } from "./planet_camera";
 
 export { PlanetMesh };
 
@@ -48,34 +47,36 @@ class PlanetMesh extends THREE.Mesh {
       });
       const meshVerticesGeometry = new THREE.BufferGeometry().copy(this.geometry);
       this.meshVertices = new THREE.Points(meshVerticesGeometry, verticesMaterial);
+      this.meshVertices.renderOrder = 99999999999;
       this.add(this.meshVertices);
     }
   }
 
   destroy() {
     if (this.meshVertices) {
-      scene.remove(this.meshVertices);
-      this.meshVertices.geometry.dispose();
-      (this.meshVertices.material as THREE.Material).dispose();
+      disposeMesh(this.meshVertices);
       this.meshVertices = null;
     }
     disposeMesh(this);
   }
 
   updatePoint(index: number, newPosition: THREE.Vector3) {
-    const positions = this.geometry.getAttribute("position");
-    positions.setXYZ(index, newPosition.x, newPosition.y, newPosition.z);
+    this.geometry.getAttribute("position").setXYZ(index, newPosition.x, newPosition.y, newPosition.z);
 
     if (this.showVertices && this.meshVertices) {
-      const offsetPosition = newPosition.clone().addScalar(0.005);
-      this.meshVertices.geometry.getAttribute("position").setXYZ(index, offsetPosition.x, offsetPosition.y, offsetPosition.z);
+      this.meshVertices.geometry.getAttribute("position").setXYZ(index, newPosition.x, newPosition.y, newPosition.z);
     }
   }
 
-  update() {
+  update(camera: PlanetCamera) {
     updateGeometry(this.geometry);
     if (this.showVertices && this.meshVertices) {
       updateGeometry(this.meshVertices.geometry);
+    }
+
+    logVisibleVertices(camera, this, "Planet");
+    if (this.showVertices && this.meshVertices) {
+      logVisibleVertices(camera, this.meshVertices, "Points");
     }
   }
 }

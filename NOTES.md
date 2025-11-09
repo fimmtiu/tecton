@@ -85,6 +85,17 @@ a separate CubeField.
 
 TO DO:
 
-- Measure "radians in view" from the left edge of the sphere instead of the front.
+- Make the mesh shrink as the camera gets closer. (Why is it not doing that already?)
 - Adjust vertexes on mesh to be denser near the center and sparser at the edges.
 - Fix the mountain and trench code in terrain.ts. It's creating weird garbage mountains.
+- Come up with some fix for squashed swatches when you zoom in on a rectangular viewport.
+
+
+Low priority:
+
+- Fix the camera code to not assume that we're always looking at the origin.
+  - Also add some freelook keys
+
+- Look at how hard it would be to change things such that we move the world around the camera instead of moving the
+  camera around the world, to allow for representing sub-1-meter things when we zoom in super far. (Otherwise you get
+  boned by floating-point inaccuracy around meter scale.)

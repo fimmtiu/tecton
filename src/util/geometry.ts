@@ -2,10 +2,11 @@ import * as THREE from "three";
 import * as d3 from "d3-geo";
 import * as D3GeoVoronoi from "d3-geo-voronoi";
 import { scene } from "../scene_data";
+import { PlanetCamera } from "../planet_camera";
 
 export {
   updateGeometry, getWorldVertexFromMesh, randomlyJitterVertices, wrapMeshAroundSphere,
-  disposeMesh, sphericalLloydsRelaxation,
+  disposeMesh, sphericalLloydsRelaxation, logVisibleVertices,
  };
 
 // Tell three.js that this geometry has changed.
@@ -68,4 +69,18 @@ function sphericalLloydsRelaxation(voronoi: any, iterations = 1): any {
     voronoi = D3GeoVoronoi.geoVoronoi(centroids);
   }
   return voronoi;
+}
+
+// Log the number of vertices in the mesh that are visible to the camera.
+function logVisibleVertices(camera: PlanetCamera, mesh: THREE.Mesh | THREE.Points, label: string) {
+  const positions = (mesh as THREE.Mesh).geometry.getAttribute("position") || (mesh as THREE.Points).geometry.getAttribute("position");
+  let pointsInCameraView = 0;
+
+  for (let i = 0; i < positions.count; i++) {
+    const worldPosition = new THREE.Vector3(positions.getX(i), positions.getY(i), positions.getZ(i))
+    if (camera.frustum.containsPoint(worldPosition)) {
+      pointsInCameraView++;
+    }
+  }
+  console.log(`${label} vertices in camera view: ${pointsInCameraView} of ${positions.count} (${pointsInCameraView / positions.count * 100}%)`);
 }
