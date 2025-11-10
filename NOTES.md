@@ -85,11 +85,9 @@ a separate CubeField.
 
 TO DO:
 
-- Make the mesh shrink as the camera gets closer. (Why is it not doing that already?)
-- Adjust vertexes on mesh to be denser near the center and sparser at the edges.
 - Fix the mountain and trench code in terrain.ts. It's creating weird garbage mountains.
 - Come up with some fix for squashed swatches when you zoom in on a rectangular viewport.
-
+- Start working on the climate sim.
 
 Low priority:
 

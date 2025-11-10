@@ -123,14 +123,17 @@ class Planet {
     const sphereCoords = new THREE.Spherical();
     const newPosition = new THREE.Vector3();
 
-    // const points = [];
     for (let i = 0; i < positions.count; i++) {
       const u = i % this.mesh.horizontalVertices;
       const v = Math.floor(i / this.mesh.horizontalVertices);
 
+      // Vertices at center get 75% spacing, vertices at edge get 125% spacing
+      const horizScale = THREE.MathUtils.lerp(0.75, 1.25, Math.abs(u - this.mesh.halfHorizLength) / this.mesh.halfHorizLength);
+      const vertScale = THREE.MathUtils.lerp(0.75, 1.25, Math.abs(v - this.mesh.halfVertLength) / this.mesh.halfVertLength);
+
       // Calculate where this vertex should go on the sea-level sphere.
-      sphereCoords.theta = horizRadiansPerCell * (u - this.mesh.halfHorizLength);
-      sphereCoords.phi = vertRadiansPerCell * (v - this.mesh.halfVertLength) + Math.PI / 2;
+      sphereCoords.theta = horizRadiansPerCell * horizScale * (u - this.mesh.halfHorizLength);
+      sphereCoords.phi = vertRadiansPerCell * vertScale * (v - this.mesh.halfVertLength) + Math.PI / 2;
       sphereCoords.radius = PLANET_RADIUS;
       newPosition.setFromSpherical(sphereCoords);
 
@@ -142,13 +145,6 @@ class Planet {
         sphereCoords.radius += height;
         newPosition.setFromSpherical(sphereCoords);
       }
-
-      // if ((u == 122 || u == 0) && (v == 0 || v == 122)) {
-      //   console.log(`Vertex at ${u}, ${v} is at [${newPosition.x}, ${newPosition.y}, ${newPosition.z}]`);
-      //   console.log(`    Theta: hrpc ${horizRadiansPerCell} * (u ${u} - hhl ${this.mesh.halfHorizLength}) = ${sphereCoords.theta}`);
-      //   console.log(`    Phi: vrpc ${vertRadiansPerCell} * (v ${v} - hvl ${this.mesh.halfVertLength}) + ${Math.PI / 2} = ${sphereCoords.phi}`);
-      //   points.push(newPosition.clone());
-      // }
 
       this.mesh.updatePoint(i, newPosition);
     }
