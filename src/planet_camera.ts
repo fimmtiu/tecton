@@ -156,7 +156,6 @@ class PlanetCamera extends THREE.PerspectiveCamera {
 
         const polarPoint = new THREE.Vector3(0, 1, 0).applyQuaternion(this.quaternion).normalize().multiplyScalar(PLANET_RADIUS);
         this.verticalRadiansInView = Math.PI - this.greatCircleDistance(rotatedIntersection, polarPoint) * 2;
-        console.log(`Great circle distance: ${this.greatCircleDistance(rotatedIntersection, polarPoint)} (x2 ${this.greatCircleDistance(rotatedIntersection, polarPoint) * 2}) (-pi ${Math.PI - this.greatCircleDistance(rotatedIntersection, polarPoint) * 2} )`);
 
         // visualHelper.setPoints("sphere intersections vertical", [topIntersection, polarPoint, rotatedIntersection], true);
         // visualHelper.showCamera(5000);
@@ -166,7 +165,7 @@ class PlanetCamera extends THREE.PerspectiveCamera {
         // visualHelper.setPoints("sphere intersections vertical", []);
       }
     }
-    console.log(`Horizontal radians in view: ${this.horizontalRadiansInView}, vertical radians in view: ${this.verticalRadiansInView}`);
+    // console.log(`Horizontal radians in view: ${this.horizontalRadiansInView}, vertical radians in view: ${this.verticalRadiansInView}`);
 
     this.frustum.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(this.projectionMatrix, this.matrixWorldInverse));
   }
@@ -198,7 +197,6 @@ class PlanetCamera extends THREE.PerspectiveCamera {
     const cameraSideRay = new THREE.Ray(this.position, cameraSide);
     const intersection = new THREE.Vector3();
     if (this.intersect(cameraSideRay, intersection)) {
-      console.log("intersection found");
       return intersection;
     }
 

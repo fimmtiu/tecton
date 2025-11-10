@@ -86,7 +86,7 @@ class Planet {
       Math.max(horizontalVertices, verticalVertices),
       Math.max(horizontalVertices, verticalVertices),
       new THREE.MeshStandardMaterial({ map: this.texture, side: THREE.FrontSide }),
-      true
+      false // showVertices
     );
     scene.add(this.mesh);
   }
@@ -117,7 +117,7 @@ class Planet {
 
     const horizRadiansPerCell = camera.horizontalRadiansInView / this.mesh.horizontalVertices;
     const vertRadiansPerCell = camera.verticalRadiansInView / this.mesh.verticalVertices;
-    console.log(`Horiz radians per cell: ${horizRadiansPerCell}, vert radians per cell: ${vertRadiansPerCell}`);
+    // console.log(`Horiz radians per cell: ${horizRadiansPerCell}, vert radians per cell: ${vertRadiansPerCell}`);
 
     const positions = this.mesh.geometry.getAttribute("position");
     const sphereCoords = new THREE.Spherical();
