@@ -32,6 +32,8 @@ const DEPTH_100_M = -0.100;   // -100 meters in km
 const DEPTH_6000_M = -6.000;  // -6000 meters in km
 const DEPTH_MAX = -11.000;    // -11 km is the deepest point on the Earth's surface.
 
+const WIDTH_SCALE = 10;   // The area affected by a plate boundary is (convergence * WIDTH_SCALE * 2) km wide.
+
 class Terrain {
   protected plateSphere: PlateSphere;
   public heightMap: HeightCubeField;
@@ -66,7 +68,7 @@ class Terrain {
         }
       }
 
-      heightCell.height += this.tectonicHeightAdjustment(heightCell, i);
+      heightCell.height = this.tectonicHeightAdjustment(heightCell, i);
       if (heightCell.height > this.max) {
         this.max = heightCell.height;
       }
@@ -74,6 +76,7 @@ class Terrain {
         this.min = heightCell.height;
       }
     }
+    console.log(`max height ${this.max.toFixed(2)} km, min depth ${this.min.toFixed(2)} km`);
   }
 
   destroy() {
@@ -135,24 +138,46 @@ class Terrain {
   // `cell` is just for debugging.
   protected tectonicHeightAdjustment(heightCell: HeightCell, cell: number) {
     const plate = this.plateSphere.plateAtPoint(heightCell.center);
-    let adjustment = 0;
+    let currentHeight = heightCell.height;
 
     for (const [boundary, distance] of this.closestDistanceToAdjacentPlates(heightCell.center, plate)) {
+      let w = boundary.convergence * WIDTH_SCALE;
+      let h = boundary.convergence * HEIGHT_MAX;
+      let d = boundary.convergence * DEPTH_MAX;
+
       if (boundary.colliding()) {
         if (boundary.plateCells[0].plate.isLand && boundary.plateCells[1].plate.isLand) {
+          w *= 50;
+          if (distance > w) {
+            continue;
+          }
+
           // Land-land plate collision that generates a mountain range.
-          // if (this.landToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)) {
-          //   console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, land/land mountain ${this.landToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)}`);
+          const mountainHeight = Math.pow((Math.cos(Math.PI * distance / w) + 1) * h / 2, 1.2);
+          console.log(`LL mountain height: currentHeight ${currentHeight}, mountainHeight ${mountainHeight}, new height ${Math.pow(currentHeight, 1.3) + mountainHeight}`);
+          return Math.pow(currentHeight, 1.3) + mountainHeight;
+
+          // const mountainHeight = this.landToLandMountainHeight(distance, 500 * boundary.convergence * WIDTH_SCALE, boundary.convergence * HEIGHT_MAX);
+          // if (mountainHeight) {
+          //   console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, land/land mountain ${mountainHeight}, base ${heightCell.height}, adj ${adjustment + mountainHeight}`);
           // }
-          adjustment += this.landToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence);
+          // adjustment += mountainHeight;
 
         } else if (!boundary.plateCells[0].plate.isLand && !boundary.plateCells[1].plate.isLand) {
+          w *= 300;
+          if (distance > w) {
+            continue;
+          }
+
+          return currentHeight + (Math.cos(distance / w / 2) ** 20) * (d / 2);
+
+
           // Ocean-ocean plate collision that generates an oceanic trench.
-          const trenchHeight = this.oceanTrenchHeight(distance, 300 * boundary.convergence, boundary.convergence);
+          const trenchHeight = this.oceanTrenchHeight(distance, 300 * boundary.convergence * WIDTH_SCALE, (boundary.convergence / 2) * DEPTH_MAX);
           // if (trenchHeight) {
-          //   console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, conv ${boundary.convergence}, ocean trench ${trenchHeight}, base ${heightCell.height}, adj ${adjustment + trenchHeight}`);
+          //   console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, conv ${boundary.convergence.toFixed(2)}, ocean trench ${trenchHeight}, base ${heightCell.height}, adj ${adjustment + trenchHeight}`);
           // }
-          adjustment += trenchHeight;
+          // adjustment += trenchHeight;
 
         } else {
           // Land-ocean plate collision that generates a mountain range on the land cell and a short shelf on the ocean.
@@ -160,13 +185,13 @@ class Terrain {
             // if (this.oceanToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)) {
             //   console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, land/ocean mountain ${this.oceanToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)}`);
             // }
-            adjustment += this.oceanToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)
+            // adjustment += this.oceanToLandMountainHeight(distance, 500 * boundary.convergence, boundary.convergence)
 
           } else {
             // if (this.continentalShelfHeight(distance, 80 * boundary.convergence)) {
             //   console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, continental shelf ${this.continentalShelfHeight(distance, 80 * boundary.convergence)}`);
             // }
-            adjustment += this.continentalShelfHeight(distance, 80 * boundary.convergence);
+            // adjustment += this.continentalShelfHeight(distance, 80 * boundary.convergence);
           }
         }
       } else if (boundary.diverging()) {
@@ -174,7 +199,7 @@ class Terrain {
       }
     }
 
-    return adjustment;
+    return currentHeight; // FIXME -- just for debugging, remove this
   }
 
   // FIXME: better variable names, for Christ's sake
@@ -244,8 +269,8 @@ class Terrain {
       return 0;
     }
     const x = dist / width;
-    // console.log(`LL mountain height: dist ${dist}, width ${width}, x ${dist / width} height ${height}, ${(Math.cos(Math.PI * x) + height) / 2}`);
-    return (Math.cos(Math.PI * x) * (height * HEIGHT_MAX) + 1) / 2;
+    console.log(`LL mountain height: cos(PI * ${x}) [${Math.cos(Math.PI * x)}] + 1 [${Math.cos(Math.PI * x) + 1}] * ${height} / 2 = ${(Math.cos(Math.PI * x) + 1) * height / 2}`);
+    return Math.pow((Math.cos(Math.PI * x) + 1) * height / 2, 1.2);
   }
 
   // dist: The distance in km between the given point and the plate boundary.
@@ -255,8 +280,8 @@ class Terrain {
     if (dist > width) {
       return 0;
     }
-    // console.log(`OL mountain height: ${(Math.cos(2 * Math.PI * ((dist / width) ** 2)) + 1) / 2 * height}`);
-    return (Math.cos(2 * Math.PI * ((dist / width) ** 2)) + 1) / 2 * (height * HEIGHT_MAX);
+    // console.log(`OL mountain height: cos(2 * PI * ((dist / width / 2) ** 2)) [${Math.cos(2 * Math.PI * ((dist / width / 2) ** 2))}] + 1 [${(Math.cos(2 * Math.PI * ((dist / width / 2) ** 2)) + 1)}] / 2 [${(Math.cos(2 * Math.PI * ((dist / width / 2) ** 2)) + 1) / 2}] * ${height} = ${(Math.cos(2 * Math.PI * ((dist / width / 2) ** 2)) + 1) / 2 * height}`);
+    return (Math.cos(2 * Math.PI * ((dist / width / 2) ** 2)) + 1) / 2 * (height);
   }
 
   // dist: The distance in km between the given point and the plate boundary.
@@ -271,14 +296,14 @@ class Terrain {
   }
 
   // dist: The distance in km between the given point and the plate boundary.
-  // depth: [0.0 - 1.0] The maximum depth of the trench at its center.
+  // depth: [-11.000 - -1.000] The maximum depth of the trench at its center.
   // width: Radius of the trench area in km.
   protected oceanTrenchHeight(dist: number, width: number, depth: number) {
     if (dist > width) {
       return 0;
     }
-    // console.log(`Trench x ${dist / width}, depth ${depth}, height: ${-(Math.cos(dist / width / 2) ** 50) * depth}`);
-    return -(Math.cos(dist / width / 2) ** 50) * (depth * DEPTH_MAX);
+    // console.log(`Trench: cos(${dist / width / 2}) [${Math.cos(dist / width / 2)}] ** 20 [${Math.cos(dist / width / 2) ** 20}] * ${depth} = ${(Math.cos(dist / width / 2) ** 20) * depth}`);
+    return (Math.cos(dist / width / 2) ** 20) * depth;
   }
 
   // dist: The distance in km between the given point and the plate boundary.
