@@ -23,7 +23,7 @@ class SceneData {
     this.planet = new Planet(width, height);
     visualHelper = new VisualHelper();
     this.camera = new PlanetCamera(this.planet, width, height);
-    visualHelper.showAxes();
+    // visualHelper.showAxes();
     this.horizDirection = this.vertDirection = this.zoomDirection = 0;
 
     // For now, just a flat background that doesn't move. In the future, maybe it can be a sky-sphere.

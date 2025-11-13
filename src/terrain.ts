@@ -153,15 +153,9 @@ class Terrain {
           }
 
           // Land-land plate collision that generates a mountain range.
-          const mountainHeight = Math.pow((Math.cos(Math.PI * distance / w) + 1) * h / 2, 1.2);
-          console.log(`LL mountain height: currentHeight ${currentHeight}, mountainHeight ${mountainHeight}, new height ${Math.pow(currentHeight, 1.3) + mountainHeight}`);
-          return Math.pow(currentHeight, 1.3) + mountainHeight;
-
-          // const mountainHeight = this.landToLandMountainHeight(distance, 500 * boundary.convergence * WIDTH_SCALE, boundary.convergence * HEIGHT_MAX);
-          // if (mountainHeight) {
-          //   console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, land/land mountain ${mountainHeight}, base ${heightCell.height}, adj ${adjustment + mountainHeight}`);
-          // }
-          // adjustment += mountainHeight;
+          // const mountainHeight = Math.pow((Math.cos(Math.PI * distance / w) + 1) * h / 2, 1.2);
+          // console.log(`LL mountain height: currentHeight ${currentHeight}, mountainHeight ${mountainHeight}, new height ${Math.pow(currentHeight, 1.3) + mountainHeight}`);
+          // return Math.pow(currentHeight, 1.3) + mountainHeight;
 
         } else if (!boundary.plateCells[0].plate.isLand && !boundary.plateCells[1].plate.isLand) {
           w *= 300;
@@ -169,15 +163,8 @@ class Terrain {
             continue;
           }
 
-          return currentHeight + (Math.cos(distance / w / 2) ** 20) * (d / 2);
-
-
           // Ocean-ocean plate collision that generates an oceanic trench.
-          const trenchHeight = this.oceanTrenchHeight(distance, 300 * boundary.convergence * WIDTH_SCALE, (boundary.convergence / 2) * DEPTH_MAX);
-          // if (trenchHeight) {
-          //   console.log(`cell ${Math.floor(cell / this.heightMap.cellsPerFace)}x${cell % this.heightMap.cellsPerFace}, distance ${distance} km from ${boundary.plateCells[0].plate.id}/${boundary.plateCells[1].plate.id}, conv ${boundary.convergence.toFixed(2)}, ocean trench ${trenchHeight}, base ${heightCell.height}, adj ${adjustment + trenchHeight}`);
-          // }
-          // adjustment += trenchHeight;
+          return currentHeight + (Math.cos(distance / w / 2) ** 20) * (d / 2);
 
         } else {
           // Land-ocean plate collision that generates a mountain range on the land cell and a short shelf on the ocean.
