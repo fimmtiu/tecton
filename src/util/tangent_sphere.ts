@@ -1,7 +1,6 @@
 import * as THREE from "three";
 
 import { PLANET_RADIUS } from "../planet"
-import { scene } from "../scene_data";
 import { v2s, sphericalFromCoords } from "../util";
 import { wrapMeshAroundSphere } from "../util/geometry";
 

@@ -1,6 +1,5 @@
 import * as THREE from "three";
-import { disposeMesh, updateGeometry, logVisibleVertices } from "./util/geometry";
-import { PlanetCamera } from "./planet_camera";
+import { disposeMesh, updateGeometry } from "./util/geometry";
 
 export { PlanetMesh };
 
